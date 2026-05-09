@@ -17,5 +17,5 @@ COPY . .
 RUN mkdir -p /app/data && chmod -R 777 /app/data
 ENV LOGBOOK_DATA_DIR=/app/data
 
-# Use uvicorn directly for easier debugging of Railway startup
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Use string format for CMD to ensure $PORT expansion by the shell
+CMD uvicorn app:app --host 0.0.0.0 --port $PORT
