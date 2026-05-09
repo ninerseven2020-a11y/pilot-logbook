@@ -16,7 +16,9 @@ class CAD407Logbook:
         
         # Mapping of internal keys to possible Excel header synonyms
         # Load from file if exists, otherwise use defaults
-        self.synonyms_file = "data/synonyms.json"
+        # Define data_dir first
+        self.data_dir = os.getenv("LOGBOOK_DATA_DIR", "data")
+        self.synonyms_file = os.path.join(self.data_dir, "synonyms.json")
         self.COLUMN_MAP = self.load_synonyms()
 
         # Aircraft Type Database (FW = Fixed Wing, HELI = Helicopter)
@@ -27,11 +29,13 @@ class CAD407Logbook:
             'ZLIN': 'FW', 'DA40': 'FW', 'BE20': 'FW', 'B350': 'FW', 'JS31': 'FW', 'TB10': 'FW'
         }
 
-        
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+            
         if user_id:
-            self.storage_file = f"data/logbook_{user_id}.json"
+            self.storage_file = os.path.join(self.data_dir, f"logbook_{user_id}.json")
         else:
-            self.storage_file = "logbook_data.json"
+            self.storage_file = os.path.join(self.data_dir, "logbook_data.json")
             
         self.load_data()
 
