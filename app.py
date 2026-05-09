@@ -836,6 +836,7 @@ async def update_profile(
 
 @app.get("/api/export_pdf")
 async def export_pdf(
+    token: str = Query(...),
     current_user: User = Depends(get_current_user),
     start_page: int = Query(1), 
     end_page: int = Query(None)
@@ -850,8 +851,12 @@ async def export_pdf(
         filename = f"Logbook_Export_{start_page}.pdf"
         output_path = os.path.join("/tmp", filename)
         
-        # 3. Render locally via Playwright
-        await render_pdf_local(html_content, output_path)
+        # 3. Render locally via Playwright (V10 screenshot style)
+        port = int(os.getenv("PORT", 8000))
+        # Get the token from query params or auth header
+        auth_token = token
+        
+        await render_pdf_local(html_content, output_path, auth_token, port=port)
         
         return FileResponse(
             path=output_path,
