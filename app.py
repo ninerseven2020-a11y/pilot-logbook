@@ -14,13 +14,8 @@ from sqlalchemy.orm import Session
 
 from main import get_mvp_data, add_adjustment, get_logbook_preview
 from engine import CAD407Logbook
-from pdf_engine import CAD407Renderer
-from models import User, get_password_hash, verify_password, SessionLocal, init_db, Organization, FlightNature
-
-# Google OAuth Imports
-from google_auth_oauthlib.flow import Flow
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
+from pdf_ssr import render_logbook_html
+from models import User, SessionLocal, init_db
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -798,74 +793,55 @@ async def update_profile(
 
 @app.get("/api/export_pdf")
 async def export_pdf(
-    token: str = Query(...), 
+    current_user: User = Depends(get_current_user),
     start_page: int = Query(1), 
     end_page: int = Query(None)
 ):
     try:
-        from playwright.async_api import async_playwright
-        from PIL import Image
-        import os
-        import io
+        import requests as httprequests
         
-        base_url = "http://localhost:8000" 
+        # 1. Generate Static HTML
+        html_content = render_logbook_html(current_user, start_page, end_page)
         
-        # Save directly to User's Downloads folder
-        downloads_path = os.path.expanduser("~/Downloads")
-        output_filename = f"Logbook_Export_{start_page}_to_{end_page}.pdf"
-        output_path = os.path.join(downloads_path, output_filename)
+        # 2. Call Browserless.io API
+        api_key = os.getenv("BROWSERLESS_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="BROWSERLESS_API_KEY not configured on server.")
+            
+        browserless_url = f"https://production-sfo.browserless.io/pdf?token={api_key}"
         
-        images = []
+        payload = {
+            "html": html_content,
+            "options": {
+                "format": "A4",
+                "landscape": True,
+                "printBackground": True,
+                "margin": {
+                    "top": "0px",
+                    "bottom": "0px",
+                    "left": "0px",
+                    "right": "0px"
+                }
+            }
+        }
         
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            context = await browser.new_context(
-                viewport={'width': 1800, 'height': 1200},
-                device_scale_factor=2
-            )
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = httprequests.post(browserless_url, json=payload, headers=headers, timeout=60)
+        
+        if response.status_code != 200:
+            raise Exception(f"Browserless Error: {response.text}")
             
-            page = await context.new_page()
-            
-            # 1. Login/Auth
-            await page.goto(f"{base_url}/login")
-            await page.evaluate(f"localStorage.setItem('logbook_auth_token', '{token}')")
-            
-            # 2. Preview
-            await page.goto(f"{base_url}/preview", wait_until="networkidle")
-            await page.wait_for_function("document.querySelectorAll('#page-select option').length > 0", timeout=20000)
-            
-            # 3. Style cleanup
-            await page.add_style_tag(content=".sync-indicator { display: none !important; }")
-            
-            total_pages = await page.evaluate("document.querySelectorAll('#page-select option').length")
-            if end_page is None or end_page > total_pages:
-                end_page = total_pages
-                
-            for p_num in range(start_page, end_page + 1):
-                await page.select_option("#page-select", str(p_num - 1))
-                await page.wait_for_timeout(800)
-                
-                element = await page.query_selector("#logbook-printable-area")
-                if element:
-                    img_data = await element.screenshot(type="png")
-                    img = Image.open(io.BytesIO(img_data))
-                    if img.mode == 'RGBA':
-                        img = img.convert('RGB')
-                    images.append(img)
-                
-            await browser.close()
-            
-        if not images:
-            raise HTTPException(status_code=500, detail="Failed to capture any pages")
-
-        images[0].save(
-            output_path, 
-            "PDF", 
-            save_all=True, 
-            append_images=images[1:] if len(images) > 1 else []
+        # 3. Return the PDF
+        return Response(
+            content=response.content,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=Logbook_Export_{start_page}.pdf"
+            }
         )
-            
-        return {"status": "success", "message": f"Exported to Downloads folder: {output_filename}", "path": output_path}
     except Exception as e:
         import traceback
         traceback.print_exc()
