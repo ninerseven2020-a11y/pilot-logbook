@@ -223,3 +223,31 @@ def render_logbook_html(user, start_page=1, end_page=None):
 
     html += "</body></html>"
     return html
+
+async def render_pdf_local(html_content, output_path):
+    """
+    Renders the provided HTML string to a PDF using local Playwright/Chromium.
+    """
+    from playwright.async_api import async_playwright
+    
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        # Use a large viewport to ensure no mobile-responsive wrapping occurs
+        context = await browser.new_context(viewport={'width': 1650, 'height': 1200})
+        page = await context.new_page()
+        
+        # Set content and wait for fonts/images to load
+        await page.set_content(html_content, wait_until="networkidle")
+        
+        # Generate PDF with exact dimensions for 1650px content
+        # 1650px at 72dpi is approx 22.9 inches
+        await page.pdf(
+            path=output_path,
+            width="1650px",
+            print_background=True,
+            display_header_footer=False,
+            margin={'top': '0px', 'right': '0px', 'bottom': '0px', 'left': '0px'}
+        )
+        
+        await browser.close()
+    return output_path

@@ -836,26 +836,17 @@ async def export_pdf(
     end_page: int = Query(None)
 ):
     try:
-        from pdf_engine import CAD407Renderer
+        from pdf_ssr import render_logbook_html, render_pdf_local
         
-        logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
-        all_pages = logbook.get_paginated_data(start_page=1)
+        # 1. Generate the HTML content
+        html_content = render_logbook_html(current_user, start_page=start_page, end_page=end_page)
         
-        if not all_pages:
-            raise HTTPException(status_code=400, detail="No logbook data to export.")
-            
-        if end_page is None:
-            end_page = len(all_pages)
-            
-        requested_pages = all_pages[start_page-1 : end_page]
-        
-        # Use local ReportLab engine
+        # 2. Define path
         filename = f"Logbook_Export_{start_page}.pdf"
-        # Use a safe temp path
         output_path = os.path.join("/tmp", filename)
         
-        renderer = CAD407Renderer(output_filename=output_path)
-        renderer.render_pages(requested_pages)
+        # 3. Render locally via Playwright
+        await render_pdf_local(html_content, output_path)
         
         return FileResponse(
             path=output_path,
@@ -865,7 +856,7 @@ async def export_pdf(
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"PDF Generation Failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
