@@ -162,7 +162,38 @@ async def register(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "User registered successfully"}
+@app.post("/api/restore")
+async def restore_logbook(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    try:
+        contents = await file.read()
+        data = json.loads(contents)
+        
+        # Simple validation: Check if it looks like a logbook
+        if "history" not in data or "sync_adjustments" not in data:
+            raise Exception("Invalid logbook format. Missing history or sync_adjustments.")
+            
+        logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+        
+        # Replace current data with uploaded data
+        logbook.history = data["history"]
+        logbook.sync_adjustments = data["sync_adjustments"]
+        
+        # Preserve aircraft DB if present
+        if "COLUMN_MAP" in data:
+            logbook.COLUMN_MAP = data["COLUMN_MAP"]
+            
+        logbook.save_data()
+        
+        return {"message": "Logbook restored successfully", "data": get_mvp_data(logbook)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/export_json")
+async def export_json(current_user: User = Depends(get_current_user)):
+    logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+    if os.path.exists(logbook.storage_file):
+        return FileResponse(logbook.storage_file, media_type="application/json", filename=f"logbook_backup_{datetime.now().strftime('%Y%m%d')}.json")
+    raise HTTPException(status_code=404, detail="No logbook file found.")
 
 @app.post("/api/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):

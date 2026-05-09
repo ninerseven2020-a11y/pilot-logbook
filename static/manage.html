@@ -532,6 +532,30 @@
                     </table>
                 </div>
             </section>
+            
+            <!-- Data Migration (JSON Backup/Restore) -->
+            <section class="card glass" id="data-migration" style="margin-top: 2rem; border-top: 2px solid #10b981;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div>
+                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Data Migration & Backup
+                        </h2>
+                        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
+                            Transfer your logbook JSON data between servers or keep a safe backup.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-secondary" onclick="exportLogbookJSON()" style="border-color: #10b981; color: #10b981;">
+                            Export JSON Backup
+                        </button>
+                        <button class="btn btn-primary" style="background: #10b981;" onclick="document.getElementById('restore-input').click()">
+                            Restore from JSON
+                        </button>
+                        <input type="file" id="restore-input" style="display: none;" accept=".json" onchange="handleRestoreLogbook(this)">
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 

@@ -683,3 +683,61 @@ async function saveSynonyms() {
         }
     } catch (e) { showToast('Server error', 'error'); }
 }
+async function handleRestoreLogbook(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    if (!confirm(`This will REPLACE your current logbook with data from ${file.name}. Are you sure?`)) {
+        input.value = '';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/restore', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        
+        if (response.ok) {
+            showToast('Logbook restored successfully!');
+            fetchHistory();
+        } else {
+            const err = await response.json();
+            showToast(`Restore failed: ${err.detail}`, 'error');
+        }
+    } catch (e) {
+        showToast('Server error during restore', 'error');
+    } finally {
+        input.value = '';
+    }
+}
+
+async function exportLogbookJSON() {
+    const token = getToken();
+    try {
+        const response = await fetch('/api/export_json', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `logbook_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('JSON backup downloaded');
+        } else {
+            showToast('Export failed', 'error');
+        }
+    } catch (e) {
+        showToast('Server error during export', 'error');
+    }
+}
