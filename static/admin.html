@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logbook Admin | Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --admin-accent: #3b82f6; /* Blue for admin instead of gold */
+        }
+        .admin-sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .user-row:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .status-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-admin { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .status-pilot { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+        
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .stat-card .val { font-size: 2rem; font-weight: 800; color: #fff; }
+        .stat-card .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    </style>
+</head>
+<body>
+    <div class="manage-container">
+        <aside class="sidebar admin-sidebar">
+            <div class="logo-section" style="padding: 0 1.5rem; margin-bottom: 3rem;">
+                <div class="logo">
+                    <span class="logo-icon" style="color: var(--admin-accent);">🛡️</span>
+                    <h1 style="background: linear-gradient(135deg, #fff 0%, var(--admin-accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin</h1>
+                </div>
+            </div>
+            <nav style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0 1rem;">
+                <a href="/admin" class="nav-item active" style="padding: 0.8rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.8rem; color: var(--admin-accent);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    User Management
+                </a>
+                <a href="/dashboard" class="nav-item" style="padding: 0.8rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.8rem; opacity: 0.6;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    Exit to App
+                </a>
+            </nav>
+        </aside>
+
+        <main class="manage-content">
+            <header class="section-header" style="margin-bottom: 2rem;">
+                <h2>System Overview</h2>
+                <div id="admin-user-info" style="display: flex; align-items: center; gap: 1rem;">
+                    <!-- User info -->
+                </div>
+            </header>
+
+            <!-- Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <div class="stat-card">
+                    <span class="label">Total Pilots</span>
+                    <span class="val" id="total-users">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Total Flights</span>
+                    <span class="val" id="total-flights">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="label">Active (24h)</span>
+                    <span class="val" id="active-users">0</span>
+                </div>
+            </div>
+
+            <section class="card glass">
+                <div class="flex-between" style="margin-bottom: 2rem;">
+                    <h3>Registered Users</h3>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                        Real-time tracking of pilot adoption
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="user-table">
+                        <thead>
+                            <tr>
+                                <th>Pilot Name</th>
+                                <th>Username</th>
+                                <th>Joined</th>
+                                <th>Last Activity</th>
+                                <th>Flights</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Merge Modal -->
+    <div id="merge-modal" class="modal">
+        <div class="modal-content glass" style="max-width: 500px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Merge Accounts</h2>
+                <button class="btn-close" onclick="closeMergeModal()">&times;</button>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                This will move all flight records and Google links from <strong id="merge-source-name" style="color:#fff;"></strong> into another account. 
+                <span style="color: #ef4444; display: block; margin-top: 0.5rem;">Warning: This action cannot be undone.</span>
+            </p>
+            <div class="form-group">
+                <label>Select Target Account (Keep this one)</label>
+                <select id="merge-target-select" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff;">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="closeMergeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmMerge()" style="background: #ef4444; color: #fff;">Merge Accounts</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/admin.js"></script>
+</body>
+</html>

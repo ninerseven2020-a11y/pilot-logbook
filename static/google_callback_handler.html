@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logging in...</title>
+</head>
+<body>
+    <script>
+        // Save the token received from the backend
+        const token = "{{ token }}";
+        if (token) {
+            localStorage.setItem('logbook_auth_token', token);
+            window.location.href = "/dashboard";
+        } else {
+            document.body.innerHTML = "Authentication failed. Please try again.";
+            setTimeout(() => window.location.href = "/login", 2000);
+        }
+    </script>
+</body>
+</html>

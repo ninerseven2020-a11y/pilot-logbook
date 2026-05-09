@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logbook - Pilot Logbook</title>
+    <link rel="stylesheet" href="static/style.css?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body data-page="preview">
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <h1>Logbook</h1>
+                </div>
+                <nav class="nav-links">
+                    <a href="/dashboard" class="nav-item">Dashboard</a>
+                    <a href="/preview" class="nav-item active">Logbook</a>
+                    <a href="/upload" class="nav-item">Upload</a>
+                    <a href="/manage" class="nav-item">Manage</a>
+                </nav>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="exportPDF()">
+                    <span class="icon">📄</span> Export PDF
+                </button>
+                <div class="user-menu-container">
+                    <button class="user-icon-btn" id="user-icon-btn" onclick="toggleProfilePopover()" title="My Profile">
+                        <span id="user-avatar-initial">?</span>
+                    </button>
+                    <div class="profile-popover" id="profile-popover">
+                        <div class="popover-user-section">
+                            <div class="popover-avatar" id="popover-avatar">?</div>
+                            <div class="popover-user-info">
+                                <div class="popover-name" id="popover-name">—</div>
+                                <div class="popover-email" id="popover-email">—</div>
+                            </div>
+                        </div>
+                        <div class="popover-divider"></div>
+                        <div class="popover-badges" id="popover-badges"></div>
+                        <div class="popover-divider"></div>
+                        <button class="popover-menu-item" onclick="openEditProfileModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit Profile
+                        </button>
+                        <button class="popover-menu-item popover-logout" onclick="handleLogout()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Logbook Preview Section -->
+        <section id="preview" class="card-section">
+            <div class="section-header">
+                <div class="title-section">
+                    <h2>CAD 407 Logbook</h2>
+                </div>
+                <div class="filter-controls" style="display: flex; gap: 1rem; align-items: center; margin-right: auto; margin-left: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="filter-date-from" style="color: #64748b; font-size: 0.9rem;">From:</label>
+                        <input type="date" id="filter-date-from" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem 0.5rem; color-scheme: dark;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="filter-date-to" style="color: #64748b; font-size: 0.9rem;">To:</label>
+                        <input type="date" id="filter-date-to" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem 0.5rem; color-scheme: dark;">
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="applyDateFilter()">Filter</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearDateFilter()">Clear</button>
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-secondary btn-sm" onclick="prevPage()">← Previous</button>
+                    <select id="page-select" onchange="jumpToPage()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.2rem 0.5rem; font-family: var(--font-mono); font-weight: bold;"></select>
+                    <button class="btn btn-secondary btn-sm" onclick="nextPage()">Next →</button>
+                    <div class="page-input-group" style="border-left: 1px solid var(--glass-border); padding-left: 1rem; margin-left: 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="lastPage()">Last ⏭</button>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div id="logbook-printable-area" style="background: white; padding: 40px; border-radius: 8px; color: #1e293b; width: 1650px; margin: 0 auto; overflow: visible;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                    <h2 style="font-size: 1.25rem; color: #1e293b; margin: 0; font-weight: 800; letter-spacing: -0.01em;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK</h2>
+                    <div id="page-number-display" style="font-weight: 800; font-size: 1.2rem; color: #1e293b;">Page 1</div>
+                </div>
+                
+                <div class="cad407-wrapper">
+                    <table id="logbook-table" class="cad407-table" style="table-layout: fixed; width: 100%;">
+                        <colgroup>
+                            <col style="width: 70px;"> <!-- Month/Date -->
+                            <col style="width: 55px;"> <!-- Type -->
+                            <col style="width: 80px;"> <!-- Registration -->
+                            <col style="width: 100px;"> <!-- Pilot-in-command -->
+                            <col style="width: 100px;"> <!-- Co-pilot or student -->
+                            <col style="width: 65px;"> <!-- Holder's operating capacity -->
+                            <col style="width: 220px;"> <!-- Journey -->
+                            <col style="width: 45px;"> <!-- Take-offs -->
+                            <col style="width: 45px;"> <!-- Landings -->
+                            
+                            <col style="width: 45px;"> <!-- Day P1 (1) -->
+                            <col style="width: 45px;"> <!-- Day P1(U/S) (2) -->
+                            <col style="width: 45px;"> <!-- Day P2/P2X (3) -->
+                            <col style="width: 45px;"> <!-- Day P/UT (4) -->
+                            
+                            <col style="width: 45px;"> <!-- Night P1 (5) -->
+                            <col style="width: 45px;"> <!-- Night P1(U/S) (6) -->
+                            <col style="width: 45px;"> <!-- Night P2/P2X (7) -->
+                            <col style="width: 45px;"> <!-- Night P/UT (8) -->
+                            
+                            <col style="width: 75px;"> <!-- Instrument Flying -->
+                            <col style="width: 75px;"> <!-- Simulator Time -->
+                            <col style="width: 140px;"> <!-- Remarks -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th id="current-year" style="border-bottom: 1px solid #94a3b8; font-weight: 700;">Year / ----</th>
+                                <th colspan="2">Aircraft / Simulator</th>
+                                <th rowspan="2">Pilot-in-command</th>
+                                <th rowspan="2">Co-pilot or student</th>
+                                <th rowspan="2">Holder's operating capacity</th>
+                                <th rowspan="2" style="padding: 0; vertical-align: top;">
+                                    <div style="padding: 6px 0; border-bottom: 1px solid #94a3b8;">Journey or nature of flight</div>
+                                    <div style="display: flex; border-bottom: 1px solid #94a3b8;">
+                                        <div style="flex: 2; padding: 2px;">From</div>
+                                        <div style="flex: 1; padding: 2px;">To</div>
+                                    </div>
+                                    <div style="display: flex;">
+                                        <div style="flex: 1; padding: 2px;">(Dep)</div>
+                                        <div style="flex: 1; padding: 2px;">(Times)</div>
+                                        <div style="flex: 1; padding: 2px;">(Arr)</div>
+                                    </div>
+                                </th>
+                                <th colspan="2">No. of</th>
+                                <th colspan="4">Day flying</th>
+                                <th colspan="4">Night flying</th>
+                                <th rowspan="2">Instrument Flying</th>
+                                <th rowspan="2">Simulator Time</th>
+                                <th rowspan="2">Remarks</th>
+                            </tr>
+                            <tr>
+                                <th style="border-top: none;">Month / Date</th>
+                                <th>Type</th>
+                                <th>Registration</th>
+                                <th>Take-offs</th>
+                                <th>Landings</th>
+                                <th>P1</th>
+                                <th>P1(U/S)</th>
+                                <th>P2/P2X</th>
+                                <th>P/UT</th>
+                                <th>P1</th>
+                                <th>P1(U/S)</th>
+                                <th>P2/P2X</th>
+                                <th>P/UT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="grand-total-row" style="background-color: var(--bg-grey) !important; color: #1e293b; font-weight: 700;">
+                                <td colspan="17" style="text-align: right; padding-right: 20px; border-right: none;">
+                                    <strong>Grand total column (1) to (8):</strong>
+                                </td>
+                                <td colspan="3" id="grand-total-display" style="border-left: none;">0.0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div> <!-- cad407-wrapper -->
+            </div> <!-- logbook-printable-area -->
+
+            <!-- Sync Status Panels Moved Here (Below Preview) -->
+            <div id="sync-status-panel" class="sync-status-panel glass" style="display: none; margin-top: 2rem; margin-bottom: 1rem; padding: 1rem; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div class="sync-badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(34, 197, 94, 0.3);">
+                            Sync Active
+                        </div>
+                        <div id="sync-info-text" style="font-size: 0.9rem; color: #94a3b8;">
+                            Physical logbook offsets are currently applied.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="openSyncModal()">Manage Sync Points</button>
+                    </div>
+                </div>
+                <div id="active-sync-points" style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <!-- Sync points will be listed here -->
+                </div>
+            </div>
+            
+            <div id="no-sync-panel" class="sync-status-panel glass" style="margin-top: 2rem; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; border-style: dashed;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 0.9rem; color: #94a3b8;">
+                        Numbers don't match your paper logbook? You can manually sync them.
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openSyncModal()">Sync with Paper</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Edit Profile Modal -->
+    <div id="profile-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Edit Profile</h2>
+                <button class="btn-close" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <form id="profile-form" onsubmit="handleUpdateProfile(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-full-name">Full Name</label>
+                        <input type="text" id="edit-full-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pilot-name">Pilot Name (Logbook)</label>
+                        <input type="text" id="edit-pilot-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-license">License Type</label>
+                        <input type="text" id="edit-license" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-aircraft">Aircraft Type</label>
+                        <input type="text" id="edit-aircraft" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Email Address</label>
+                        <input type="email" id="edit-email" placeholder="e.g. pilot@gmail.com">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 1.5rem; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()" style="margin-right: 0.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PDF Export Modal -->
+    <div id="pdf-modal" class="modal">
+        <div class="modal-content glass" style="max-width: 450px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Export PDF Options</h2>
+                <button class="btn-close" onclick="closePDFModal()">&times;</button>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8;">Select Pages to Export</label>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="radio" name="pdf-range" value="all" onchange="togglePDFRangeInput()">
+                        <span>All Pages</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="radio" name="pdf-range" value="current" checked onchange="togglePDFRangeInput()">
+                        <span>Current Page (<span id="pdf-current-page-num">1</span>)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                        <input type="radio" name="pdf-range" value="custom" onchange="togglePDFRangeInput()">
+                        <span>Custom Range</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="pdf-custom-range-inputs" style="display: none; margin-bottom: 1.5rem; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.8rem; color: #64748b;">From Page</label>
+                        <input type="number" id="pdf-start-page" value="1" min="1" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 4px;">
+                    </div>
+                    <div style="padding-top: 1.2rem;">to</div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.8rem; color: #64748b;">To Page</label>
+                        <input type="number" id="pdf-end-page" value="1" min="1" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; padding: 0.5rem; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="closePDFModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmExportPDF()">
+                    <span class="icon">📥</span> Export
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="sync-modal" class="modal">
+        <div class="modal-content glass" style="max-width: 1200px;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <div>
+                    <h2 style="margin-bottom: 0.25rem;">Sync with Physical Logbook</h2>
+                    <p style="font-size: 0.9rem; color: #94a3b8;">Adjust your digital totals to match your physical logbook for the current page.</p>
+                </div>
+                <button class="btn-close" onclick="closeSyncModal()">&times;</button>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label>Sync Date (Effective Date)</label>
+                        <input type="date" id="sync-date" style="color-scheme: dark;">
+                        <small style="color: #64748b;">The adjustment will apply to all pages from this date onwards.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks</label>
+                        <input type="text" id="sync-remarks" placeholder="e.g. Correction for page 42">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sync-table-container" style="overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid var(--glass-border); border-radius: 8px;">
+                <table id="sync-table-transposed" class="cad407-table" style="font-size: 0.8rem; background: transparent; box-shadow: none; width: auto; min-width: 100%;">
+                    <!-- Populated by JS in rows: Labels, Digital, Physical, Delta -->
+                    <tr id="sync-row-labels" style="background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">
+                        <th style="text-align: left; padding: 10px; min-width: 120px;">Category</th>
+                    </tr>
+                    <tr id="sync-row-digital">
+                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Digital</th>
+                    </tr>
+                    <tr id="sync-row-physical">
+                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Physical</th>
+                    </tr>
+                    <tr id="sync-row-delta">
+                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Delta</th>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+                <button class="btn btn-secondary" onclick="closeSyncModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSyncAdjustment()">Save Adjustment</button>
+            </div>
+
+            <div id="existing-sync-section" style="margin-top: 3rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Active Sync Points</h3>
+                <div id="existing-sync-list" style="display: grid; gap: 0.75rem;">
+                    <!-- Existing sync points listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
+    <script src="static/script.js?v=6"></script>
+</body>
+</html>

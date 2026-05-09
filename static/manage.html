@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Logbook - Pilot Logbook</title>
+    <link rel="stylesheet" href="static/style.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .manage-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .opening-totals-card {
+            overflow-x: auto;
+        }
+
+        .nested-header-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .nested-header-table th, .nested-header-table td {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .nested-header-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* Fixed column widths */
+        .col-date { width: 75px; }
+        .col-type { width: 60px; }
+        .col-reg { width: 75px; }
+        .col-route { width: 85px; }
+        .col-hour { width: 45px; }
+
+        .route-cell {
+            max-width: 85px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .route-cell:hover {
+            white-space: normal;
+            overflow: visible;
+            background: rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 10;
+            max-width: none;
+            padding: 4px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .header-day { background: rgba(59, 130, 246, 0.25) !important; color: white !important; }
+        .header-night { background: rgba(255, 193, 7, 0.25) !important; color: white !important; }
+        .header-sim { background: transparent !important; }
+
+        .nested-header-table input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            text-align: center;
+            padding: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nested-header-table input:focus {
+            outline: 1px solid var(--accent-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .history-table-wrapper {
+            margin-top: 1rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .edit-row {
+            background: rgba(245, 158, 11, 0.1) !important;
+        }
+
+        .edit-row input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            padding: 0.2rem;
+            width: 100%;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: nowrap;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .select-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .select-group select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .select-group select:focus {
+            outline: 1px solid var(--accent-color);
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-range input[type="date"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .date-range input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+        }
+
+        .batch-bar {
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .batch-bar.visible {
+            display: flex;
+        }
+
+        .batch-bar .count {
+            font-size: 0.9rem;
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .col-select { width: 35px; }
+ 
+        .select-cb {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: absolute;
+            display: none;
+            background: #1a1b1e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            padding: 5px 0;
+            min-width: 160px;
+        }
+
+        .context-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #a1a1aa;
+            transition: all 0.2s;
+        }
+
+        .context-menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .context-menu-item svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        .context-menu-item.delete {
+            color: #ef4444;
+        }
+
+        .context-menu-item.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 5px 0;
+        }
+
+        .history-table tr {
+            cursor: context-menu;
+        }
+
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .history-table tr.selected {
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        /* Flight Detail Modal (JSON Interface) */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .detail-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .detail-group label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .detail-group input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: white;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .detail-group input:focus {
+            outline: 1px solid var(--accent-color);
+        }
+    </style>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body data-page="manage">
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <h1>Logbook</h1>
+                </div>
+                <nav class="nav-links">
+                    <a href="/dashboard" class="nav-item">Dashboard</a>
+                    <a href="/preview" class="nav-item">Logbook</a>
+                    <a href="/upload" class="nav-item">Upload</a>
+                    <a href="/manage" class="nav-item active">Manage</a>
+                </nav>
+            </div>
+            <div class="actions">
+                <div class="user-menu-container">
+                    <button class="user-icon-btn" id="user-icon-btn" onclick="toggleProfilePopover()" title="My Profile">
+                        <span id="user-avatar-initial">?</span>
+                    </button>
+                    <div class="profile-popover" id="profile-popover">
+                        <div class="popover-user-section">
+                            <div class="popover-avatar" id="popover-avatar">?</div>
+                            <div class="popover-user-info">
+                                <div class="popover-name" id="popover-name">—</div>
+                                <div class="popover-email" id="popover-email">—</div>
+                            </div>
+                        </div>
+                        <div class="popover-divider"></div>
+                        <div class="popover-badges" id="popover-badges"></div>
+                        <div class="popover-divider"></div>
+                        <button class="popover-menu-item" onclick="openEditProfileModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit Profile
+                        </button>
+                        <button class="popover-menu-item popover-logout" onclick="handleLogout()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="manage-grid">
+            <!-- Opening Totals Section -->
+            <section id="opening-totals" class="card-section">
+                <div class="section-header">
+                    <h2>Previous Experience</h2>
+                    <p class="text-muted">Add summaries of your past flying experience by aircraft type.</p>
+                </div>
+                <div class="table-card glass opening-totals-card">
+                    <form id="opening-totals-form" onsubmit="handleOpeningTotalsSubmit(event)">
+                        <table class="nested-header-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Year</th>
+                                    <th rowspan="2">Type</th>
+                                    <th colspan="4" class="header-day">Day</th>
+                                    <th colspan="4" class="header-night">Night</th>
+                                    <th rowspan="2">IF</th>
+                                    <th colspan="2" class="header-sim">Sim</th>
+                                    <th rowspan="2">Operator</th>
+                                    <th rowspan="2">Label</th>
+                                </tr>
+                                <tr>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2/P2X</th>
+                                    <th>P/UT</th>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2/P2X</th>
+                                    <th>P/UT</th>
+                                    <th>Day</th>
+                                    <th>Night</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" id="open-year" placeholder="2019" style="width: 70px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem;" required></td>
+                                    <td><input type="text" id="open-ac-type" placeholder="e.g. C172" required></td>
+                                    <td><input type="text" class="smart-decimal" id="open-day-p1" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-day-p1us" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-day-p2" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-day-put" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-night-p1" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-night-p1us" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-night-p2" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-night-put" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-inst" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-sim-day" value="0.0"></td>
+                                    <td><input type="text" class="smart-decimal" id="open-sim-night" value="0.0"></td>
+                                    <td><input type="text" id="open-operator" placeholder="e.g. NHV" list="edit-operator-list"></td>
+                                    <td><input type="text" id="open-remarks" placeholder="e.g. PPEP" list="edit-label-list"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="display:flex; justify-content:flex-end; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary">Add Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- History Management Section -->
+            <section id="history-management" class="card-section">
+                <div class="section-header" style="display: block;">
+                    <h2>Manage Flight History</h2>
+                    <div class="filter-bar">
+                        <div class="search-box">
+                            <input type="text" id="history-search" placeholder="Search..." onkeyup="filterHistory()" style="width: 100%;">
+                        </div>
+                        <div class="select-group">
+                            <select id="filter-year" onchange="filterHistory()">
+                                <option value="ALL">Year</option>
+                            </select>
+                            <select id="filter-month" onchange="filterHistory()">
+                                <option value="ALL">Month</option>
+                                <option value="0">Jan</option>
+                                <option value="1">Feb</option>
+                                <option value="2">Mar</option>
+                                <option value="3">Apr</option>
+                                <option value="4">May</option>
+                                <option value="5">Jun</option>
+                                <option value="6">Jul</option>
+                                <option value="7">Aug</option>
+                                <option value="8">Sep</option>
+                                <option value="9">Oct</option>
+                                <option value="10">Nov</option>
+                                <option value="11">Dec</option>
+                            </select>
+                            <select id="filter-type" onchange="filterHistory()">
+                                <option value="ALL">Type</option>
+                            </select>
+                            <select id="filter-operator" onchange="filterHistory()">
+                                <option value="ALL">Operator</option>
+                            </select>
+                            <select id="filter-label" onchange="filterHistory()">
+                                <option value="ALL">Label</option>
+                            </select>
+                        </div>
+                        <div class="date-range">
+                            <input type="date" id="filter-date-from" onchange="filterHistory()" style="font-size: 0.75rem; padding: 0.3rem;">
+                            <span style="font-size: 0.7rem; opacity: 0.5;">to</span>
+                            <input type="date" id="filter-date-to" onchange="filterHistory()" style="font-size: 0.75rem; padding: 0.3rem;">
+                        </div>
+                        <div style="flex-grow: 1;"></div>
+                        <button class="btn btn-secondary btn-sm" onclick="exportToExcel()" style="height: 34px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0 1rem; font-size: 0.8rem;">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="table-card glass">
+                    <div id="batch-bar" class="batch-bar">
+                        <span class="count" id="batch-count">0 selected</span>
+                        <button class="btn btn-sm" style="background:rgba(245,158,11,0.8);color:white;border:none;padding:0.4rem 1rem;border-radius:6px;cursor:pointer" onclick="openBatchEdit()">Edit Selected</button>
+                        <button class="btn btn-sm" style="background:rgba(239,68,68,0.8);color:white;border:none;padding:0.4rem 1rem;border-radius:6px;cursor:pointer" onclick="batchDelete()">Delete Selected</button>
+                        <button class="btn btn-sm" style="background:rgba(255,255,255,0.1);color:white;border:none;padding:0.4rem 1rem;border-radius:6px;cursor:pointer" onclick="clearSelection()">Cancel</button>
+                     </div>
+                     <div class="history-table-wrapper" id="history-table-wrapper">
+                        <table id="history-table" class="nested-header-table">
+                            <colgroup>
+                                <col class="col-select">
+                                <col class="col-date">
+                                <col class="col-type">
+                                <col class="col-reg">
+                                <col style="width:75px">
+                                <col class="col-route">
+                                <col class="col-hour" span="10">
+                                <col style="width:100px"> <!-- Operator -->
+                                <col style="width:100px"> <!-- Label -->
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2"><input type="checkbox" class="select-cb" id="select-all" onchange="toggleSelectAll(this)"></th>
+                                    <th rowspan="2">Date</th>
+                                    <th rowspan="2">Type</th>
+                                    <th rowspan="2">Reg</th>
+                                    <th rowspan="2">PIC</th>
+                                    <th rowspan="2">Co-Pilot</th>
+                                    <th rowspan="2">Route</th>
+                                    <th colspan="4" class="header-day">Day</th>
+                                    <th colspan="4" class="header-night">Night</th>
+                                    <th rowspan="2">IF</th>
+                                    <th rowspan="2">Sim</th>
+                                    <th rowspan="2">Operator</th>
+                                    <th rowspan="2">Label</th>
+                                </tr>
+                                <tr>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2/P2X</th>
+                                    <th>P/UT</th>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2/P2X</th>
+                                    <th>P/UT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-body" class="history-table">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <!-- Advanced Settings (Synonyms) -->
+            <section class="card glass" id="synonym-settings" style="margin-top: 2rem; border-top: 2px solid var(--accent-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div>
+                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"></path></svg>
+                            Excel Header Mapping
+                        </h2>
+                        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
+                            Configure synonyms for each logbook field to enable automatic Excel column detection.
+                        </p>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSynonyms()">
+                        <span>Save Mappings</span>
+                    </button>
+                </div>
+
+                <div class="table-container" style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead style="background: rgba(255,255,255,0.03);">
+                            <tr>
+                                <th style="text-align: left; padding: 1rem; color: var(--accent-color); text-transform: uppercase; font-size: 0.7rem; width: 30%;">Internal Field</th>
+                                <th style="text-align: left; padding: 1rem; color: var(--accent-color); text-transform: uppercase; font-size: 0.7rem;">Excel Synonyms (Comma Separated)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="synonym-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Right Click Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <div class="context-menu-item" id="ctx-edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit Flight Details
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item delete" id="ctx-delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Delete
+        </div>
+    </div>
+
+    <!-- Advanced Flight Detail Modal -->
+    <div id="flight-detail-modal" class="modal">
+        <div class="modal-content glass" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
+            <!-- Modal Header -->
+            <div class="flex-between" style="padding: 1.5rem 2rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <h2 style="margin: 0;">Flight Data Interface</h2>
+                <button class="btn-close" onclick="closeFlightDetailModal()">&times;</button>
+            </div>
+            
+            <!-- Modal Body (Scrollable) -->
+            <div style="flex: 1; overflow-y: auto; padding: 2rem;">
+                <p class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    Edit all JSON fields for this entry. Fields marked with <span style="color:var(--accent-color)">*</span> are primary columns.
+                </p>
+                <form id="flight-detail-form" onsubmit="handleFlightDetailSubmit(event)">
+                    <input type="hidden" id="detail-flight-index">
+                    
+                    <div class="detail-grid">
+                        <!-- Primary Data -->
+                        <div class="detail-group">
+                            <label>Date *</label>
+                            <input type="date" id="detail-date" required>
+                        </div>
+                        <div class="detail-group">
+                            <label>Aircraft Type *</label>
+                            <input type="text" id="detail-type" required>
+                        </div>
+                        <div class="detail-group">
+                            <label>Registration *</label>
+                            <input type="text" id="detail-reg" required>
+                        </div>
+                        <div class="detail-group">
+                            <label>Route *</label>
+                            <input type="text" id="detail-route">
+                        </div>
+                        
+                        <!-- Crew -->
+                        <div class="detail-group">
+                            <label>PIC</label>
+                            <input type="text" id="detail-pic">
+                        </div>
+                        <div class="detail-group">
+                            <label>Co-Pilot</label>
+                            <input type="text" id="detail-copilot">
+                        </div>
+
+                        <!-- Hidden/Metadata Fields -->
+                        <div class="detail-group">
+                            <label>Flight ID (JSON)</label>
+                            <input type="text" id="detail-flight-id" placeholder="None">
+                        </div>
+                        <div class="detail-group">
+                            <label>Dept Time</label>
+                            <input type="text" id="detail-dep-time" placeholder="HH:MM">
+                        </div>
+                        <div class="detail-group">
+                            <label>Arr Time</label>
+                            <input type="text" id="detail-arr-time" placeholder="HH:MM">
+                        </div>
+                        <div class="detail-group">
+                            <label>Nature of Flight</label>
+                            <input type="text" id="detail-nature" placeholder="Training, PPEP, etc.">
+                        </div>
+                    </div>
+
+                    <div class="popover-divider" style="margin: 2rem 0;"></div>
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-color); margin-bottom: 1rem;">Flying Hours</h3>
+                    
+                    <div class="detail-grid">
+                        <div class="detail-group"><label>Day P1</label><input type="text" class="smart-decimal" id="detail-day-p1"></div>
+                        <div class="detail-group"><label>Day P1(U/S)</label><input type="text" class="smart-decimal" id="detail-day-p1us"></div>
+                        <div class="detail-group"><label>Day P2</label><input type="text" class="smart-decimal" id="detail-day-p2"></div>
+                        <div class="detail-group"><label>Day P/UT</label><input type="text" class="smart-decimal" id="detail-day-put"></div>
+                        <div class="detail-group"><label>Night P1</label><input type="text" class="smart-decimal" id="detail-night-p1"></div>
+                        <div class="detail-group"><label>Night P1(U/S)</label><input type="text" class="smart-decimal" id="detail-night-p1us"></div>
+                        <div class="detail-group"><label>Night P2</label><input type="text" class="smart-decimal" id="detail-night-p2"></div>
+                        <div class="detail-group"><label>Night P/UT</label><input type="text" class="smart-decimal" id="detail-night-put"></div>
+                        <div class="detail-group"><label>IF</label><input type="text" class="smart-decimal" id="detail-inst"></div>
+                        <div class="detail-group"><label>Sim</label><input type="text" class="smart-decimal" id="detail-sim"></div>
+                    </div>
+
+                    <div class="popover-divider" style="margin: 2rem 0;"></div>
+                    
+                    <div class="detail-grid">
+                        <div class="detail-group">
+                            <label>Operator</label>
+                            <input type="text" id="detail-operator">
+                        </div>
+                        <div class="detail-group">
+                            <label>Label</label>
+                            <input type="text" id="detail-label">
+                        </div>
+                    </div>
+
+                    <div class="popover-divider" style="margin: 2rem 0;"></div>
+                    <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-color); margin-bottom: 1rem;">Raw Excel Metadata</h3>
+                    <div id="detail-metadata-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; opacity: 0.8; font-size: 0.85rem; margin-bottom: 2rem;">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div style="display:flex; justify-content:flex-end; gap:0.75rem; padding: 1.5rem 0; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <button type="button" class="btn btn-secondary" onclick="closeFlightDetailModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Flight Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Edit Modal -->
+    <div id="batch-edit-modal" class="modal">
+        <div class="modal-content glass" style="max-width:420px">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Batch Edit</h2>
+                <button class="btn-close" onclick="closeBatchEdit()">&times;</button>
+            </div>
+            <p class="text-muted" style="margin-bottom:1rem" id="batch-edit-info">Editing 0 entries</p>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label for="batch-field">Field</label>
+                <select id="batch-field" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:white;padding:0.5rem;font-size:0.9rem">
+                    <option value="ac_type">Aircraft Type</option>
+                    <option value="reg">Registration</option>
+                    <option value="pic">PIC</option>
+                    <option value="copilot">Co-Pilot</option>
+                    <option value="route">Route</option>
+                    <option value="day_p1">Day P1</option>
+                    <option value="day_p1us">Day P1(U/S)</option>
+                    <option value="day_p2">Day P2</option>
+                    <option value="day_dual">Day P/UT</option>
+                    <option value="night_p1">Night P1</option>
+                    <option value="night_p1us">Night P1(U/S)</option>
+                    <option value="night_p2">Night P2</option>
+                    <option value="night_dual">Night P/UT</option>
+                    <option value="inst_flying">IF</option>
+                    <option value="sim_time">Sim</option>
+                    <option value="operator">Operator</option>
+                    <option value="label">Label</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:1.5rem">
+                <label for="batch-value">New Value</label>
+                <input type="text" id="batch-value" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:white;padding:0.5rem;font-size:0.9rem" placeholder="Enter new value..." list="batch-suggestions">
+                <datalist id="batch-suggestions"></datalist>
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="closeBatchEdit()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitBatchEdit()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal (Standard) -->
+    <div id="profile-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Edit Profile</h2>
+                <button class="btn-close" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <form id="profile-form" onsubmit="handleUpdateProfile(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-full-name">Full Name</label>
+                        <input type="text" id="edit-full-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pilot-name">Pilot Name (Logbook)</label>
+                        <input type="text" id="edit-pilot-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-license">License Type</label>
+                        <input type="text" id="edit-license" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-aircraft">Aircraft Type</label>
+                        <input type="text" id="edit-aircraft" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Email Address</label>
+                        <input type="email" id="edit-email" placeholder="e.g. pilot@gmail.com">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" class="btn" style="background:rgba(66,133,244,0.1); color:#4285f4; border:1px solid rgba(66,133,244,0.3);" onclick="handleGoogleLink()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:5px; vertical-align:middle;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285f4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34a853"/><path d="M5.84 14.09c-.22-.67-.35-1.39-.35-2.09s.13-1.42.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#fbbc05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#ea4335"/></svg>
+                        Link Google
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()" style="margin-right: 0.5rem;">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <datalist id="edit-operator-list"></datalist>
+    <datalist id="edit-label-list"></datalist>
+    <div id="toast" class="toast"></div>
+    <script src="static/script.js?v=5"></script>
+    <script src="static/manage.js?v=2"></script>
+</body>
+</html>

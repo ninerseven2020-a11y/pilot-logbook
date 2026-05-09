@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Databases
+*.db
+*.sqlite3
+
+# Logbook Data
+data/logbook_*.json
+logbook_data.json
+
+# Excel Files
+*.xlsx
+*.xls
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
