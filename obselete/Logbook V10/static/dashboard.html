@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Pilot Logbook</title>
+    <link rel="stylesheet" href="static/style.css?v=5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body data-page="dashboard">
+    <header>
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <h1>Logbook</h1>
+                </div>
+                <nav class="nav-links">
+                    <a href="/dashboard" class="nav-item active">Dashboard</a>
+                    <a href="/preview" class="nav-item">Logbook</a>
+                    <a href="/upload" class="nav-item">Upload</a>
+                    <a href="/manage" class="nav-item">Manage</a>
+                </nav>
+            </div>
+            <div class="actions">
+                <div class="user-menu-container">
+                    <button class="user-icon-btn" id="user-icon-btn" onclick="toggleProfilePopover()" title="My Profile">
+                        <span id="user-avatar-initial">?</span>
+                    </button>
+                    <!-- Profile Popover Dropdown -->
+                    <div class="profile-popover" id="profile-popover">
+                        <div class="popover-user-section">
+                            <div class="popover-avatar" id="popover-avatar">?</div>
+                            <div class="popover-user-info">
+                                <div class="popover-name" id="popover-name">—</div>
+                                <div class="popover-email" id="popover-email">—</div>
+                            </div>
+                        </div>
+                        <div class="popover-divider"></div>
+                        <div class="popover-badges" id="popover-badges"></div>
+                        <div class="popover-divider"></div>
+                        <button class="popover-menu-item" onclick="openEditProfileModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit Profile
+                        </button>
+                        <button class="popover-menu-item popover-logout" onclick="handleLogout()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="card-section">
+            <div class="section-header flex-between">
+                <h2>Flight Statistics</h2>
+            </div>
+            <div class="dashboard-grid-new">
+                <!-- Recent Hours -->
+                <div class="table-card glass">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem">
+                        <div style="display:flex; align-items:baseline; gap:1rem">
+                            <div class="total-hours" id="total-hours" style="margin:0">0.0</div>
+                            <span class="label" style="margin:0">Total Hours</span>
+                        </div>
+                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap">
+                            <button class="filter-btn" data-period="ALL" onclick="setPeriodFilter('ALL')">ALL</button>
+                            <button class="filter-btn" data-period="1Y" onclick="setPeriodFilter('1Y')">1Y</button>
+                            <button class="filter-btn active" data-period="YTD" onclick="setPeriodFilter('YTD')">YTD</button>
+                            <button class="filter-btn" data-period="3M" onclick="setPeriodFilter('3M')">3M</button>
+                            <button class="filter-btn" data-period="1M" onclick="setPeriodFilter('1M')">1M</button>
+                            <button class="filter-btn" data-period="MTD" onclick="setPeriodFilter('MTD')">MTD</button>
+                            <button class="filter-btn" data-period="1W" onclick="setPeriodFilter('1W')">1W</button>
+                        </div>
+                    </div>
+                    <div style="position:relative; height:200px; margin-bottom:0.5rem">
+                        <canvas id="hours-chart"></canvas>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:0.4rem; flex-wrap:wrap; margin-bottom:1rem" id="granularity-controls">
+                        <button class="filter-btn gran-btn" data-gran="Y" onclick="setGranularity('Y')">Y</button>
+                        <button class="filter-btn gran-btn active" data-gran="M" onclick="setGranularity('M')">M</button>
+                        <button class="filter-btn gran-btn" data-gran="W" onclick="setGranularity('W')">W</button>
+                        <button class="filter-btn gran-btn" data-gran="D" onclick="setGranularity('D')">D</button>
+                    </div>
+                    <div class="table-wrapper" style="overflow-x:auto">
+                        <table id="period-table" class="cad-breakdown-table">
+                            <thead>
+                                <tr>
+                                    <th colspan="4" style="background:rgba(59,130,246,0.15)">Day</th>
+                                    <th colspan="4" style="background:rgba(255,193,7,0.15)">Night</th>
+                                    <th rowspan="2">IF</th>
+                                    <th rowspan="2">Sim</th>
+                                </tr>
+                                <tr>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2</th>
+                                    <th>P/UT</th>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2</th>
+                                    <th>P/UT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="cad-day-p1">0.0</td>
+                                    <td id="cad-day-p1us">0.0</td>
+                                    <td id="cad-day-p2">0.0</td>
+                                    <td id="cad-day-dual">0.0</td>
+                                    <td id="cad-night-p1">0.0</td>
+                                    <td id="cad-night-p1us">0.0</td>
+                                    <td id="cad-night-p2">0.0</td>
+                                    <td id="cad-night-dual">0.0</td>
+                                    <td id="cad-inst">0.0</td>
+                                    <td id="cad-sim">0.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Aircraft Breakdown -->
+                <div class="table-card glass">
+                    <div class="flex-between" style="margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem">
+                        <h3>Aircraft Type Breakdown</h3>
+                        <div id="breakdown-filters" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap">
+                            <!-- Label buttons populated by JS -->
+                            <span id="label-divider" class="filter-divider" style="display:none"></span>
+                            <div id="breakdown-type-buttons" style="display:flex; gap:0.4rem; flex-wrap:wrap">
+                                <!-- Type buttons populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-wrapper" style="overflow-x:auto;">
+                        <table id="type-table" class="cad-breakdown-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Type</th>
+                                    <th colspan="4" style="background:rgba(59,130,246,0.15)">Day</th>
+                                    <th colspan="4" style="background:rgba(255,193,7,0.15)">Night</th>
+                                    <th rowspan="2">IF</th>
+                                    <th rowspan="2">Sim</th>
+                                    <th rowspan="2">Total</th>
+                                </tr>
+                                <tr>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2</th>
+                                    <th>P/UT</th>
+                                    <th>P1</th>
+                                    <th>P1(U/S)</th>
+                                    <th>P2</th>
+                                    <th>P/UT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Edit Profile Modal -->
+    <div id="profile-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Edit Profile</h2>
+                <button class="btn-close" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <form id="profile-form" onsubmit="handleUpdateProfile(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-full-name">Full Name</label>
+                        <input type="text" id="edit-full-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-pilot-name">Pilot Name (Logbook)</label>
+                        <input type="text" id="edit-pilot-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-license">License Type</label>
+                        <input type="text" id="edit-license" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-aircraft">Aircraft Type</label>
+                        <input type="text" id="edit-aircraft" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 1.5rem; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()" style="margin-right: 0.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="static/script.js?v=5"></script>
+</body>
+</html>
