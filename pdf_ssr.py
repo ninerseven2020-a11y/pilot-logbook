@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from engine import CAD407Logbook
 
 def render_logbook_html(user, start_page=1, end_page=None):
@@ -6,24 +7,27 @@ def render_logbook_html(user, start_page=1, end_page=None):
     Generates a static, data-injected HTML string of the CAD 407 logbook.
     This HTML is ready to be sent to Browserless.io for PDF generation.
     """
-    logbook = CAD407Logbook(user_id=user.id)
+    logbook = CAD407Logbook(user_id=user.id, pilot_name=user.pilot_name)
     
-    # Use the same logic as your preview API
-    all_pages = []
-    # Simplified logic to get all requested pages
-    # In a real scenario, we'd loop through pages
-    # For now, let's just get the logic working for the current view
+    # Use the existing engine logic to get fully calculated and paginated data
+    all_pages = logbook.get_paginated_data(start_page=1)
     
-    # Get all entries
-    entries = logbook.history
-    entries_per_page = 18
-    
-    # Determine total pages
-    total_pages = (len(entries) + entries_per_page - 1) // entries_per_page
-    if total_pages == 0: total_pages = 1
-    
+    if not all_pages:
+        # Create at least one empty page if no data
+        all_pages = [{
+            'page_number': 1,
+            'year': datetime.now().year,
+            'entries': [],
+            'brought_forward': {col: 0.0 for col in ['day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual', 'inst_flying', 'sim_time']},
+            'carried_forward': {col: 0.0 for col in ['day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual', 'inst_flying', 'sim_time']},
+            'grand_total_1_8': 0.0
+        }]
+
     if end_page is None:
-        end_page = total_pages
+        end_page = len(all_pages)
+    
+    # Slice requested pages (start_page is 1-indexed)
+    requested_pages = all_pages[start_page-1 : end_page]
     
     # Build HTML string
     html = f"""
@@ -91,24 +95,14 @@ def render_logbook_html(user, start_page=1, end_page=None):
     <body>
     """
 
-    for page_num in range(start_page, end_page + 1):
-        # Calculate totals for this page
-        start_idx = (page_num - 1) * entries_per_page
-        end_idx = start_idx + entries_per_page
-        page_entries = entries[start_idx:end_idx]
-        
-        # Calculate Carried Forward (all entries up to this page)
-        history_to_now = entries[:end_idx]
-        cf = logbook.calculate_summary_stats(history_to_now)
-        
-        # Calculate Page Total Column 1-8
-        page_total_1_8 = 0
-        for e in page_entries:
-            for k in ['day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual']:
-                page_total_1_8 += e.get(k, 0)
+    for page_data in requested_pages:
+        page_num = page_data['page_number']
+        page_entries = page_data['entries']
+        cf = page_data['carried_forward']
         
         # Build Table rows
         rows_html = ""
+        entries_per_page = 18
         for i in range(entries_per_page):
             if i < len(page_entries):
                 e = page_entries[i]
@@ -119,30 +113,48 @@ def render_logbook_html(user, start_page=1, end_page=None):
                     if val is None or val == 0: return ""
                     return f"{val:.1f}" if isinstance(val, (int, float)) else str(val)
 
-                rows_html += f"""
-                <tr class="{striped}">
-                    <td>{e.get('date_str', '')}</td>
-                    <td>{e.get('ac_type', '')}</td>
-                    <td>{e.get('reg', '')}</td>
-                    <td>{e.get('pic', '')}</td>
-                    <td>{e.get('copilot', '')}</td>
-                    <td>{e.get('capacity', '')}</td>
-                    <td style="text-align: left;">{e.get('route', '')}</td>
-                    <td>{e.get('takeoffs', '') or ''}</td>
-                    <td>{e.get('landings', '') or ''}</td>
-                    <td>{fmt(e.get('day_p1'))}</td>
-                    <td>{fmt(e.get('day_p1us'))}</td>
-                    <td>{fmt(e.get('day_p2'))}</td>
-                    <td>{fmt(e.get('day_dual'))}</td>
-                    <td>{fmt(e.get('night_p1'))}</td>
-                    <td>{fmt(e.get('night_p1us'))}</td>
-                    <td>{fmt(e.get('night_p2'))}</td>
-                    <td>{fmt(e.get('night_dual'))}</td>
-                    <td>{fmt(e.get('inst_flying'))}</td>
-                    <td>{fmt(e.get('sim_time'))}</td>
-                    <td style="text-align: left;">{e.get('remarks', '')}</td>
-                </tr>
-                """
+                if e.get('is_monthly_total'):
+                    rows_html += f"""
+                    <tr class="grand-total-row">
+                        <td colspan="9" style="text-align: left; padding-left: 10px;">{e.get('date_str', '')}</td>
+                        <td>{fmt(e.get('day_p1'))}</td>
+                        <td>{fmt(e.get('day_p1us'))}</td>
+                        <td>{fmt(e.get('day_p2'))}</td>
+                        <td>{fmt(e.get('day_dual'))}</td>
+                        <td>{fmt(e.get('night_p1'))}</td>
+                        <td>{fmt(e.get('night_p1us'))}</td>
+                        <td>{fmt(e.get('night_p2'))}</td>
+                        <td>{fmt(e.get('night_dual'))}</td>
+                        <td>{fmt(e.get('inst_flying'))}</td>
+                        <td>{fmt(e.get('sim_time'))}</td>
+                        <td></td>
+                    </tr>
+                    """
+                else:
+                    rows_html += f"""
+                    <tr class="{striped}">
+                        <td>{e.get('date_str', '')}</td>
+                        <td>{e.get('ac_type', '')}</td>
+                        <td>{e.get('reg', '')}</td>
+                        <td>{e.get('pic', '')}</td>
+                        <td>{e.get('copilot', '')}</td>
+                        <td>{e.get('capacity', '')}</td>
+                        <td style="text-align: left;">{e.get('route', '')}</td>
+                        <td>{e.get('takeoffs', '') or ''}</td>
+                        <td>{e.get('landings', '') or ''}</td>
+                        <td>{fmt(e.get('day_p1'))}</td>
+                        <td>{fmt(e.get('day_p1us'))}</td>
+                        <td>{fmt(e.get('day_p2'))}</td>
+                        <td>{fmt(e.get('day_dual'))}</td>
+                        <td>{fmt(e.get('night_p1'))}</td>
+                        <td>{fmt(e.get('night_p1us'))}</td>
+                        <td>{fmt(e.get('night_p2'))}</td>
+                        <td>{fmt(e.get('night_dual'))}</td>
+                        <td>{fmt(e.get('inst_flying'))}</td>
+                        <td>{fmt(e.get('sim_time'))}</td>
+                        <td style="text-align: left;">{e.get('remarks', '')}</td>
+                    </tr>
+                    """
             else:
                 # Empty rows
                 rows_html += "<tr>" + "<td></td>"*20 + "</tr>"
