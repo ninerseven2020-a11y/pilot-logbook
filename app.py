@@ -19,6 +19,7 @@ from main import get_mvp_data, add_adjustment, get_logbook_preview
 from engine import CAD407Logbook
 from pdf_ssr import render_logbook_html
 from models import User, Organization, FlightNature, SessionLocal, init_db, get_password_hash, verify_password
+print(f"[DEBUG] Organization imported: {Organization}")
 from dotenv import load_dotenv
 
 # Load environment variables
