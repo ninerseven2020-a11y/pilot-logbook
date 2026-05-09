@@ -1868,7 +1868,43 @@ function renderExistingSyncList() {
     });
 }
 
+
 document.addEventListener('DOMContentLoaded', init);
+
+async function handleGoogleLogin() {
+    try {
+        const response = await fetch('/api/auth/google/login');
+        const data = await response.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert("Failed to get Google login URL");
+        }
+    } catch (error) {
+        console.error("Error initiating Google login:", error);
+        alert("An error occurred during Google login");
+    }
+}
+
+async function handleGoogleLink() {
+    try {
+        if (typeof currentUserData === 'undefined' || !currentUserData) {
+            alert("You must be logged in to link your account.");
+            return;
+        }
+        
+        const response = await fetch(`/api/auth/google/login?link=true&current_user_id=${currentUserData.id}`);
+        const data = await response.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            alert("Failed to get Google login URL");
+        }
+    } catch (error) {
+        console.error("Error initiating Google link:", error);
+        alert("An error occurred during Google link");
+    }
+}
 
 
 

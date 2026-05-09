@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from typing import Optional, List
 from sqlalchemy.orm import Session
 import json
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from main import get_mvp_data, add_adjustment, get_logbook_preview
 from engine import CAD407Logbook
@@ -21,6 +23,13 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+
+# Allow insecure transport for local development (MUST BE REMOVED IN PRODUCTION)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Security Configuration
 SECRET_KEY = "3bf3dcec3423b9b40d911ca20f5f63b66efe78bc201ed5880b5755b4f162d6ed"
@@ -288,8 +297,142 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "license_type": current_user.license_type,
         "aircraft_type": current_user.aircraft_type,
+        "is_google_user": current_user.google_id is not None,
         "is_admin": current_user.is_admin
     }
+
+# --- Google OAuth Endpoints ---
+
+@app.get("/api/auth/google/login")
+async def google_login(link: Optional[bool] = False, current_user_id: Optional[int] = None):
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth configuration missing")
+    
+    # Generate PKCE verifier and challenge
+    import secrets
+    import hashlib
+    import base64
+    
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
+    
+    import urllib.parse
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
+        "access_type": "offline",
+        "prompt": "consent",
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256"
+    }
+    authorization_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
+    
+    response = JSONResponse(content={"url": authorization_url})
+    # Store verifier and link intent in a secure cookie
+    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300)
+    if link and current_user_id:
+        response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300)
+    
+    return response
+
+@app.get("/api/auth/google/callback")
+async def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
+    try:
+        # Retrieve the verifier and linking intent from the cookie
+        code_verifier = request.cookies.get("google_code_verifier")
+        link_user_id = request.cookies.get("link_user_id")
+        
+        if not code_verifier:
+            raise Exception("Security session expired. Please try logging in again.")
+
+        # Manually exchange the code for tokens
+        import requests as httprequests
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+            "code_verifier": code_verifier
+        }
+        
+        token_response = httprequests.post(token_url, data=data)
+        token_data = token_response.json()
+        
+        if "error" in token_data:
+            raise Exception(f"Google Token Error: {token_data.get('error_description', token_data['error'])}")
+            
+        access_token = token_data.get("access_token")
+        id_token_str = token_data.get("id_token")
+        refresh_token = token_data.get("refresh_token")
+        
+        id_info = id_token.verify_oauth2_token(
+            id_token_str, google_requests.Request(), GOOGLE_CLIENT_ID
+        )
+        
+        google_id = id_info.get("sub")
+        email = id_info.get("email").lower().strip()
+        full_name = id_info.get("name")
+        
+        user = None
+        
+        # Scenario A: We are explicitly LINKING an existing logged-in user
+        if link_user_id:
+            user = db.query(User).filter(User.id == int(link_user_id)).first()
+            if user:
+                print(f"[DEBUG] Explicitly linking Google ID {google_id} to user {user.username}")
+                user.google_id = google_id
+                if not user.email: user.email = email
+        
+        # Scenario B: Standard Login
+        if not user:
+            user = db.query(User).filter(User.google_id == google_id).first()
+            if not user:
+                # Fallback check by email (case-insensitive and trimmed)
+                user = db.query(User).filter(User.email.ilike(email)).first()
+                if user:
+                    print(f"[DEBUG] Auto-linking Google ID {google_id} to user {user.username} by email {email}")
+                    user.google_id = google_id
+                else:
+                    print(f"[DEBUG] Creating NEW user for Google email {email}")
+                    user = User(
+                        username=email,
+                        email=email,
+                        full_name=full_name,
+                        pilot_name=full_name.upper() if full_name else "NEW PILOT",
+                        google_id=google_id
+                    )
+                    db.add(user)
+        
+        if refresh_token:
+            user.google_refresh_token = refresh_token
+            
+        if email == "ninerseven2020@gmail.com":
+            user.is_admin = True
+            
+        db.commit()
+        db.refresh(user)
+        
+        # Create app JWT
+        app_access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        app_access_token = create_access_token(
+            data={"sub": user.username}, expires_delta=app_access_token_expires
+        )
+        
+        # Clear the linking cookie
+        res = templates.TemplateResponse("google_callback_handler.html", {
+            "request": {}, 
+            "token": app_access_token
+        })
+        res.delete_cookie("link_user_id")
+        return res
+        
+    except Exception as e:
+        print(f"[GOOGLE CALLBACK ERROR] {str(e)}")
+        return HTMLResponse(content=f"<h3>Authentication Error</h3><p>{str(e)}</p><a href='/login'>Back to Login</a>", status_code=400)
 
 # --- Logbook APIs ---
 
