@@ -742,6 +742,7 @@ async def import_excel(
             if entry:
                 # SMART UPDATE: Find existing entry by flight ID
                 existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
+                if existing:
                     # Refresh with new parser logic (metadata, cleaned route/remarks, and specific times)
                     existing['metadata'] = entry.get('metadata', {})
                     existing['remarks'] = entry.get('remarks', '')
