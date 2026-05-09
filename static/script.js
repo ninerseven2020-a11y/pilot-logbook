@@ -1353,17 +1353,28 @@ function confirmExportPDF() {
     showToast("Exporting high-fidelity PDF to your local drive... Please wait.");
     
     fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                showToast(`✅ ${data.message}`);
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
             } else {
-                showToast("❌ Export failed: " + (data.detail || "Unknown error"), true);
+                return response.json().then(err => { throw err; });
             }
+        })
+        .then(blob => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `Logbook_Export_${start}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+            showToast("✅ Export complete!");
         })
         .catch(err => {
             console.error("Export error:", err);
-            showToast("❌ Error during export", true);
+            const msg = err.detail || err.message || "Error during export";
+            showToast("❌ Export failed: " + msg, true);
         });
         
     closePDFModal();
