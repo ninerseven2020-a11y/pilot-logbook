@@ -17,5 +17,5 @@ ENV TMPDIR=/tmp
 # Railway uses PORT env var
 EXPOSE 8000
 
-# Start the application
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the application using the PORT environment variable provided by Railway
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]
