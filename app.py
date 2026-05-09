@@ -37,6 +37,10 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
 app = FastAPI()
+@app.get("/test")
+async def test_route():
+    return {"message": "Backend is alive"}
+
 try:
     init_db()
     print("Database initialized successfully.")
