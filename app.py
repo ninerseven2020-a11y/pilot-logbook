@@ -18,7 +18,7 @@ from google.auth.transport import requests as google_requests
 from main import get_mvp_data, add_adjustment, get_logbook_preview
 from engine import CAD407Logbook
 from pdf_ssr import render_logbook_html
-from models import User, SessionLocal, init_db
+from models import User, Organization, FlightNature, SessionLocal, init_db, get_password_hash, verify_password
 from dotenv import load_dotenv
 
 # Load environment variables
