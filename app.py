@@ -36,6 +36,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
 app = FastAPI()
+init_db()
 templates = Jinja2Templates(directory="static") # We'll use static as templates dir for simplicity
 
 # Dependency to get DB session

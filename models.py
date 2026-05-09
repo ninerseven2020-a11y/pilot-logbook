@@ -4,7 +4,10 @@ from sqlalchemy.orm import sessionmaker, relationship
 from passlib.context import CryptContext
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./logbook.db"
+import os
+data_dir = os.getenv("LOGBOOK_DATA_DIR", ".")
+db_path = os.path.join(data_dir, "logbook.db")
+DATABASE_URL = f"sqlite:///{db_path}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
