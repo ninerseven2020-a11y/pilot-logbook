@@ -342,7 +342,12 @@
             <!-- Opening Totals Section -->
             <section id="opening-totals" class="card-section">
                 <div class="section-header">
-                    <h2>Previous Experience</h2>
+                    <h2>Previous Experience
+                        <div class="tooltip-container">
+                            <span class="info-icon">i</span>
+                            <span class="tooltip-text">Add your flying hours from before you started using this digital logbook. These are added to your grand totals.</span>
+                        </div>
+                    </h2>
                     <p class="text-muted">Add summaries of your past flying experience by aircraft type.</p>
                 </div>
                 <div class="table-card glass opening-totals-card">
@@ -402,7 +407,12 @@
             <!-- History Management Section -->
             <section id="history-management" class="card-section">
                 <div class="section-header" style="display: block;">
-                    <h2>Manage Flight History</h2>
+                    <h2>Manage Flight History
+                        <div class="tooltip-container">
+                            <span class="info-icon">i</span>
+                            <span class="tooltip-text">View, search, edit, or delete individual flight records. Right-click a row for more options.</span>
+                        </div>
+                    </h2>
                     <div class="filter-bar">
                         <div class="search-box">
                             <input type="text" id="history-search" placeholder="Search..." onkeyup="filterHistory()" style="width: 100%;">
@@ -508,6 +518,10 @@
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"></path></svg>
                             Excel Header Mapping
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">Tell the system which Excel columns match our internal fields. For example, if your Excel says 'A/C Type', add that as a synonym for 'Aircraft Type'.</span>
+                            </div>
                         </h2>
                         <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
                             Configure synonyms for each logbook field to enable automatic Excel column detection.
@@ -540,6 +554,10 @@
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                             Data Migration & Backup
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">Backup your entire logbook as a JSON file or restore from a previous backup. This is the best way to move data between local and cloud versions.</span>
+                            </div>
                         </h2>
                         <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
                             Transfer your logbook JSON data between servers or keep a safe backup.

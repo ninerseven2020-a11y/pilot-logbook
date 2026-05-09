@@ -62,7 +62,12 @@
             <form id="upload-form" class="auth-form" onsubmit="handleAdvancedUpload(event)">
                 <div class="upload-grid">
                     <div class="form-group datalist-wrapper">
-                        <label for="operator">Operator</label>
+                        <label for="operator">Operator
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">The organization you flew for (e.g., NHV, GFS). This helps in filtering your dashboard later.</span>
+                            </div>
+                        </label>
                         <input type="text" id="operator" list="operator-list" placeholder="e.g. NHV, GFS, FTA" required>
                         <datalist id="operator-list">
                             <!-- Populated by JS -->
@@ -70,7 +75,12 @@
                     </div>
 
                     <div class="form-group datalist-wrapper">
-                        <label for="label">Label</label>
+                        <label for="label">Label
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">The nature or project for these flights (e.g., Initial Training, Line Flying).</span>
+                            </div>
+                        </label>
                         <input type="text" id="label" list="label-list" placeholder="e.g. Initial Training, Secondment, Line Flying, PPEP..." required>
                         <datalist id="label-list">
                             <!-- Populated by JS -->
@@ -81,7 +91,12 @@
                 <div class="upload-methods-container">
                     <!-- Manual Input Section -->
                     <div class="manual-input-section">
-                        <h3 class="section-subtitle">Manual Input</h3>
+                        <h3 class="section-subtitle">Manual Input
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">Manually add a single flight entry to your logbook.</span>
+                            </div>
+                        </h3>
                     
                     <!-- Subsection 1: Aircraft Info -->
                     <div class="manual-subsection-group">
@@ -92,11 +107,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="manual-ac-type">*AC TYPE</label>
-                                <input type="text" id="manual-ac-type" placeholder="H175">
+                                <input type="text" id="manual-ac-type" placeholder="EC175">
                             </div>
                             <div class="form-group">
                                 <label for="manual-ac-reg">*AC REG</label>
-                                <input type="text" id="manual-ac-reg" placeholder="G-XXXX">
+                                <input type="text" id="manual-ac-reg" placeholder="B-LVD">
                             </div>
                         </div>
                     </div>
@@ -226,7 +241,12 @@
                 </div>
 
                 <div class="file-input-section">
-                    <h3 class="section-subtitle">Import via excel or image</h3>
+                    <h3 class="section-subtitle">Import via excel or image
+                        <div class="tooltip-container">
+                            <span class="info-icon">i</span>
+                            <span class="tooltip-text">Upload an Excel file (.xlsx) to bulk import flight records. The system will automatically map the columns.</span>
+                        </div>
+                    </h3>
                     <div class="form-group">
                         <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('excel-file').click()">
                             <span class="icon">📄</span>

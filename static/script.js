@@ -682,6 +682,8 @@ async function fetchPreview(retries = 3) {
 
         allPages = data;
         if (allPages.length > 0) {
+            // Default to last page
+            currentPageIndex = allPages.length - 1;
             populatePageSelect();
             renderLogbookTable();
         } else {
@@ -716,6 +718,13 @@ function populatePageSelect() {
         select.appendChild(option);
     });
     select.value = currentPageIndex;
+}
+
+function firstPage() {
+    if (allPages.length > 0) {
+        currentPageIndex = 0;
+        updateNavigation();
+    }
 }
 
 function prevPage() {
