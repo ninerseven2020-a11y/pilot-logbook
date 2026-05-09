@@ -836,49 +836,31 @@ async def export_pdf(
     end_page: int = Query(None)
 ):
     try:
-        import requests as httprequests
+        from pdf_engine import CAD407Renderer
         
-        # 1. Generate Static HTML
-        html_content = render_logbook_html(current_user, start_page, end_page)
+        logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+        all_pages = logbook.get_paginated_data(start_page=1)
         
-        # 2. Call Browserless.io API
-        api_key = os.getenv("BROWSERLESS_API_KEY")
-        if not api_key:
-            raise HTTPException(status_code=500, detail="BROWSERLESS_API_KEY not configured on server.")
+        if not all_pages:
+            raise HTTPException(status_code=400, detail="No logbook data to export.")
             
-        browserless_url = f"https://production-sfo.browserless.io/pdf?token={api_key}"
-        
-        payload = {
-            "html": html_content,
-            "options": {
-                "format": "A4",
-                "landscape": True,
-                "printBackground": True,
-                "margin": {
-                    "top": "0px",
-                    "bottom": "0px",
-                    "left": "0px",
-                    "right": "0px"
-                }
-            }
-        }
-        
-        headers = {
-            "Content-Type": "application/json"
-        }
-        
-        response = httprequests.post(browserless_url, json=payload, headers=headers, timeout=60)
-        
-        if response.status_code != 200:
-            raise Exception(f"Browserless Error: {response.text}")
+        if end_page is None:
+            end_page = len(all_pages)
             
-        # 3. Return the PDF
-        return Response(
-            content=response.content,
+        requested_pages = all_pages[start_page-1 : end_page]
+        
+        # Use local ReportLab engine
+        filename = f"Logbook_Export_{start_page}.pdf"
+        # Use a safe temp path
+        output_path = os.path.join("/tmp", filename)
+        
+        renderer = CAD407Renderer(output_filename=output_path)
+        renderer.render_pages(requested_pages)
+        
+        return FileResponse(
+            path=output_path,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=Logbook_Export_{start_page}.pdf"
-            }
+            filename=filename
         )
     except Exception as e:
         import traceback
