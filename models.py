@@ -27,8 +27,6 @@ class User(Base):
     email = Column(String)
     license_type = Column(String)
     aircraft_type = Column(String)
-    google_id = Column(String, unique=True, index=True)
-    google_refresh_token = Column(String)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
