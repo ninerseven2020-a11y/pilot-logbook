@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status, Response, Request, Query
+from contextlib import asynccontextmanager
+
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -37,16 +39,22 @@ SECRET_KEY = "3bf3dcec3423b9b40d911ca20f5f63b66efe78bc201ed5880b5755b4f162d6ed"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize DB
+    try:
+        init_db()
+        print("Database initialized successfully via lifespan.")
+    except Exception as e:
+        print(f"Warning: Database initialization failed during startup: {e}")
+    yield
+    # Shutdown logic (if any) can go here
+
+app = FastAPI(lifespan=lifespan)
+
 @app.get("/test")
 async def test_route():
     return {"message": "Backend is alive"}
-
-try:
-    init_db()
-    print("Database initialized successfully.")
-except Exception as e:
-    print(f"Warning: Database initialization failed: {e}")
 
 templates = Jinja2Templates(directory="static")
 
