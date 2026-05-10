@@ -18,5 +18,5 @@ RUN mkdir -p /app/data && chmod -R 777 /app/data
 ENV LOGBOOK_DATA_DIR=/app/data
 
 # Use the same command as local development for maximum parity
-# Use sh -c to ensure the $PORT environment variable is correctly expanded by the shell
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Use the shell form to allow the system to automatically expand $PORT
+CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
