@@ -6,20 +6,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from jose import JWTError, jwt
-import pandas as pd
 import os
-import io
-import secrets
+import json
 from datetime import datetime, timedelta
 from typing import Optional, List
 from sqlalchemy.orm import Session
-import json
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-from main import get_mvp_data, add_adjustment, get_logbook_preview
-from engine import CAD407Logbook
-from pdf_ssr import render_logbook_html
+# Heavy local modules and pandas are lazy-loaded inside functions to fix Railway 502 timeouts
 from models import User, Organization, FlightNature, SessionLocal, init_db, get_password_hash, verify_password
 print(f"[DEBUG] Organization imported: {Organization}")
 from dotenv import load_dotenv
@@ -271,6 +266,7 @@ async def print_view(
     end_page: int = Query(None),
     current_user: User = Depends(get_current_user)
 ):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     all_pages = logbook.get_paginated_data(start_page=1)
     
@@ -319,8 +315,11 @@ async def register(
     db.refresh(new_user)
 @app.post("/api/restore")
 async def restore_logbook(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     try:
         contents = await file.read()
+        import json
         data = json.loads(contents)
         
         # Simple validation: Check if it looks like a logbook
@@ -345,6 +344,7 @@ async def restore_logbook(file: UploadFile = File(...), current_user: User = Dep
 
 @app.get("/api/export_json")
 async def export_json(current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     if os.path.exists(logbook.storage_file):
         return FileResponse(logbook.storage_file, media_type="application/json", filename=f"logbook_backup_{datetime.now().strftime('%Y%m%d')}.json")
@@ -382,6 +382,7 @@ async def get_admin_users(user: User = Depends(get_current_user), db: Session = 
     users = db.query(User).all()
     user_list = []
     for u in users:
+        from engine import CAD407Logbook
         # Check flight count from their logbook JSON
         pilot_logbook = CAD407Logbook(user_id=u.id, pilot_name=u.pilot_name)
         flight_count = len(pilot_logbook.history)
@@ -414,6 +415,7 @@ async def merge_users(req: MergeRequest, admin_user: User = Depends(get_current_
     if not source or not target:
         raise HTTPException(status_code=404, detail="User not found")
     
+    from engine import CAD407Logbook
     # 1. Merge Logbooks (Physical Syncs + Flight History)
     source_lb = CAD407Logbook(user_id=source.id, pilot_name=source.pilot_name)
     target_lb = CAD407Logbook(user_id=target.id, pilot_name=target.pilot_name)
@@ -454,6 +456,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @app.get("/api/dashboard")
 async def dashboard(category: Optional[str] = Query(None), q: Optional[str] = Query(None), current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     return get_mvp_data(logbook, category=category, query=q)
 
@@ -464,6 +468,8 @@ async def adjustment(
     reason: str = Form(...),
     current_user: User = Depends(get_current_user)
 ):
+    from engine import CAD407Logbook
+    from main import get_mvp_data, add_adjustment
     try:
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         msg = add_adjustment(logbook, column, value, reason)
@@ -473,11 +479,13 @@ async def adjustment(
 
 @app.get("/api/sync_adjustments")
 async def get_sync_adjustments(current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     return {"adjustments": logbook.sync_adjustments}
 
 @app.post("/api/sync_adjustments")
 async def add_sync_adjustment(request: Request, current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     data = await request.json()
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     adj = logbook.add_sync_adjustment(
@@ -502,6 +510,8 @@ async def preview(
     date_to: Optional[str] = Query(None), 
     current_user: User = Depends(get_current_user)
 ):
+    from engine import CAD407Logbook
+    from main import get_logbook_preview
     try:
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         
@@ -539,17 +549,20 @@ async def read_manage():
 
 @app.get("/api/synonyms")
 async def get_synonyms(user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=user.id, pilot_name=user.pilot_name)
     return logbook.COLUMN_MAP
 
 @app.post("/api/synonyms")
 async def update_synonyms(new_map: dict, user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=user.id, pilot_name=user.pilot_name)
     logbook.update_synonyms(new_map)
     return {"message": "Synonyms updated successfully"}
 
 @app.get("/api/history")
 async def get_history(current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     # Sort history by date descending for management view
     sorted_history = sorted(logbook.history, key=lambda x: x.get('date_obj', datetime(1900,1,1)), reverse=True)
@@ -557,12 +570,15 @@ async def get_history(current_user: User = Depends(get_current_user)):
 
 @app.delete("/api/entry/{entry_id}")
 async def delete_entry(entry_id: str, category: Optional[str] = Query(None), q: Optional[str] = Query(None), current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     logbook.delete_entry(entry_id)
     return {"message": "Entry deleted", "data": get_mvp_data(logbook, category=category, query=q)}
 
 @app.post("/api/entries/batch-delete")
 async def batch_delete_entries(request: Request, current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     data = await request.json()
     ids = data.get('ids', [])
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
@@ -604,6 +620,8 @@ async def batch_edit_entries(request: Request, current_user: User = Depends(get_
 
 @app.post("/api/entry/{entry_id}")
 async def update_entry(entry_id: str, request: Request, category: Optional[str] = Query(None), q: Optional[str] = Query(None), current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     data = await request.json()
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     logbook.update_entry(entry_id, data)
@@ -627,6 +645,8 @@ async def update_entry(entry_id: str, request: Request, category: Optional[str] 
 
 @app.post("/api/opening_totals")
 async def add_opening_totals(request: Request, category: Optional[str] = Query(None), q: Optional[str] = Query(None), current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     data = await request.json()
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     
@@ -738,7 +758,9 @@ async def import_excel(
 
         logbook.history.append(entry)
         logbook.save_data()
-        return {"message": "Manual entry added successfully.", "data": get_mvp_data(logbook)}
+        msg = f"Manual entry added successfully."
+        from main import get_mvp_data
+        return {"message": msg, "data": get_mvp_data(logbook)}
 
     if not file:
         raise HTTPException(status_code=400, detail="No file or manual entry provided.")
@@ -747,6 +769,8 @@ async def import_excel(
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
     
     try:
+        import io
+        import pandas as pd
         contents = await file.read()
         # Read without header first to find the correct header row
         df_raw = pd.read_excel(io.BytesIO(contents), header=None)
@@ -840,6 +864,8 @@ async def update_profile(
     db.commit()
     print(f"[DEBUG] DB commit successful for user {current_user.username}")
     
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=pilot_name)
     logbook.save_data()
     
