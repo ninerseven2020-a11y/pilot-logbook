@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: pilot-logbook
+    env: docker
+    plan: free # You can upgrade later if you need more RAM for Playwright
+    region: singapore # Or choose your closest region
+    envVars:
+      - key: LOGBOOK_DATA_DIR
+        value: /app/data
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+    disk:
+      name: logbook-data
+      mountPath: /app/data
+      sizeGB: 1
