@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  logbook-app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/logbook.db
+      # REPLACE THESE WITH YOUR ACTUAL SECRETS IN THE NAS UI OR .env FILE
+      - GOOGLE_CLIENT_ID=819898419568-92874ljo5j4q6ktmtm2l2fs4rl323jtj.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+      - SECRET_KEY=REPLACE_ME_WITH_A_RANDOM_STRING
+    restart: always

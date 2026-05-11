@@ -27,6 +27,10 @@ logbook_data.json
 # OS
 .DS_Store
 
+# Docker
+Dockerfile
+node_modules
+
 # Secrets and Logs
 client_secret_*.json
 server.log
