@@ -93,45 +93,53 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 # --- Google OAuth Endpoints ---
 
 @app.get("/api/auth/google/login")
-async def google_login(link: Optional[bool] = False, current_user_id: Optional[int] = None):
+async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
     print(f"[DEBUG] /api/auth/google/login hit! link={link}, current_user_id={current_user_id}")
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        raise HTTPException(status_code=500, detail="Google OAuth configuration missing")
     
-    # Generate PKCE verifier and challenge
-    import secrets
-    import hashlib
-    import base64
-    
-    code_verifier = secrets.token_urlsafe(64)
-    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
-    
-    # Dynamically determine the redirect URI based on the request
-    # This works for both local dev and Synology Reverse Proxy
-    host = request.headers.get('host', 'localhost:8000')
-    scheme = 'https' if 'synology.me' in host else 'http'
-    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
-    
-    import urllib.parse
-    params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": redirect_uri,
-        "response_type": "code",
-        "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
-        "access_type": "offline",
-        "prompt": "consent",
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256"
-    }
-    authorization_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
-    
-    response = JSONResponse(content={"url": authorization_url})
-    # Store verifier and link intent in a secure cookie
-    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
-    if link and current_user_id:
-        response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300, samesite="lax", secure=True)
-    
-    return response
+    try:
+        if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+            print(f"[ERROR] Missing credentials! ID: {'set' if GOOGLE_CLIENT_ID else 'MISSING'}, Secret: {'set' if GOOGLE_CLIENT_SECRET else 'MISSING'}")
+            return JSONResponse(status_code=500, content={"detail": "Google Auth credentials not found in environment"})
+
+        # Generate PKCE verifier and challenge
+        import secrets
+        import hashlib
+        import base64
+        
+        code_verifier = secrets.token_urlsafe(64)
+        code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
+        
+        # Dynamically determine the redirect URI
+        host = request.headers.get('host', 'localhost:8000')
+        scheme = 'https' if 'synology.me' in host else 'http'
+        redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+        
+        print(f"[DEBUG] Redirect URI generated: {redirect_uri}")
+
+        import urllib.parse
+        params = {
+            "client_id": GOOGLE_CLIENT_ID,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
+            "access_type": "offline",
+            "prompt": "consent",
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256"
+        }
+        authorization_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
+        
+        response = JSONResponse(content={"url": authorization_url})
+        response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
+        if link and current_user_id:
+            response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300, samesite="lax", secure=True)
+        
+        return response
+    except Exception as e:
+        import traceback
+        print(f"[CRITICAL] Google Login Error: {str(e)}")
+        print(traceback.format_exc())
+        return JSONResponse(status_code=500, content={"detail": f"Server Error: {str(e)}"})
 
 @app.get("/api/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db), code: Optional[str] = None, error: Optional[str] = None):
