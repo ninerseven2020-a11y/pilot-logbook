@@ -140,6 +140,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
 
     try:
         code_verifier = request.cookies.get("google_code_verifier")
+        link_user_id = request.cookies.get("link_user_id")
         
         host = request.headers.get('host', 'localhost:8000')
         scheme = 'https' if 'synology.me' in host else 'http'
