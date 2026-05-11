@@ -1,0 +1,139 @@
+import os
+from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+from typing import Optional, List
+import json
+from datetime import datetime, timedelta
+import secrets
+import hashlib
+import base64
+import urllib.parse
+import requests as httprequests
+from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+
+# --- DB and Engine Imports ---
+from database import SessionLocal, init_db, engine
+import models
+from engine import CAD407Logbook
+
+# Load environment variables from .env or Docker
+load_dotenv()
+
+# Configuration
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
+ALGORITHM = "HS256"
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+# Static files mapping
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="static")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# --- Auth Helper ---
+def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        return None
+    # Add JWT validation logic here if needed
+    # For now, we trust the cookie or use a simplified mock
+    return {"id": 1} # Placeholder
+
+@app.get("/")
+async def read_root(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/login")
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/dashboard")
+async def dashboard_page(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+@app.get("/manage")
+async def manage_page(request: Request):
+    return templates.TemplateResponse("manage.html", {"request": request})
+
+# --- Google OAuth ---
+
+@app.get("/api/auth/google/login")
+async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return JSONResponse(status_code=500, content={"detail": "Google Auth not configured in environment"})
+
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
+    
+    # Smart Redirect URI detection
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+    
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+        "access_type": "offline",
+        "prompt": "consent",
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256"
+    }
+    auth_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
+    
+    response = JSONResponse(content={"url": auth_url})
+    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
+    return response
+
+@app.get("/api/auth/google/callback")
+async def google_callback(request: Request, db: Session = Depends(get_db), code: Optional[str] = None):
+    if not code:
+        return HTMLResponse("Auth failed", status_code=400)
+    
+    code_verifier = request.cookies.get("google_code_verifier")
+    
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "code": code,
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+        "code_verifier": code_verifier
+    }
+    
+    res = httprequests.post(token_url, data=data)
+    tokens = res.json()
+    
+    if "error" in tokens:
+        return HTMLResponse(f"Google Error: {tokens.get('error')}", status_code=400)
+    
+    # Success - normally you'd create a user and JWT here
+    response = RedirectResponse(url="/dashboard")
+    response.set_cookie(key="access_token", value="mock-token", httponly=True, samesite="lax", secure=True)
+    return response
+
+# ... (rest of the API routes would follow)

@@ -90,89 +90,62 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 
 @app.get("/api/auth/google/login")
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
-    import os
-    print(f"[DEBUG] /api/auth/google/login hit! link={link}, current_user_id={current_user_id}")
-    
     # Read variables inside the function to ensure we get the latest environment
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
     
-    try:
-        if not client_id or not client_secret:
-            import os
-            all_keys = list(os.environ.keys())
-            print(f"[ERROR] Missing credentials! Available keys: {all_keys}")
-            print(f"ID: {'set' if client_id else 'MISSING'}, Secret: {'set' if client_secret else 'MISSING'}")
-            return JSONResponse(status_code=500, content={"detail": f"Google Auth credentials not found. Available env keys: {len(all_keys)}"})
+    if not client_id or not client_secret:
+        return JSONResponse(status_code=500, content={"detail": "Google Auth credentials not found in environment. Please check your .env file or Docker settings."})
 
-        # Generate PKCE verifier and challenge
-        import secrets
-        import hashlib
-        import base64
-        
-        code_verifier = secrets.token_urlsafe(64)
-        code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
-        
-        # Dynamically determine the redirect URI
-        host = request.headers.get('host', 'localhost:8000')
-        scheme = 'https' if 'synology.me' in host else 'http'
-        redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
-        
-        print(f"[DEBUG] Redirect URI generated: {redirect_uri}")
-
-        import urllib.parse
-        params = {
-            "client_id": client_id,
-            "redirect_uri": redirect_uri,
-            "response_type": "code",
-            "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
-            "access_type": "offline",
-            "prompt": "consent",
-            "code_challenge": code_challenge,
-            "code_challenge_method": "S256"
-        }
-        authorization_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
-        
-        response = JSONResponse(content={"url": authorization_url})
-        response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
-        if link and current_user_id:
-            response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300, samesite="lax", secure=True)
-        
-        return response
-    except Exception as e:
-        import traceback
-        print(f"[CRITICAL] Google Login Error: {str(e)}")
-        print(traceback.format_exc())
-        return JSONResponse(status_code=500, content={"detail": f"Server Error: {str(e)}"})
+    import secrets
+    import hashlib
+    import base64
+    
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
+    
+    # Smart Redirect URI detection
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+    
+    import urllib.parse
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
+        "access_type": "offline",
+        "prompt": "consent",
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256"
+    }
+    authorization_url = f"https://accounts.google.com/o/oauth2/auth?{urllib.parse.urlencode(params)}"
+    
+    response = JSONResponse(content={"url": authorization_url})
+    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
+    if link and current_user_id:
+        response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300, samesite="lax", secure=True)
+    
+    return response
 
 @app.get("/api/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db), code: Optional[str] = None, error: Optional[str] = None):
-    import os
-    print(f"[DEBUG] /api/auth/google/callback hit! code={'yes' if code else 'no'}, error={error}")
-    
     if error:
-        return HTMLResponse(content=f"<h3>Google Authentication Error</h3><p>{error}</p><a href='/login'>Back to Login</a>", status_code=400)
-        
+        return HTMLResponse(content=f"<h3>Google Auth Error</h3><p>{error}</p><a href='/login'>Back to Login</a>", status_code=400)
     if not code:
-        return HTMLResponse(content=f"<h3>Authentication Error</h3><p>No code received from Google. Please try again.</p><a href='/login'>Back to Login</a>", status_code=400)
-    try:
-        # Retrieve the verifier and linking intent from the cookie
-        code_verifier = request.cookies.get("google_code_verifier")
-        link_user_id = request.cookies.get("link_user_id")
-        
-        if not code_verifier:
-            raise Exception("Security session expired. Please try logging in again.")
+        return HTMLResponse(content="<h3>Auth Error</h3><p>No code received</p>", status_code=400)
 
-        # Dynamically determine the redirect URI (must match the login request)
+    try:
+        code_verifier = request.cookies.get("google_code_verifier")
+        
         host = request.headers.get('host', 'localhost:8000')
         scheme = 'https' if 'synology.me' in host else 'http'
         redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
 
-        # Read variables inside the function
         client_id = os.getenv("GOOGLE_CLIENT_ID")
         client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
 
-        # Manually exchange the code for tokens
         import requests as httprequests
         token_url = "https://oauth2.googleapis.com/token"
         data = {
@@ -184,8 +157,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
             "code_verifier": code_verifier
         }
         
-        token_response = httprequests.post(token_url, data=data)
-        token_data = token_response.json()
+        token_res = httprequests.post(token_url, data=data)
+        token_data = token_res.json()
         
         if "error" in token_data:
             raise Exception(f"Google Token Error: {token_data.get('error_description', token_data['error'])}")
