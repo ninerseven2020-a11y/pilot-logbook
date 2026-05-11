@@ -519,45 +519,73 @@ function clearSelection() {
     updateBatchBar();
 }
 
+function showConfirmModal(title, message, actionText, onConfirm) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const btn = document.getElementById('confirm-btn-action');
+    btn.textContent = actionText;
+    btn.onclick = () => {
+        onConfirm();
+        closeConfirmModal();
+    };
+    document.getElementById('confirm-modal').classList.add('show');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirm-modal').classList.remove('show');
+}
+
 async function deleteEntry(id) {
     if (!id) return;
-    if (!confirm('Are you sure you want to delete this entry?')) return;
-    const token = getToken();
-    try {
-        const response = await fetch(`/api/entry/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-            showToast('Entry deleted');
-            fetchHistory();
-        } else {
-            showToast('Delete failed', 'error');
+    showConfirmModal(
+        'Delete Entry?', 
+        'Are you sure you want to delete this flight? This cannot be undone.',
+        'Delete',
+        async () => {
+            const token = getToken();
+            try {
+                const response = await fetch(`/api/entry/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    showToast('Entry deleted');
+                    fetchHistory();
+                } else {
+                    showToast('Delete failed', 'error');
+                }
+            } catch (e) { showToast('Server error', 'error'); }
         }
-    } catch (e) { showToast('Server error', 'error'); }
+    );
 }
 
 async function batchDelete() {
     const checked = document.querySelectorAll('.row-cb:checked');
     const ids = Array.from(checked).map(cb => cb.dataset.id);
     if (ids.length === 0) return;
-    if (!confirm(`Delete ${ids.length} entries?`)) return;
-
-    const token = getToken();
-    try {
-        const response = await fetch('/api/entries/batch-delete', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ ids })
-        });
-        if (response.ok) {
-            showToast(`${ids.length} entries deleted`);
-            fetchHistory();
+    
+    showConfirmModal(
+        'Batch Delete?', 
+        `Delete ${ids.length} selected entries? This cannot be undone.`,
+        'Delete All',
+        async () => {
+            const token = getToken();
+            try {
+                const response = await fetch('/api/entries/batch-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ids })
+                });
+                if (response.ok) {
+                    showToast(`${ids.length} entries deleted`);
+                    fetchHistory();
+                }
+            } catch (e) { showToast('Server error', 'error'); }
         }
-    } catch (e) { showToast('Server error', 'error'); }
+    );
 }
 
 function openBatchEdit() {
@@ -699,30 +727,32 @@ async function handleRestoreLogbook(input) {
     const formData = new FormData();
     formData.append('file', file);
     
-    if (!confirm(`This will REPLACE your current logbook with data from ${file.name}. Are you sure?`)) {
-        input.value = '';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/restore', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-        });
-        
-        if (response.ok) {
-            showToast('Logbook restored successfully!');
-            fetchHistory();
-        } else {
-            const err = await response.json();
-            showToast(`Restore failed: ${err.detail}`, 'error');
+    showConfirmModal(
+        'Restore Logbook?',
+        `This will REPLACE your current logbook with data from ${file.name}. Are you sure?`,
+        'Restore',
+        async () => {
+            try {
+                const response = await fetch('/api/restore', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showToast('Logbook restored successfully!');
+                    fetchHistory();
+                } else {
+                    const err = await response.json();
+                    showToast(`Restore failed: ${err.detail}`, 'error');
+                }
+            } catch (e) {
+                showToast('Server error during restore', 'error');
+            } finally {
+                input.value = '';
+            }
         }
-    } catch (e) {
-        showToast('Server error during restore', 'error');
-    } finally {
-        input.value = '';
-    }
+    );
 }
 
 async function exportLogbookJSON() {

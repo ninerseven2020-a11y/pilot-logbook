@@ -789,7 +789,20 @@
     <datalist id="edit-operator-list"></datalist>
     <datalist id="edit-label-list"></datalist>
     <div id="toast" class="toast"></div>
-    <script src="static/script.js?v=6"></script>
-    <script src="static/manage.js?v=3"></script>
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content glass" style="max-width: 400px; text-align: center; padding: 2rem;">
+            <div style="color: #ef4444; font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h2 id="confirm-title" style="margin-bottom: 1rem;">Are you sure?</h2>
+            <p id="confirm-message" class="text-muted" style="margin-bottom: 2rem;">This action cannot be undone.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirm-btn-action" class="btn" style="background: #ef4444; color: white; border: none;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/script.js?v=7"></script>
+    <script src="static/manage.js?v=4"></script>
 </body>
 </html>
