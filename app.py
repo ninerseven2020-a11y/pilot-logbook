@@ -90,9 +90,11 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 
 @app.get("/api/auth/google/login")
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
-    # Read variables inside the function to ensure we get the latest environment
+    # Read variables inside the function
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    
+    print(f"[DEBUG] Login attempt. ID present: {bool(client_id)}, Secret present: {bool(client_secret)}")
     
     if not client_id or not client_secret:
         return JSONResponse(status_code=500, content={"detail": "Google Auth credentials not found in environment. Please check your .env file or Docker settings."})
