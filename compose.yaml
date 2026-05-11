@@ -10,6 +10,7 @@ services:
       - ./data:/app/data
     environment:
       - DATABASE_URL=sqlite:///./data/logbook.db
+      - PORT=8000
       # THE SECRETS BELOW ARE PLACEHOLDERS. 
       # DO NOT PUT ACTUAL SECRETS HERE. 
       # ENTER THEM IN THE SYNOLOGY CONTAINER MANAGER UI OR A .env FILE.
