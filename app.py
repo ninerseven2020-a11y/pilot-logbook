@@ -499,6 +499,7 @@ async def add_sync_adjustment(request: Request, current_user: User = Depends(get
 
 @app.delete("/api/sync_adjustments/{adj_id}")
 async def delete_sync_adjustment(adj_id: str, current_user: User = Depends(get_current_user)):
+    from engine import CAD407Logbook
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     logbook.delete_sync_adjustment(adj_id)
     return {"message": "Sync adjustment deleted"}
@@ -595,6 +596,7 @@ async def batch_edit_entries(request: Request, current_user: User = Depends(get_
         if not ids:
             return {"message": "No entries selected"}
             
+        from engine import CAD407Logbook
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         count = logbook.batch_update_entries(ids, updates)
         
@@ -716,6 +718,8 @@ async def import_excel(
     
     db.commit()
 
+    from engine import CAD407Logbook
+    from main import get_mvp_data
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
 
     if is_manual:
@@ -759,7 +763,6 @@ async def import_excel(
         logbook.history.append(entry)
         logbook.save_data()
         msg = f"Manual entry added successfully."
-        from main import get_mvp_data
         return {"message": msg, "data": get_mvp_data(logbook)}
 
     if not file:
