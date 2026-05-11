@@ -144,7 +144,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         host = request.headers.get('host', 'localhost:8000')
         scheme = 'https' if 'synology.me' in host else 'http'
         redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
-
+        import requests as httprequests
+        token_url = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
