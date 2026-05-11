@@ -30,7 +30,7 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Security Configuration
-SECRET_KEY = "3bf3dcec3423b9b40d911ca20f5f63b66efe78bc201ed5880b5755b4f162d6ed"
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-for-local-only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 

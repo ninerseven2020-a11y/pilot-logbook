@@ -26,3 +26,11 @@ logbook_data.json
 
 # OS
 .DS_Store
+
+# Secrets and Logs
+client_secret_*.json
+server.log
+*.xlsx
+*.xls
+*.db
+logbook_data.json
