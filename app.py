@@ -106,10 +106,16 @@ async def google_login(link: Optional[bool] = False, current_user_id: Optional[i
     code_verifier = secrets.token_urlsafe(64)
     code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().replace('=', '')
     
+    # Dynamically determine the redirect URI based on the request
+    # This works for both local dev and Synology Reverse Proxy
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+    
     import urllib.parse
     params = {
         "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
         "access_type": "offline",
@@ -144,6 +150,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         if not code_verifier:
             raise Exception("Security session expired. Please try logging in again.")
 
+        # Dynamically determine the redirect URI (must match the login request)
+        host = request.headers.get('host', 'localhost:8000')
+        scheme = 'https' if 'synology.me' in host else 'http'
+        redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+
         # Manually exchange the code for tokens
         import requests as httprequests
         token_url = "https://oauth2.googleapis.com/token"
@@ -151,7 +162,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
             "code_verifier": code_verifier
         }
