@@ -99,9 +99,9 @@ function renderHistory(history) {
             displayDate = entry.date_str; // Fallback
         }
 
-        // Context menu listener
         row.addEventListener('contextmenu', e => {
             e.preventDefault();
+            e.stopPropagation(); // Stop from bubbling up to document click
             showContextMenu(e, entry.id);
         });
 
@@ -358,8 +358,16 @@ function setupContextMenu() {
         document.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
     });
 
-    document.getElementById('ctx-edit').onclick = () => openFlightDetailModal(selectedEntryId);
-    document.getElementById('ctx-delete').onclick = () => deleteEntry(selectedEntryId);
+    document.getElementById('ctx-edit').onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openFlightDetailModal(selectedEntryId);
+    };
+    document.getElementById('ctx-delete').onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteEntry(selectedEntryId);
+    };
 }
 
 function showContextMenu(e, id) {

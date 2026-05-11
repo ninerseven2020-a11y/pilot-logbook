@@ -121,9 +121,9 @@ async def google_login(link: Optional[bool] = False, current_user_id: Optional[i
     
     response = JSONResponse(content={"url": authorization_url})
     # Store verifier and link intent in a secure cookie
-    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300)
+    response.set_cookie(key="google_code_verifier", value=code_verifier, httponly=True, max_age=300, samesite="lax", secure=True)
     if link and current_user_id:
-        response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300)
+        response.set_cookie(key="link_user_id", value=str(current_user_id), httponly=True, max_age=300, samesite="lax", secure=True)
     
     return response
 
@@ -244,6 +244,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/favicon.ico")
 async def favicon():
