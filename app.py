@@ -90,6 +90,7 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 
 @app.get("/api/auth/google/login")
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
+    import os
     print(f"[DEBUG] /api/auth/google/login hit! link={link}, current_user_id={current_user_id}")
     
     # Read variables inside the function to ensure we get the latest environment
@@ -146,6 +147,7 @@ async def google_login(request: Request, link: Optional[bool] = False, current_u
 
 @app.get("/api/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db), code: Optional[str] = None, error: Optional[str] = None):
+    import os
     print(f"[DEBUG] /api/auth/google/callback hit! code={'yes' if code else 'no'}, error={error}")
     
     if error:
