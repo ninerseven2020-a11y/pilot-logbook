@@ -22,6 +22,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+
 # Allow insecure transport for local development (MUST BE REMOVED IN PRODUCTION)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -90,13 +94,9 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 
 @app.get("/api/auth/google/login")
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
-    # Read variables inside the function
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    print(f"[DEBUG] Login attempt. ID present: {bool(GOOGLE_CLIENT_ID)}, Secret present: {bool(GOOGLE_CLIENT_SECRET)}")
     
-    print(f"[DEBUG] Login attempt. ID present: {bool(client_id)}, Secret present: {bool(client_secret)}")
-    
-    if not client_id or not client_secret:
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return JSONResponse(status_code=500, content={"detail": "Google Auth credentials not found in environment. Please check your .env file or Docker settings."})
 
     import secrets
@@ -113,7 +113,7 @@ async def google_login(request: Request, link: Optional[bool] = False, current_u
     
     import urllib.parse
     params = {
-        "client_id": client_id,
+        "client_id": GOOGLE_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
@@ -145,15 +145,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         scheme = 'https' if 'synology.me' in host else 'http'
         redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
 
-        client_id = os.getenv("GOOGLE_CLIENT_ID")
-        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-
-        import requests as httprequests
-        token_url = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
             "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
             "code_verifier": code_verifier
