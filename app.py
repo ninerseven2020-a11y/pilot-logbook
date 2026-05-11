@@ -128,8 +128,14 @@ async def google_login(link: Optional[bool] = False, current_user_id: Optional[i
     return response
 
 @app.get("/api/auth/google/callback")
-async def google_callback(request: Request, code: str, db: Session = Depends(get_db)):
-    print("[DEBUG] /api/auth/google/callback hit!")
+async def google_callback(request: Request, db: Session = Depends(get_db), code: Optional[str] = None, error: Optional[str] = None):
+    print(f"[DEBUG] /api/auth/google/callback hit! code={'yes' if code else 'no'}, error={error}")
+    
+    if error:
+        return HTMLResponse(content=f"<h3>Google Authentication Error</h3><p>{error}</p><a href='/login'>Back to Login</a>", status_code=400)
+        
+    if not code:
+        return HTMLResponse(content=f"<h3>Authentication Error</h3><p>No code received from Google. Please try again.</p><a href='/login'>Back to Login</a>", status_code=400)
     try:
         # Retrieve the verifier and linking intent from the cookie
         code_verifier = request.cookies.get("google_code_verifier")
@@ -238,6 +244,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/style.css") # Just return anything to avoid 404
 
 @app.get("/")
 async def read_root():
