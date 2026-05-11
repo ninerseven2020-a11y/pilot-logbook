@@ -22,10 +22,6 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
-
 # Allow insecure transport for local development (MUST BE REMOVED IN PRODUCTION)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -96,10 +92,17 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
     print(f"[DEBUG] /api/auth/google/login hit! link={link}, current_user_id={current_user_id}")
     
+    # Read variables inside the function to ensure we get the latest environment
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    
     try:
-        if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-            print(f"[ERROR] Missing credentials! ID: {'set' if GOOGLE_CLIENT_ID else 'MISSING'}, Secret: {'set' if GOOGLE_CLIENT_SECRET else 'MISSING'}")
-            return JSONResponse(status_code=500, content={"detail": "Google Auth credentials not found in environment"})
+        if not client_id or not client_secret:
+            import os
+            all_keys = list(os.environ.keys())
+            print(f"[ERROR] Missing credentials! Available keys: {all_keys}")
+            print(f"ID: {'set' if client_id else 'MISSING'}, Secret: {'set' if client_secret else 'MISSING'}")
+            return JSONResponse(status_code=500, content={"detail": f"Google Auth credentials not found. Available env keys: {len(all_keys)}"})
 
         # Generate PKCE verifier and challenge
         import secrets
@@ -118,7 +121,7 @@ async def google_login(request: Request, link: Optional[bool] = False, current_u
 
         import urllib.parse
         params = {
-            "client_id": GOOGLE_CLIENT_ID,
+            "client_id": client_id,
             "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": "openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file",
@@ -163,13 +166,17 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         scheme = 'https' if 'synology.me' in host else 'http'
         redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
 
+        # Read variables inside the function
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+
         # Manually exchange the code for tokens
         import requests as httprequests
         token_url = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
             "code_verifier": code_verifier
