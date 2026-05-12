@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.35">
+    <link rel="stylesheet" href="static/style.css?v=1.2.36">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -355,28 +355,19 @@
 
         <div class="upload-form-card glass">
             <div class="section-header">
-                <h2>Data Migration (JSON)
-                    <div class="tooltip-container">
-                        <span class="info-icon">i</span>
-                        <span class="tooltip-text">Export your entire logbook as a JSON file or restore from a previous backup. This is the safest way to move your data between devices.</span>
-                    </div>
-                </h2>
+                <h2>Data Migration (JSON)</h2>
             </div>
             
             <div class="migration-grid">
-                <div style="background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📤</div>
-                    <h3 style="margin-bottom: 0.25rem; font-size: 1rem;">Export Backup</h3>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Download your entire logbook and settings as a .json file.</p>
-                    <button onclick="exportLogbookJSON()" class="btn btn-secondary" style="width: 100%; font-size: 0.8rem;">Download JSON</button>
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📤</div>
+                    <button onclick="exportLogbookJSON()" class="btn btn-secondary" style="width: 100%; font-size: 0.9rem;">Download JSON</button>
                 </div>
 
-                <div style="background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📥</div>
-                    <h3 style="margin-bottom: 0.25rem; font-size: 1rem;">Restore from JSON</h3>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Upload a previously exported .json file to replace your current logbook.</p>
+                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">📥</div>
                     <input type="file" id="restore-json-input" accept=".json" style="display: none;" onchange="handleRestoreLogbook(this)">
-                    <button onclick="document.getElementById('restore-json-input').click()" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-color); color: var(--accent-color); font-size: 0.8rem;">Restore JSON</button>
+                    <button onclick="document.getElementById('restore-json-input').click()" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-color); color: var(--accent-color); font-size: 0.9rem;">Restore JSON</button>
                 </div>
             </div>
         </div>
@@ -465,8 +456,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.35</div>
-    <script>const APP_VERSION = "1.2.35"</script>
-    <script src="static/script.js?v=1.2.35"></script>
+    <div class="version-label">v1.2.36</div>
+    <script>const APP_VERSION = "1.2.36"</script>
+    <script src="static/script.js?v=1.2.36"></script>
 </body>
 </html>
