@@ -120,22 +120,27 @@
                             <col style="width: 100px;"> <!-- Pilot-in-command -->
                             <col style="width: 100px;"> <!-- Co-pilot or student -->
                             <col style="width: 65px;"> <!-- Holder's operating capacity -->
-                            <col style="width: 220px;"> <!-- Journey -->
-                            <col style="width: 45px;"> <!-- Take-offs -->
-                            <col style="width: 45px;"> <!-- Landings -->
                             
-                            <col style="width: 45px;"> <!-- Day P1 (1) -->
-                            <col style="width: 45px;"> <!-- Day P1(U/S) (2) -->
-                            <col style="width: 45px;"> <!-- Day P2/P2X (3) -->
-                            <col style="width: 45px;"> <!-- Day P/UT (4) -->
+                            <!-- Journey Columns: Now 3 separate boxes -->
+                            <col style="width: 48px;"> <!-- Dep -->
+                            <col style="width: 48px;"> <!-- Times (Total) -->
+                            <col style="width: 48px;"> <!-- Arr -->
                             
-                            <col style="width: 45px;"> <!-- Night P1 (5) -->
-                            <col style="width: 45px;"> <!-- Night P1(U/S) (6) -->
-                            <col style="width: 45px;"> <!-- Night P2/P2X (7) -->
-                            <col style="width: 45px;"> <!-- Night P/UT (8) -->
+                            <col style="width: 48px;"> <!-- Take-offs -->
+                            <col style="width: 48px;"> <!-- Landings -->
                             
-                            <col style="width: 75px;"> <!-- Instrument Flying -->
-                            <col style="width: 75px;"> <!-- Simulator Time -->
+                            <col style="width: 48px;"> <!-- Day P1 (1) -->
+                            <col style="width: 48px;"> <!-- Day P1(U/S) (2) -->
+                            <col style="width: 48px;"> <!-- Day P2/P2X (3) -->
+                            <col style="width: 48px;"> <!-- Day P/UT (4) -->
+                            
+                            <col style="width: 48px;"> <!-- Night P1 (5) -->
+                            <col style="width: 48px;"> <!-- Night P1(U/S) (6) -->
+                            <col style="width: 48px;"> <!-- Night P2/P2X (7) -->
+                            <col style="width: 48px;"> <!-- Night P/UT (8) -->
+                            
+                            <col style="width: 48px;"> <!-- Instrument Flying -->
+                            <col style="width: 48px;"> <!-- Simulator Time -->
                             <col style="width: 140px;"> <!-- Remarks -->
                         </colgroup>
                         <thead>
@@ -145,39 +150,34 @@
                                 <th rowspan="2">Pilot-in-command</th>
                                 <th rowspan="2">Co-pilot or student</th>
                                 <th rowspan="2">Holder's operating capacity</th>
-                                <th rowspan="2" style="padding: 0; vertical-align: top;">
-                                    <div style="padding: 6px 0; border-bottom: 1px solid #94a3b8;">Journey or nature of flight</div>
-                                    <div style="display: flex; border-bottom: 1px solid #94a3b8;">
-                                        <div style="flex: 2; padding: 2px;">From</div>
-                                        <div style="flex: 1; padding: 2px;">To</div>
-                                    </div>
-                                    <div style="display: flex;">
-                                        <div style="flex: 1; padding: 2px;">(Dep)</div>
-                                        <div style="flex: 1; padding: 2px;">(Times)</div>
-                                        <div style="flex: 1; padding: 2px;">(Arr)</div>
-                                    </div>
-                                </th>
+                                <th colspan="3">Journey or nature of flight</th>
                                 <th colspan="2">No. of</th>
                                 <th colspan="4">Day flying</th>
                                 <th colspan="4">Night flying</th>
-                                <th rowspan="2">Instrument Flying</th>
-                                <th rowspan="2">Simulator Time</th>
+                                <th rowspan="2">Inst.</th>
+                                <th rowspan="2">Sim.</th>
                                 <th rowspan="2">Remarks</th>
                             </tr>
                             <tr>
                                 <th style="border-top: none;">Month / Date</th>
                                 <th>Type</th>
                                 <th>Registration</th>
-                                <th>Take-offs</th>
-                                <th>Landings</th>
+                                
+                                <!-- Journey sub-headers -->
+                                <th>Dep</th>
+                                <th>Total</th>
+                                <th>Arr</th>
+                                
+                                <th>T/O</th>
+                                <th>LDG</th>
                                 <th>P1</th>
                                 <th>P1(U/S)</th>
-                                <th>P2/P2X</th>
-                                <th>P/UT</th>
+                                <th>P2</th>
+                                <th>PUT</th>
                                 <th>P1</th>
                                 <th>P1(U/S)</th>
-                                <th>P2/P2X</th>
-                                <th>P/UT</th>
+                                <th>P2</th>
+                                <th>PUT</th>
                             </tr>
                         </thead>
                         <tbody>

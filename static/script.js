@@ -806,7 +806,7 @@ function renderLogbookTable() {
         <td></td>
         <td></td>
         <td></td>
-        <td style="text-align: center;">Totals brought forward</td>
+        <td colspan="3" style="text-align: center; font-weight: 700;">Totals brought forward</td>
         <td></td>
         <td></td>
         <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(1)</span>${fmt(bf.day_p1)}</td>
@@ -831,7 +831,7 @@ function renderLogbookTable() {
         if (entry.is_monthly_total) {
             tr.className = 'monthly-total-row';
             tr.innerHTML = `
-                <td colspan="9" style="text-align: left; padding-left: 20px;"><strong>${entry.date_str}</strong></td>
+                <td colspan="11" style="text-align: left; padding-left: 20px;"><strong>${entry.date_str}</strong></td>
                 <td>${fmt(entry.day_p1)}</td>
                 <td>${fmt(entry.day_p1us)}</td>
                 <td>${fmt(entry.day_p2)}</td>
@@ -845,6 +845,21 @@ function renderLogbookTable() {
                 <td></td>
             `;
         } else {
+            // Split route if possible, or handle GFS case
+            let route = entry.route || '';
+            let dep = '';
+            let arr = '';
+            if (entry.operator === 'GFS') {
+                dep = 'VHHH';
+                arr = 'VHHH';
+            } else if (route.includes(' ')) {
+                const parts = route.split(/\s+/);
+                dep = parts[0];
+                arr = parts[parts.length - 1];
+            } else {
+                dep = route;
+            }
+
             tr.innerHTML = `
                 <td>${entry.date_str || ''}</td>
                 <td>${entry.ac_type || ''}</td>
@@ -852,9 +867,14 @@ function renderLogbookTable() {
                 <td>${entry.pic || ''}</td>
                 <td>${entry.copilot || ''}</td>
                 <td>${entry.capacity || ''}</td>
-                <td>${entry.operator === 'GFS' ? 'VHHH VHHH' : (entry.route || '')}</td> <!-- Journey -->
-                <td style="text-align: center;">${entry.takeoff || ''}</td> <!-- Take-offs -->
-                <td style="text-align: center;">${entry.landing || ''}</td> <!-- Landings -->
+                
+                <td style="text-align: center;">${dep}</td>
+                <td style="text-align: center; color: #64748b; font-weight: 500;">${entry.total_time_str || ''}</td>
+                <td style="text-align: center;">${arr}</td>
+                
+                <td style="text-align: center;">${entry.takeoff || ''}</td>
+                <td style="text-align: center;">${entry.landing || ''}</td>
+                
                 <td>${fmt(entry.day_p1)}</td>
                 <td>${fmt(entry.day_p1us)}</td>
                 <td>${fmt(entry.day_p2)}</td>
@@ -882,7 +902,7 @@ function renderLogbookTable() {
         <td></td>
         <td></td>
         <td></td>
-        <td style="text-align: center;">Totals carried forward</td>
+        <td colspan="3" style="text-align: center; font-weight: 700;">Totals carried forward</td>
         <td></td>
         <td></td>
         <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(1)</span>${fmt(cf.day_p1)}</td>
