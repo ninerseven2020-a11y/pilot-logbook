@@ -120,10 +120,11 @@ class CAD407Logbook:
             print(f"[SMART ENGINE] Standard detection successful ({found_critical}/{len(critical_keys)} critical keys).")
             return standard_map
             
-        print(f"[SMART ENGINE] Standard detection low confidence ({found_critical}/4). Attempting LLM mapping...")
+        print(f"[SMART ENGINE] Confidence low ({found_critical}/4). Engaging LLM Brain with sample data...")
         try:
             llm_map = self.detect_columns_llm(df)
             if llm_map:
+                print(f"[SMART ENGINE] LLM Brain returned: {json.dumps(llm_map)}")
                 # Merge: Use LLM results to override/fill standard map
                 for k, v in llm_map.items():
                     if v in df.columns:
@@ -136,56 +137,36 @@ class CAD407Logbook:
 
     def detect_columns_llm(self, df):
         """
-        Uses an LLM to map Excel columns to internal keys.
+        Uses an LLM to map Excel columns to internal keys using headers and sample data.
         """
-        # Prepare sample data for the LLM
-        # We take the header and first 5 rows
-        sample_data = df.head(5).to_string()
+        sample_rows = df.head(5).to_dict(orient='records')
         columns_list = list(df.columns)
         
         prompt = f"""
-        You are an aviation logbook data expert. I have an Excel file with the following columns:
-        {columns_list}
+You are an aviation logbook data expert. Map the following Excel columns to our internal logbook keys.
+INTERNAL KEYS: {list(self.COLUMN_MAP.keys())}
+EXCEL COLUMNS: {columns_list}
 
-        Here is a sample of the data:
-        {sample_data}
+SAMPLE DATA (First 5 rows):
+{json.dumps(sample_rows, indent=2, default=str)}
 
-        Please map these columns to my internal keys:
-        - DEP: Flight Date / Month / Day
-        - FLT_SN: Flight Serial Number / S/N
-        - AC_TYPE: Aircraft Type / Model
-        - AC_REG: Aircraft Registration / Reg
-        - CAPTAIN: Pilot in Command / Captain name
-        - COPILOT: Co-pilot / Student name
-        - CAPACITY: Operating Capacity (P1, P2, P/UT, etc.)
-        - ROUTE: Route / From-To
-        - DAY_P1: Day P1 / PIC hours
-        - DAY_P1US: Day P1 (U/S) hours
-        - DAY_P2: Day P2 / SIC hours
-        - DAY_DUAL: Day Dual / P/UT hours
-        - NIGHT_P1: Night P1 / PIC hours
-        - NIGHT_P1US: Night P1 (U/S) hours
-        - NIGHT_P2: Night P2 / SIC hours
-        - NIGHT_DUAL: Night Dual / P/UT hours
-        - INSTRUMENT: Instrument Flying (IF) hours
-        - SIM_DAY: Simulator hours
-        - REMARKS: Remarks / Details
-        - ARR: Arrival time / Arrival airport
-        - TOTAL: Total flight hours
-
-        Return ONLY a JSON object where keys are my internal keys and values are the EXACT column names from the list above. 
-        If you are unsure or a column doesn't exist, omit it.
-        """
-
+RULES:
+1. Return ONLY a JSON object.
+2. Keys must be from the INTERNAL KEYS list.
+3. Values must be from the EXCEL COLUMNS list.
+4. Use the SAMPLE DATA to help identify columns (e.g. if a column 'D' contains aircraft registrations like 'B-LVZ', map it to 'AC_REG').
+5. If unsure, omit the key.
+6. Do not include any text, markdown blocks, or explanation.
+"""
         # 1. Try Gemini first (Production / Live App)
         api_key = os.getenv("GEMINI_API_KEY")
-        if api_key and HAS_GENAI:
+        if api_key:
             print("[SMART ENGINE] Using Google Gemini API...")
             try:
+                import google.generativeai as genai
                 genai.configure(api_key=api_key)
                 model = genai.GenerativeModel('gemini-1.5-flash')
                 response = model.generate_content(prompt)
-                # Extract JSON from response (handling potential markdown blocks)
                 text = response.text
                 if "```json" in text:
                     text = text.split("```json")[1].split("```")[0]
@@ -197,10 +178,11 @@ class CAD407Logbook:
 
         # 2. Try Local Ollama (Development / Aberdeen)
         ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        ollama_model = os.getenv("OLLAMA_MODEL", "gemma4")
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3")
         
         print(f"[SMART ENGINE] Attempting local Ollama ({ollama_model})...")
         try:
+            import requests
             response = requests.post(
                 f"{ollama_url}/api/generate",
                 json={
