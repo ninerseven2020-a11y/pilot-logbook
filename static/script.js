@@ -1229,17 +1229,21 @@ function handleLogout() {
 }
 
 function exportPDF() {
-    const currentPageIndex = parseInt(document.getElementById('page-select').value) || 0;
-    const currentPageNum = currentPageIndex + 1;
-    document.getElementById('pdf-current-page-num').innerText = currentPageNum;
+    const pageIndex = window.currentPageIndex || 0;
+    const currentPageNum = pageIndex + 1;
+    const maxPageNum = (window.allPages && window.allPages.length) ? window.allPages.length : currentPageNum;
+
+    const pageNumEl = document.getElementById('pdf-current-page-num');
+    if (pageNumEl) pageNumEl.innerText = currentPageNum;
     
-    // Default the custom range to current page or reasonable range
-    document.getElementById('pdf-start-page').value = currentPageNum;
-    const pageSelect = document.getElementById('page-select');
-    const maxPageNum = pageSelect.options.length;
-    document.getElementById('pdf-end-page').value = maxPageNum || currentPageNum;
+    const startPageInput = document.getElementById('pdf-start-page');
+    if (startPageInput) startPageInput.value = currentPageNum;
     
-    document.getElementById('pdf-modal').classList.add('show');
+    const endPageInput = document.getElementById('pdf-end-page');
+    if (endPageInput) endPageInput.value = maxPageNum;
+    
+    const modal = document.getElementById('pdf-modal');
+    if (modal) modal.classList.add('show');
 }
 
 function closePDFModal() {
@@ -1378,14 +1382,13 @@ function confirmExportPDF() {
     let start = 0;
     let end = 0;
 
-    const pageSelect = document.getElementById('page-select');
-    const maxPageCount = pageSelect.options.length;
+    const maxPageCount = (window.allPages && window.allPages.length) ? window.allPages.length : 1;
 
     if (rangeType === 'all') {
         start = 1;
         end = maxPageCount;
     } else if (rangeType === 'current') {
-        start = (parseInt(pageSelect.value) || 0) + 1;
+        start = (window.currentPageIndex || 0) + 1;
         end = start;
     } else {
         start = parseInt(document.getElementById('pdf-start-page').value) || 1;

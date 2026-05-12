@@ -710,18 +710,28 @@ header {
     .dashboard-grid, .dashboard-top-row {
         grid-template-columns: 1fr;
     }
+    header {
+        height: auto;
+        min-height: var(--header-height);
+    }
     .header-content {
         flex-direction: row;         /* Keep avatar + nav on ONE line */
-        flex-wrap: wrap;
+        flex-wrap: nowrap;           /* No wrapping to keep on one line */
         height: auto;
         padding: 0.6rem 0.75rem;
         gap: 0.5rem;
         align-items: center;
+        overflow: hidden;
     }
     .logo-section {
         flex: 1;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         min-width: 0;
+        display: flex;
+        align-items: center;
+    }
+    .user-menu-container {
+        flex-shrink: 0;
     }
     .nav-links {
         margin-left: 0.75rem;
