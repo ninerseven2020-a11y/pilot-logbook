@@ -4,6 +4,13 @@ import json
 import os
 from datetime import datetime, time
 import uuid
+try:
+    import google.generativeai as genai
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
+
+import requests
 
 class CAD407Logbook:
     def __init__(self, user_id=None, pilot_name="L CHIANG"):
@@ -44,8 +51,8 @@ class CAD407Logbook:
         defaults = {
             'DEP': ['DEP', 'DATE', 'DEPARTURE', 'FLIGHT DATE', 'UTC DATE', 'MONTH/DATE', 'MONTH', 'DAY', 'DEP TIME', 'DEP_TIME', 'DEPARTURE TIME'],
             'FLT_SN': ['FLT S/N', 'SERIAL', 'S/N', 'FLIGHT NO', 'FLT NO', 'FLIGHT SN', 'FLT_SN', 'FLIGHT ID', 'FLIGHT_ID'],
-            'AC_TYPE': ['AC TYPE', 'AIRCRAFT TYPE', 'TYPE', 'MODEL', 'A/C TYPE'],
-            'AC_REG': ['AC REG', 'REGISTRATION', 'REG', 'TAIL NO', 'AIRCRAFT REG', 'A/C REG', 'A/C_REG', 'REG NO', 'REGISTRATION NO'],
+            'AC_TYPE': ['AC TYPE', 'AIRCRAFT TYPE', 'TYPE', 'MODEL', 'A/C TYPE', 'AIRCRAFT MODEL'],
+            'AC_REG': ['AC REG', 'REGISTRATION', 'REG', 'TAIL NO', 'AIRCRAFT REG', 'A/C REG', 'A/C_REG', 'REG NO', 'REGISTRATION NO', 'REG.'],
             'CAPTAIN': ['CAPTAIN', 'PIC', 'COMMANDER', 'PILOT IN COMMAND', 'P1 NAME', 'PILOT-IN-COMMAND', 'CAPT'],
             'COPILOT': ['COPILOT', 'FO', 'CO-PILOT', 'SIC', 'P2 NAME', 'CO-PILOT OR STUDENT', 'COPILOT NAME'],
             'CAPACITY': ['OPERATING CAPACITY', 'CAPACITY', 'ROLE', 'FUNCTION', "HOLDER'S OPERATING CAPACITY"],
@@ -97,6 +104,120 @@ class CAD407Logbook:
         }
         with open(self.storage_file, "w") as f:
             json.dump(payload, f, default=encoder)
+
+    def detect_columns_smart(self, df):
+        """
+        Tries standard detection first. If low confidence, tries LLM.
+        """
+        # Get standard mapping
+        standard_map = self.detect_columns(df.columns)
+        
+        # Check if critical columns were found
+        critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
+        found_critical = sum(1 for k in critical_keys if k in standard_map and standard_map[k] in df.columns)
+        
+        if found_critical >= 3:
+            print(f"[SMART ENGINE] Standard detection successful ({found_critical}/{len(critical_keys)} critical keys).")
+            return standard_map
+            
+        print(f"[SMART ENGINE] Standard detection low confidence ({found_critical}/4). Attempting LLM mapping...")
+        try:
+            llm_map = self.detect_columns_llm(df)
+            if llm_map:
+                # Merge: Use LLM results to override/fill standard map
+                for k, v in llm_map.items():
+                    if v in df.columns:
+                        standard_map[k] = v
+                return standard_map
+        except Exception as e:
+            print(f"[SMART ENGINE] LLM mapping error: {e}")
+            
+        return standard_map
+
+    def detect_columns_llm(self, df):
+        """
+        Uses an LLM to map Excel columns to internal keys.
+        """
+        # Prepare sample data for the LLM
+        # We take the header and first 5 rows
+        sample_data = df.head(5).to_string()
+        columns_list = list(df.columns)
+        
+        prompt = f"""
+        You are an aviation logbook data expert. I have an Excel file with the following columns:
+        {columns_list}
+
+        Here is a sample of the data:
+        {sample_data}
+
+        Please map these columns to my internal keys:
+        - DEP: Flight Date / Month / Day
+        - FLT_SN: Flight Serial Number / S/N
+        - AC_TYPE: Aircraft Type / Model
+        - AC_REG: Aircraft Registration / Reg
+        - CAPTAIN: Pilot in Command / Captain name
+        - COPILOT: Co-pilot / Student name
+        - CAPACITY: Operating Capacity (P1, P2, P/UT, etc.)
+        - ROUTE: Route / From-To
+        - DAY_P1: Day P1 / PIC hours
+        - DAY_P1US: Day P1 (U/S) hours
+        - DAY_P2: Day P2 / SIC hours
+        - DAY_DUAL: Day Dual / P/UT hours
+        - NIGHT_P1: Night P1 / PIC hours
+        - NIGHT_P1US: Night P1 (U/S) hours
+        - NIGHT_P2: Night P2 / SIC hours
+        - NIGHT_DUAL: Night Dual / P/UT hours
+        - INSTRUMENT: Instrument Flying (IF) hours
+        - SIM_DAY: Simulator hours
+        - REMARKS: Remarks / Details
+        - ARR: Arrival time / Arrival airport
+        - TOTAL: Total flight hours
+
+        Return ONLY a JSON object where keys are my internal keys and values are the EXACT column names from the list above. 
+        If you are unsure or a column doesn't exist, omit it.
+        """
+
+        # 1. Try Gemini first (Production / Live App)
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key and HAS_GENAI:
+            print("[SMART ENGINE] Using Google Gemini API...")
+            try:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(prompt)
+                # Extract JSON from response (handling potential markdown blocks)
+                text = response.text
+                if "```json" in text:
+                    text = text.split("```json")[1].split("```")[0]
+                elif "```" in text:
+                    text = text.split("```")[1].split("```")[0]
+                return json.loads(text.strip())
+            except Exception as e:
+                print(f"[SMART ENGINE] Gemini error: {e}")
+
+        # 2. Try Local Ollama (Development / Aberdeen)
+        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        ollama_model = os.getenv("OLLAMA_MODEL", "gemma4")
+        
+        print(f"[SMART ENGINE] Attempting local Ollama ({ollama_model})...")
+        try:
+            response = requests.post(
+                f"{ollama_url}/api/generate",
+                json={
+                    "model": ollama_model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": "json"
+                },
+                timeout=30
+            )
+            if response.status_code == 200:
+                result = response.json()
+                return json.loads(result.get('response', '{}'))
+        except Exception as e:
+            print(f"[SMART ENGINE] Ollama error: {e}")
+
+        return None
 
     def load_data(self):
         """Loads history and profile from JSON."""
@@ -440,9 +561,9 @@ class CAD407Logbook:
                     match_found = True
                     break
             
-            # Default to the first synonym (original name) if nothing found
+            # Default to None if nothing found (don't guess, let SMART engine handle it)
             if not match_found:
-                detected_map[key] = synonyms[0]
+                detected_map[key] = None
                 
         return detected_map
 
