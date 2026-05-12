@@ -1,3 +1,17 @@
+import subprocess
+import sys
+
+# Auto-install missing dependencies (Self-Repair)
+try:
+    import calamine
+except ImportError:
+    print("[SYSTEM] python-calamine is missing. Attempting auto-install...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-calamine"])
+        print("[SYSTEM] python-calamine installed successfully!")
+    except Exception as e:
+        print(f"[SYSTEM] Auto-install failed: {e}")
+
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status, Response, Request, Query
 from contextlib import asynccontextmanager
 
