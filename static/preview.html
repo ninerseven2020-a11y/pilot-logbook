@@ -309,8 +309,14 @@
                 <button class="btn-close" onclick="closeSyncModal()">&times;</button>
             </div>
             
+            <style>
+                .form-row-tri { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+                .form-row-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+                .form-row-quad { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+            </style>
+
             <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-row-split">
                     <div class="form-group">
                         <label>Sync Date (Effective Date)</label>
                         <input type="date" id="sync-date" style="color-scheme: dark;">
@@ -359,9 +365,10 @@
 
 
     <!-- Version Indicator -->
-    <div class="version-label">v1.2.13</div>
+    <div class="version-label">v1.2.14</div>
 
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script src="static/script.js?v=1.2.13"></script>
+    <script>const APP_VERSION = "1.2.14";</script>
+    <script src="static/script.js?v=1.2.14"></script>
 </body>
 </html>
