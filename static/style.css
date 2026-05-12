@@ -1235,17 +1235,13 @@ header {
 
 body {
     padding-top: 60px; /* Offset for fixed header */
-    padding-bottom: 70px; /* Offset for fixed bottom nav */
-    height: 100vh;
-    overflow: hidden; /* Lock the main page from scrolling */
-    display: flex;
-    flex-direction: column;
+    padding-bottom: 70px; /* Offset for fixed bottom nav on mobile */
+    min-height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal page-level scroll */
 }
 
 .main-content {
-    flex: 1;
-    overflow-y: auto; /* Independent vertical scroll for content */
-    -webkit-overflow-scrolling: touch;
+    padding: 1.5rem;
 }
 
 .page-input-group {
