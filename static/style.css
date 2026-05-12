@@ -462,6 +462,17 @@ body[data-page="preview"] .container {
     max-width: 1800px;
 }
 
+body[data-page="manage"] .container {
+    max-width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+body[data-page="manage"] .header-content {
+    max-width: 100%;
+    padding: 0 1.5rem;
+}
+
 /* Header Styling */
 header {
     height: var(--header-height);
