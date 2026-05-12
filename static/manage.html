@@ -35,33 +35,40 @@
         }
 
 
+
+        /* Previous Experience - outer glass card (matches history section) */
         .opening-totals-card {
-            overflow: auto;
-            max-height: 400px;
-            border-radius: 12px;
+            padding: 0.75rem 1.25rem 1.25rem 1.25rem !important;
             width: 100%;
-            scrollbar-width: auto; /* Use standard scrollbars for better visibility */
-            scrollbar-color: var(--accent-color) rgba(255, 255, 255, 0.05);
         }
 
-        /* Force scrollbars to be more visible, especially on Mac */
-        .opening-totals-card::-webkit-scrollbar, 
+        /* Previous Experience - inner scrollable table wrapper (matches #history-table-wrapper) */
+        .opening-table-wrapper {
+            overflow: auto;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        /* Shared scrollbar styling for both table wrappers */
+        .opening-table-wrapper::-webkit-scrollbar,
         #history-table-wrapper::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             display: block;
         }
 
-        .opening-totals-card::-webkit-scrollbar-thumb,
+        .opening-table-wrapper::-webkit-scrollbar-thumb,
         #history-table-wrapper::-webkit-scrollbar-thumb {
-            background: rgba(245, 158, 11, 0.4); /* Use accent color with transparency */
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 10px;
-            border: 2px solid #1a1b1e;
         }
 
-        .opening-totals-card::-webkit-scrollbar-track,
+        .opening-table-wrapper::-webkit-scrollbar-track,
         #history-table-wrapper::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
+            background: transparent;
             border-radius: 10px;
         }
 
@@ -521,54 +528,56 @@
                     </h2>
                     <p class="text-muted">Add summaries of your past flying experience by aircraft type.</p>
                 </div>
-                <div class="table-card glass opening-totals-card">
+                <div class="glass opening-totals-card">
                     <form id="opening-totals-form" onsubmit="handleOpeningTotalsSubmit(event)">
-                        <table class="nested-header-table">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2">Year</th>
-                                    <th rowspan="2">Type</th>
-                                    <th colspan="4" class="header-day">Day</th>
-                                    <th colspan="4" class="header-night">Night</th>
-                                    <th rowspan="2">IF</th>
-                                    <th colspan="2" class="header-sim">Sim</th>
-                                    <th rowspan="2">Operator</th>
-                                    <th rowspan="2">Label</th>
-                                </tr>
-                                <tr>
-                                    <th>P1</th>
-                                    <th>P1(U/S)</th>
-                                    <th>P2/P2X</th>
-                                    <th>P/UT</th>
-                                    <th>P1</th>
-                                    <th>P1(U/S)</th>
-                                    <th>P2/P2X</th>
-                                    <th>P/UT</th>
-                                    <th>Day</th>
-                                    <th>Night</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="number" id="open-year" placeholder="2019" style="width: 70px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem;" required></td>
-                                    <td><input type="text" id="open-ac-type" placeholder="e.g. C172" required></td>
-                                    <td><input type="text" class="smart-decimal" id="open-day-p1" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-day-p1us" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-day-p2" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-day-put" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-night-p1" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-night-p1us" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-night-p2" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-night-put" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-inst" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-sim-day" value="0.0"></td>
-                                    <td><input type="text" class="smart-decimal" id="open-sim-night" value="0.0"></td>
-                                    <td><input type="text" id="open-operator" placeholder="e.g. NHV" list="edit-operator-list"></td>
-                                    <td><input type="text" id="open-remarks" placeholder="e.g. PPEP" list="edit-label-list"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div style="display:flex; justify-content:flex-end; margin-top: 1.5rem;">
+                        <div class="opening-table-wrapper">
+                            <table class="nested-header-table">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">Year</th>
+                                        <th rowspan="2">Type</th>
+                                        <th colspan="4" class="header-day">Day</th>
+                                        <th colspan="4" class="header-night">Night</th>
+                                        <th rowspan="2">IF</th>
+                                        <th colspan="2" class="header-sim">Sim</th>
+                                        <th rowspan="2">Operator</th>
+                                        <th rowspan="2">Label</th>
+                                    </tr>
+                                    <tr>
+                                        <th>P1</th>
+                                        <th>P1(U/S)</th>
+                                        <th>P2/P2X</th>
+                                        <th>P/UT</th>
+                                        <th>P1</th>
+                                        <th>P1(U/S)</th>
+                                        <th>P2/P2X</th>
+                                        <th>P/UT</th>
+                                        <th>Day</th>
+                                        <th>Night</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="number" id="open-year" placeholder="2019" style="width: 70px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem;" required></td>
+                                        <td><input type="text" id="open-ac-type" placeholder="e.g. C172" required></td>
+                                        <td><input type="text" class="smart-decimal" id="open-day-p1" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-day-p1us" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-day-p2" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-day-put" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-night-p1" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-night-p1us" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-night-p2" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-night-put" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-inst" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-sim-day" value="0.0"></td>
+                                        <td><input type="text" class="smart-decimal" id="open-sim-night" value="0.0"></td>
+                                        <td><input type="text" id="open-operator" placeholder="e.g. NHV" list="edit-operator-list"></td>
+                                        <td><input type="text" id="open-remarks" placeholder="e.g. PPEP" list="edit-label-list"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; margin-top: 1rem;">
                             <button type="submit" class="btn btn-primary">Add Entry</button>
                         </div>
                     </form>
