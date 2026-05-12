@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Manage Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.47">
+    <link rel="stylesheet" href="static/style.css?v=1.2.48">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -598,10 +598,13 @@
                 </div>
 
                 <div class="glass" style="padding: 0.75rem 1.25rem 1.25rem 1.25rem;">
-                    <div class="filter-bar" style="margin-bottom: 1.25rem; padding-top: 0; display: flex; gap: 0.75rem; align-items: center; justify-content: flex-end;">
+                    <div class="filter-bar" style="margin-bottom: 1.25rem; padding-top: 0; display: flex; gap: 0.75rem; align-items: center;">
+                        <div class="search-box" style="flex-grow: 1;">
+                            <input type="text" id="history-search" placeholder="Search records..." onkeyup="filterHistory()" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 7px 12px; color: white; font-size: 0.85rem;">
+                        </div>
                         <button class="btn btn-secondary btn-sm" onclick="openFilterModal()" style="height: 34px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0 1rem; font-size: 0.8rem;">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                            Advanced Filter
+                            Filter
                         </button>
                         <button class="btn btn-secondary btn-sm" onclick="exportToExcel()" style="height: 34px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0 1rem; font-size: 0.8rem;">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -951,8 +954,8 @@
         </div>
     </div>
 
-    <div class="version-label">v1.2.47</div>
-    <script src="static/script.js?v=1.2.47"></script>
-    <script src="static/manage.js?v=1.2.47"></script>
+    <div class="version-label">v1.2.48</div>
+    <script src="static/script.js?v=1.2.48"></script>
+    <script src="static/manage.js?v=1.2.48"></script>
 </body>
 </html>
