@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+APP_VERSION = "1.2.0"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -848,6 +849,7 @@ async def import_excel(
     label: str = Form("Default"),
     confirm_year: bool = Form(False),
     confirm_mapping: bool = Form(False),
+    custom_mapping_raw: Optional[str] = Form(None),
     # Manual entry fields
     date: Optional[str] = Form(None),
     ac_type: Optional[str] = Form(None),
@@ -987,17 +989,28 @@ async def import_excel(
                 df = pd.DataFrame(data[header_row_index+1:], columns=headers)
                 df = df.dropna(how='all')
                 
-                # SMART detection with confirmation check
-                col_map, needs_confirmation = logbook.detect_columns_smart(df)
+                # Handle confirmation and custom mapping
+                custom_mapping_raw = Form(None)
+                if custom_mapping_raw:
+                    try:
+                        col_map = json.loads(custom_mapping_raw)
+                        needs_confirmation = False
+                        print(f"[IMPORT] Using user-provided custom mapping: {col_map}")
+                    except:
+                        pass
+                else:
+                    col_map, needs_confirmation = logbook.detect_columns_smart(df)
                 
                 # If AI was used and user hasn't confirmed yet, PAUSE and ask
                 if needs_confirmation and not confirm_mapping:
                     return JSONResponse(
-                        status_code=422, # Unprocessable Entity - needs user input
+                        status_code=422,
                         content={
                             "requires_mapping_confirmation": True,
                             "proposed_mapping": col_map,
-                            "message": "The system is not 100% sure about your Excel columns. Please confirm the mapping below before we proceed."
+                            "all_columns": df.columns.tolist(),
+                            "ai_used": True,
+                            "message": "The system used AI to analyze your Excel data patterns. Please verify the mappings below."
                         }
                     )
                 

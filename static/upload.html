@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=3">
+    <link rel="stylesheet" href="static/style.css?v=1.2.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,17 +13,6 @@
     <header>
         <div class="header-content">
             <div class="logo-section">
-                <div class="logo">
-                    <h1>Logbook</h1>
-                </div>
-                <nav class="nav-links">
-                    <a href="/dashboard" class="nav-item">Dashboard</a>
-                    <a href="/preview" class="nav-item">Logbook</a>
-                    <a href="/upload" class="nav-item active">Upload</a>
-                    <a href="/manage" class="nav-item">Manage</a>
-                </nav>
-            </div>
-            <div class="actions">
                 <div class="user-menu-container">
                     <button class="user-icon-btn" id="user-icon-btn" onclick="toggleProfilePopover()" title="My Profile">
                         <span id="user-avatar-initial">?</span>
@@ -49,6 +38,15 @@
                         </button>
                     </div>
                 </div>
+                <nav class="nav-links">
+                    <a href="/dashboard" class="nav-item">Dashboard</a>
+                    <a href="/preview" class="nav-item">Logbook</a>
+                    <a href="/upload" class="nav-item active">Upload</a>
+                    <a href="/manage" class="nav-item">Manage</a>
+                </nav>
+            </div>
+            <div class="actions">
+                <!-- Profile moved to left -->
             </div>
         </div>
     </header>
@@ -300,15 +298,25 @@
     <!-- Mapping Confirmation Modal -->
     <div id="mapping-modal" class="modal">
         <div class="modal-content glass" style="max-width: 500px;">
-            <div class="flex-between" style="margin-bottom: 1.5rem;">
+            <div class="flex-between" style="margin-bottom: 0.5rem;">
                 <h2>Confirm Excel Mapping</h2>
+                <div id="ai-status-badge" style="display: none; background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.2);">AI BRAIN ACTIVE</div>
                 <button class="btn-close" onclick="closeMappingModal()">&times;</button>
             </div>
             <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
                 The AI scanned your Excel and found these column matches. Please verify if they are correct.
             </p>
-            <div id="mapping-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+            <div id="mapping-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
                 <!-- Filled by JS -->
+            </div>
+
+            <!-- AI Instruction Box (The "Help Me AI" section) -->
+            <div class="ai-assistant-mini" style="background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.3); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <label style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">AI Mapping Assistant</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="ai-modal-instruction" placeholder="e.g. 'Use column D for Total Time'..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px; border-radius: 4px; font-size: 0.8rem;">
+                    <button type="button" class="btn btn-sm btn-accent" onclick="reMapWithAI()" style="padding: 4px 12px; font-size: 0.75rem;">Apply</button>
+                </div>
             </div>
             <div class="form-actions" style="text-align: right;">
                 <button type="button" class="btn btn-secondary" onclick="closeMappingModal()" style="margin-right: 0.5rem;">Cancel</button>
@@ -318,6 +326,29 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <script src="static/script.js?v=6"></script>
+
+    <!-- Bottom Navigation for Mobile -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Dash</span>
+        </a>
+        <a href="/preview" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Logbook</span>
+        </a>
+        <a href="/upload" class="nav-item-mobile active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Upload</span>
+        </a>
+        <a href="/manage" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Manage</span>
+        </a>
+    </nav>
+    <!-- Version Indicator -->
+    <div class="version-label">v1.2.0</div>
+
+    <script src="static/script.js?v=1.2.0"></script>
 </body>
 </html>

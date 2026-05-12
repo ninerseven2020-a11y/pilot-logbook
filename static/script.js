@@ -1740,8 +1740,8 @@ async function handleAdvancedUpload(event) {
         if (response.status === 422) {
             const result = await response.json();
             if (result.requires_mapping_confirmation) {
-                showMappingModal(result.proposed_mapping);
-                return; // Stop here, modal will resume
+                showMappingModal(result.proposed_mapping, result.all_columns, result.ai_used);
+                return; 
             }
         }
 
@@ -2069,18 +2069,24 @@ function checkGuide() {
     }
 }
 
-function showMappingModal(mapping) {
+let currentExcelColumns = [];
+
+function showMappingModal(mapping, allColumns = [], aiUsed = false) {
+    currentExcelColumns = allColumns; // Store for re-mapping
     const modal = document.getElementById('mapping-modal');
     const list = document.getElementById('mapping-list');
+    const aiBadge = document.getElementById('ai-status-badge');
     list.innerHTML = '';
+    
+    if (aiBadge) aiBadge.style.display = aiUsed ? 'block' : 'none';
     
     // Core fields to show/confirm
     const coreFields = {
-        'DEP': 'Date',
+        'DEP': 'Flight Date',
         'FLT_SN': 'Flight S/N',
         'AC_TYPE': 'Aircraft Type',
         'AC_REG': 'Aircraft Reg',
-        'TOTAL': 'Total Hours',
+        'TOTAL': 'Total Time',
         'ROUTE': 'Route',
         'CAPTAIN': 'PIC Name',
         'COPILOT': 'Copilot Name',
@@ -2090,20 +2096,29 @@ function showMappingModal(mapping) {
     
     Object.entries(coreFields).forEach(([key, label]) => {
         const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.marginBottom = '0.5rem';
-        row.style.padding = '0.5rem';
-        row.style.background = 'rgba(255,255,255,0.05)';
-        row.style.borderRadius = '4px';
+        row.style.marginBottom = '1rem';
+        row.style.padding = '0.75rem';
+        row.style.background = 'rgba(255,255,255,0.03)';
+        row.style.borderRadius = '8px';
+        row.style.border = '1px solid rgba(255,255,255,0.05)';
         
-        const colVal = mapping[key] || "--- NOT FOUND ---";
-        const isMissing = !mapping[key];
+        const colVal = mapping[key] || "";
         
+        // Create select dropdown
+        let optionsHtml = `<option value="">--- NOT FOUND ---</option>`;
+        allColumns.forEach(col => {
+            const selected = col === colVal ? 'selected' : '';
+            optionsHtml += `<option value="${col}" ${selected}>${col}</option>`;
+        });
+
         row.innerHTML = `
-            <span style="font-weight: 600; font-size: 0.8rem;">${label}</span>
-            <span style="color: ${isMissing ? '#ef4444' : '#38bdf8'}; font-family: monospace;">${colVal}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: var(--accent-color);">${label}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-style: italic;">${colVal ? 'AI Matched' : 'Missing'}</span>
+            </div>
+            <select class="mapping-select" data-key="${key}" style="width: 100%; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px; font-size: 0.85rem;">
+                ${optionsHtml}
+            </select>
         `;
         list.appendChild(row);
     });
@@ -2111,20 +2126,58 @@ function showMappingModal(mapping) {
     modal.classList.add('show');
 }
 
+async function reMapWithAI() {
+    const instruction = document.getElementById('ai-modal-instruction').value;
+    if (!instruction) return;
+    
+    showToast("AI is analyzing your instruction...");
+    
+    try {
+        const response = await apiFetch('/api/synonyms/ai', {
+            method: 'POST',
+            body: JSON.stringify({ instruction: instruction })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            // We need to re-detect columns with the updated synonyms
+            // For now, we can just let the AI tell us the mapping directly or suggest new ones
+            showToast("Mapping rules updated! Re-scanning columns...");
+            
+            // Re-trigger the modal with the same columns but potentially new mapping
+            // Note: Ideally the /api/synonyms/ai would also return the new mapping for currentExcelColumns
+            // But for now, we'll just inform the user to try uploading again or manually select
+            showToast("Synonyms updated. Please manually select or try uploading again for auto-match.");
+        } else {
+            showToast("AI could not process instruction", true);
+        }
+    } catch (e) {
+        showToast("Error re-mapping", true);
+    }
+}
+
 function closeMappingModal() {
     document.getElementById('mapping-modal').classList.remove('show');
 }
 
 async function confirmMapping() {
+    // Gather custom mapping from dropdowns
+    const selects = document.querySelectorAll('.mapping-select');
+    const customMapping = {};
+    selects.forEach(s => {
+        customMapping[s.dataset.key] = s.value;
+    });
+
     closeMappingModal();
-    // Re-trigger upload with confirm_mapping flag
+    
     const form = document.getElementById('upload-form');
     const formData = new FormData(form);
     
     formData.append('confirm_mapping', 'true');
+    formData.append('custom_mapping_raw', JSON.stringify(customMapping));
+    
     showToast("Finalizing import with confirmed mapping...");
     
-    // Call the same handleAdvancedUpload logic or reuse the code
     const fileInput = document.getElementById('excel-file');
     if (fileInput.files[0]) {
         formData.append('file', fileInput.files[0]);

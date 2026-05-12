@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=4">
+    <link rel="stylesheet" href="static/style.css?v=1.2.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -297,17 +297,6 @@
     <header>
         <div class="header-content">
             <div class="logo-section">
-                <div class="logo">
-                    <h1>Logbook</h1>
-                </div>
-                <nav class="nav-links">
-                    <a href="/dashboard" class="nav-item">Dashboard</a>
-                    <a href="/preview" class="nav-item">Logbook</a>
-                    <a href="/upload" class="nav-item">Upload</a>
-                    <a href="/manage" class="nav-item active">Manage</a>
-                </nav>
-            </div>
-            <div class="actions">
                 <div class="user-menu-container">
                     <button class="user-icon-btn" id="user-icon-btn" onclick="toggleProfilePopover()" title="My Profile">
                         <span id="user-avatar-initial">?</span>
@@ -333,6 +322,15 @@
                         </button>
                     </div>
                 </div>
+                <nav class="nav-links">
+                    <a href="/dashboard" class="nav-item">Dashboard</a>
+                    <a href="/preview" class="nav-item">Logbook</a>
+                    <a href="/upload" class="nav-item">Upload</a>
+                    <a href="/manage" class="nav-item active">Manage</a>
+                </nav>
+            </div>
+            <div class="actions">
+                <!-- Profile moved to left -->
             </div>
         </div>
     </header>
@@ -513,41 +511,8 @@
                         </table>
                     </div>
                 </div>
-            <!-- AI Header Mapping Assistant (Simplified) -->
-            <section class="card glass" id="synonym-settings" style="margin-top: 2rem; border-top: 2px solid var(--accent-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <div>
-                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            AI Mapping Assistant
-                        </h2>
-                        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
-                            Tell the engine how to map your Excel headers if it gets confused.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="ai-mapping-container glass" style="background: rgba(255,255,255,0.03); padding: 1.5rem;">
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; display: block; opacity: 0.7;">Natural Language Instruction</label>
-                        <textarea id="ai-mapping-input" placeholder="e.g. 'The column called Pilot Name is actually the PIC' or 'The column No. of TO means Takeoffs'" 
-                                  style="width: 100%; min-height: 80px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 1rem; font-family: inherit; font-size: 0.95rem; resize: none;"></textarea>
-                    </div>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button class="btn btn-primary" onclick="handleAiMapping()">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                            Ask AI to Update Mapping
-                        </button>
-                    </div>
-                </div>
-
-                <div id="mapping-summary" style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); display: none;">
-                    <!-- Filled by JS after AI update -->
-                </div>
-            </section>
             
             <!-- Data Migration (JSON Backup/Restore) -->
-            </section>
             
         </div>
     </main>
@@ -786,8 +751,29 @@
             </div>
         </div>
     </div>
+    <!-- Bottom Navigation for Mobile -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Dash</span>
+        </a>
+        <a href="/preview" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Logbook</span>
+        </a>
+        <a href="/upload" class="nav-item-mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Upload</span>
+        </a>
+        <a href="/manage" class="nav-item-mobile active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Manage</span>
+        </a>
+    </nav>
+    <!-- Version Indicator -->
+    <div class="version-label">v1.2.0</div>
 
-    <script src="static/script.js?v=7"></script>
-    <script src="static/manage.js?v=4"></script>
+    <script src="static/script.js?v=1.2.0"></script>
+    <script src="static/manage.js?v=1.2.0"></script>
 </body>
 </html>
