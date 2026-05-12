@@ -800,26 +800,21 @@ function renderLogbookTable() {
     const bfTr = document.createElement('tr');
     bfTr.className = 'totals-row brought-forward';
     bfTr.innerHTML = `
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td colspan="3" style="text-align: center; font-weight: 700;">Totals brought forward</td>
-        <td></td>
-        <td></td>
-        <td style="text-align: center;">${fmt(bf.day_p1)}</td>
-        <td style="text-align: center;">${fmt(bf.day_p1us)}</td>
-        <td style="text-align: center;">${fmt(bf.day_p2)}</td>
-        <td style="text-align: center;">${fmt(bf.day_dual)}</td>
-        <td style="text-align: center;">${fmt(bf.night_p1)}</td>
-        <td style="text-align: center;">${fmt(bf.night_p1us)}</td>
-        <td style="text-align: center;">${fmt(bf.night_p2)}</td>
-        <td style="text-align: center;">${fmt(bf.night_dual)}</td>
-        <td>${fmt(bf.inst_flying)}</td>
-        <td>${fmt(bf.sim_time)}</td>
-        <td></td>
+        <td></td><td></td><td></td><td></td><td></td><td></td>
+        <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals brought forward</td>
+        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_dual)}</td>
+        <td style="border: 1px solid #94a3b8;">${fmt(bf.inst_flying)}</td>
+        <td style="border: 1px solid #94a3b8;">${fmt(bf.sim_time)}</td>
+        <td style="border: 1px solid #94a3b8;"></td>
     `;
     tableBody.appendChild(bfTr);
 
@@ -831,18 +826,18 @@ function renderLogbookTable() {
         if (entry.is_monthly_total) {
             tr.className = 'monthly-total-row';
             tr.innerHTML = `
-                <td colspan="11" style="text-align: left; padding-left: 20px;"><strong>${entry.date_str}</strong></td>
-                <td>${fmt(entry.day_p1)}</td>
-                <td>${fmt(entry.day_p1us)}</td>
-                <td>${fmt(entry.day_p2)}</td>
-                <td>${fmt(entry.day_dual)}</td>
-                <td>${fmt(entry.night_p1)}</td>
-                <td>${fmt(entry.night_p1us)}</td>
-                <td>${fmt(entry.night_p2)}</td>
-                <td>${fmt(entry.night_dual)}</td>
-                <td>${fmt(entry.inst_flying)}</td>
-                <td>${fmt(entry.sim_time)}</td>
-                <td></td>
+                <td colspan="11" style="text-align: left; padding-left: 20px; border: 1px solid #94a3b8;"><strong>${entry.date_str}</strong></td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1us)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p2)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.day_dual)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p1)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p1us)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p2)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.night_dual)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.inst_flying)}</td>
+                <td style="border: 1px solid #94a3b8;">${fmt(entry.sim_time)}</td>
+                <td style="border: 1px solid #94a3b8;"></td>
             `;
         } else {
             // Split route if possible, or handle GFS case
@@ -896,26 +891,21 @@ function renderLogbookTable() {
     const cfTr = document.createElement('tr');
     cfTr.className = 'totals-row carried-forward';
     cfTr.innerHTML = `
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td colspan="3" style="text-align: center; font-weight: 700;">Totals carried forward</td>
-        <td></td>
-        <td></td>
-        <td style="text-align: center;">${fmt(cf.day_p1)}</td>
-        <td style="text-align: center;">${fmt(cf.day_p1us)}</td>
-        <td style="text-align: center;">${fmt(cf.day_p2)}</td>
-        <td style="text-align: center;">${fmt(cf.day_dual)}</td>
-        <td style="text-align: center;">${fmt(cf.night_p1)}</td>
-        <td style="text-align: center;">${fmt(cf.night_p1us)}</td>
-        <td style="text-align: center;">${fmt(cf.night_p2)}</td>
-        <td style="text-align: center;">${fmt(cf.night_dual)}</td>
-        <td>${fmt(cf.inst_flying)}</td>
-        <td>${fmt(cf.sim_time)}</td>
-        <td></td>
+        <td></td><td></td><td></td><td></td><td></td><td></td>
+        <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals carried forward</td>
+        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_dual)}</td>
+        <td style="border: 1px solid #94a3b8;">${fmt(cf.inst_flying)}</td>
+        <td style="border: 1px solid #94a3b8;">${fmt(cf.sim_time)}</td>
+        <td style="border: 1px solid #94a3b8;"></td>
     `;
     tableBody.appendChild(cfTr);
     
