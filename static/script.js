@@ -840,19 +840,14 @@ function renderLogbookTable() {
                 <td style="border: 1px solid #94a3b8;"></td>
             `;
         } else {
-            // Split route if possible, or handle GFS case
-            let route = entry.route || '';
-            let dep = '';
-            let arr = '';
-            if (entry.operator === 'GFS') {
-                dep = 'VHHH';
-                arr = 'VHHH';
-            } else if (route.includes(' ')) {
-                const parts = route.split(/\s+/);
-                dep = parts[0];
-                arr = parts[parts.length - 1];
+            // Use full route for non-GFS flights, otherwise just start/end
+            let displayRoute = '';
+            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS');
+            
+            if (isGfs) {
+                displayRoute = `${entry.dep || ''} ${entry.arr || ''}`;
             } else {
-                dep = route;
+                displayRoute = entry.route || `${entry.dep || ''} ${entry.arr || ''}`;
             }
 
             tr.innerHTML = `
@@ -863,7 +858,7 @@ function renderLogbookTable() {
                 <td>${entry.copilot || ''}</td>
                 <td>${entry.capacity || ''}</td>
                 
-                <td colspan="3" style="text-align: center;">${dep} ${entry.total_time_str || ''} ${arr}</td>
+                <td colspan="3" style="text-align: center;">${displayRoute}</td>
                 
                 <td style="text-align: center;">${entry.takeoff || ''}</td>
                 <td style="text-align: center;">${entry.landing || ''}</td>
@@ -1431,11 +1426,8 @@ function renderLogbookPageToHTML(pageData) {
                 </tr>
             `;
         } else {
-            let route = entry.route || '';
-            let dep = '', arr = '';
-            if (entry.operator === 'GFS') { dep = 'VHHH'; arr = 'VHHH'; }
-            else if (route.includes(' ')) { const p = route.split(/\s+/); dep = p[0]; arr = p[p.length-1]; }
-            else { dep = route; }
+            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS');
+            let displayRoute = isGfs ? `${entry.dep || ''} ${entry.arr || ''}` : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
 
             rowsHtml += `
                 <tr style="height: 38px;">
@@ -1445,7 +1437,7 @@ function renderLogbookPageToHTML(pageData) {
                     <td style="border: 1px solid #94a3b8;">${entry.pic || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${entry.copilot || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${entry.capacity || ''}</td>
-                    <td colspan="3" style="border: 1px solid #94a3b8; text-align: center;">${dep} ${entry.total_time_str || ''} ${arr}</td>
+                    <td colspan="3" style="border: 1px solid #94a3b8; text-align: center;">${displayRoute}</td>
                     <td style="border: 1px solid #94a3b8; text-align: center;">${entry.takeoff || ''}</td>
                     <td style="border: 1px solid #94a3b8; text-align: center;">${entry.landing || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1)}</td>
