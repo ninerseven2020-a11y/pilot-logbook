@@ -1427,6 +1427,17 @@ body {
     align-items: center;
 }
 
+/* Header Row Height Adjustments */
+.cad407-table thead tr.header-main,
+.cad407-table thead tr.header-sub {
+    height: 35px;
+}
+
+.cad407-table thead th {
+    padding: 4px 2px !important;
+    vertical-align: middle;
+}
+
 /* Monthly Summary Row Styling */
 .cad407-table tr.monthly-total-row {
     background-color: #dbeafe !important; /* Light blue for monthly totals */

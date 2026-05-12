@@ -1493,7 +1493,7 @@ function renderLogbookPageToHTML(pageData) {
                     <col style="width: 65px;"> <col style="width: 65px;"> <col style="width: 200px;">
                 </colgroup>
                 <thead>
-                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700; height: 35px;">
                         <th id="current-year" style="border: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; font-weight: 700;">Year / ${pageData.year || '----'}</th>
                         <th colspan="2" style="border: 1px solid #94a3b8;">Aircraft / Simulator</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Pilot-In-Command</th>
@@ -1507,7 +1507,7 @@ function renderLogbookPageToHTML(pageData) {
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Simulator Time</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Remarks</th>
                     </tr>
-                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700; height: 35px;">
                         <th rowspan="2" style="border: 1px solid #94a3b8; border-top: none;">Month / Date</th>
                         <th rowspan="2" style="border: 1px solid #94a3b8;">Type</th>
                         <th rowspan="2" style="border: 1px solid #94a3b8;">Registration</th>
