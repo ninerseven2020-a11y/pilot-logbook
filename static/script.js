@@ -1486,13 +1486,13 @@ function renderLogbookPageToHTML(pageData) {
     return `
         <div class="pdf-page-wrapper" style="padding: 30px; background: white; color: #1e293b; font-family: 'Inter', sans-serif; min-height: 1000px; page-break-after: always; width: 1650px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
-                <h2 style="font-size: 1.25rem; color: #1e293b; margin: 0; font-weight: 800; letter-spacing: -0.01em;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK</h2>
+                <h2 style="font-size: 1.25rem; color: #1e293b; margin: 0; font-weight: 800; letter-spacing: -0.01em;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK (v1.2.69)</h2>
                 <div style="font-weight: 800; font-size: 1.2rem; color: #1e293b;">Page ${pageData.page_number}</div>
             </div>
             
             <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.75rem;">
                 <colgroup>
-                    <col style="width: 70px;"> <col style="width: 55px;"> <col style="width: 80px;">
+                    <col style="width: 85px;"> <col style="width: 55px;"> <col style="width: 80px;">
                     <col style="width: 100px;"> <col style="width: 100px;"> <col style="width: 65px;">
                     <col style="width: 70px;"> <col style="width: 60px;"> <col style="width: 70px;">
                     <col style="width: 48px;"> <col style="width: 48px;">
