@@ -932,7 +932,7 @@ async def import_excel(
                 if found_critical < 2:
                     continue
                 
-                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns.")
+                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns: {[k for k in critical_keys if k in col_map]}")
                 
                 # Parse rows for this sheet
                 sheet_entries = []
@@ -950,7 +950,16 @@ async def import_excel(
                 continue
 
         if not all_entries:
-            raise HTTPException(status_code=400, detail="Could not find any valid flight data in any of the Excel sheets.")
+            # Construct a helpful error message
+            logbook = CAD407Logbook(user_id=current_user.id)
+            has_llm = bool(os.getenv("GEMINI_API_KEY") or os.getenv("OLLAMA_BASE_URL"))
+            
+            error_detail = "Could not find valid flight data. "
+            if not has_llm:
+                error_detail += "(Note: No LLM Brain was detected. Please add GEMINI_API_KEY to .env for smarter parsing). "
+            
+            error_detail += "The engine is looking for headers like 'Date', 'Registration', and 'Total Hours'."
+            raise HTTPException(status_code=400, detail=error_detail)
 
         # Dedup and Merge
         added_count = 0
