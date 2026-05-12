@@ -2207,12 +2207,89 @@ async function confirmMapping() {
         showToast("Error during confirmation", true);
     }
 }
-function dismissGuide() {
-    localStorage.setItem('onboarding_guide_dismissed', 'true');
-    const guide = document.getElementById('onboarding-guide');
-    if (guide) {
-        guide.style.display = 'none';
+document.addEventListener('DOMContentLoaded', init);
+
+function showConfirmModal(title, message, actionText, onConfirm) {
+    const modal = document.getElementById('confirm-modal');
+    if (!modal) {
+        if (confirm(`${title}\n\n${message}`)) {
+            onConfirm();
+        }
+        return;
+    }
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const btn = document.getElementById('confirm-btn-action');
+    btn.textContent = actionText;
+    btn.onclick = () => {
+        onConfirm();
+        closeConfirmModal();
+    };
+    modal.classList.add('show');
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirm-modal');
+    if (modal) modal.classList.remove('show');
+}
+
+async function exportLogbookJSON() {
+    const token = getToken();
+    try {
+        const response = await fetch('/api/export_json', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `logbook_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('JSON backup downloaded');
+        } else {
+            showToast('Export failed', 'error');
+        }
+    } catch (e) {
+        showToast('Server error during export', 'error');
     }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+async function handleRestoreLogbook(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    showConfirmModal(
+        'Restore Logbook?',
+        `This will REPLACE your current logbook with data from ${file.name}. Are you sure?`,
+        'Restore',
+        async () => {
+            try {
+                const response = await fetch('/api/restore', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showToast('Logbook restored successfully! Reloading...');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    const err = await response.json();
+                    showToast(`Restore failed: ${err.detail}`, 'error');
+                }
+            } catch (e) {
+                showToast('Server error during restore', 'error');
+            } finally {
+                input.value = '';
+            }
+        }
+    );
+}

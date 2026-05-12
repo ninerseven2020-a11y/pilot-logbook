@@ -64,6 +64,17 @@ async function fetchHistory() {
         const response = await fetch('/api/history', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        if (response.status === 401) {
+            showToast('Session expired. Please login again.', 'error');
+            return;
+        }
+        
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ detail: 'Server Error' }));
+            throw new Error(err.detail || 'Failed to fetch history');
+        }
+
         const data = await response.json();
         allHistory = data.history;
         await fetchMetadata();
@@ -71,7 +82,7 @@ async function fetchHistory() {
         filterHistory();
     } catch (error) {
         console.error('Error fetching history:', error);
-        showToast('Error loading history', 'error');
+        showToast(`Error loading history: ${error.message}`, 'error');
     }
 }
 
@@ -214,14 +225,23 @@ function populateFilters() {
 }
 
 function filterHistory() {
-    const query = document.getElementById('history-search').value.toLowerCase();
-    const filterYear = document.getElementById('filter-year').value;
-    const filterMonth = document.getElementById('filter-month').value;
-    const filterType = document.getElementById('filter-type').value;
-    const filterOperator = document.getElementById('filter-operator').value;
-    const filterLabel = document.getElementById('filter-label').value;
-    const dateFrom = document.getElementById('filter-date-from').value;
-    const dateTo = document.getElementById('filter-date-to').value;
+    const queryEl = document.getElementById('history-search');
+    const yearEl = document.getElementById('filter-year');
+    const monthEl = document.getElementById('filter-month');
+    const typeEl = document.getElementById('filter-type');
+    const operatorEl = document.getElementById('filter-operator');
+    const labelEl = document.getElementById('filter-label');
+    const dateFromEl = document.getElementById('filter-date-from');
+    const dateToEl = document.getElementById('filter-date-to');
+
+    const query = queryEl ? queryEl.value.toLowerCase() : '';
+    const filterYear = yearEl ? yearEl.value : 'ALL';
+    const filterMonth = monthEl ? monthEl.value : 'ALL';
+    const filterType = typeEl ? typeEl.value : 'ALL';
+    const filterOperator = operatorEl ? operatorEl.value : 'ALL';
+    const filterLabel = labelEl ? labelEl.value : 'ALL';
+    const dateFrom = dateFromEl ? dateFromEl.value : '';
+    const dateTo = dateToEl ? dateToEl.value : '';
 
     const filtered = allHistory.filter(entry => {
         const matchesQuery = !query || 
@@ -360,12 +380,15 @@ function setupContextMenu() {
         document.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
     });
 
-    document.getElementById('ctx-edit').onclick = (e) => {
+    const editBtn = document.getElementById('ctx-edit');
+    const deleteBtn = document.getElementById('ctx-delete');
+    
+    if (editBtn) editBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         openFlightDetailModal(selectedEntryId);
     };
-    document.getElementById('ctx-delete').onclick = (e) => {
+    if (deleteBtn) deleteBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         deleteEntry(selectedEntryId);

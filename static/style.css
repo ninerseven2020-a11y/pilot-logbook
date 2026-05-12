@@ -136,17 +136,12 @@ input[type=number] {
     font-weight: 600;
 }
 
-/* Form Grid for Registration */
+/* Form Grid */
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-@media (max-width: 600px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    align-items: flex-end;
 }
 
 /* User Icon Button in Nav */
@@ -1235,9 +1230,8 @@ header {
 
 body {
     padding-top: 60px; /* Offset for fixed header */
-    padding-bottom: 70px; /* Offset for fixed bottom nav on mobile */
     min-height: 100vh;
-    overflow-x: hidden; /* Prevent horizontal page-level scroll */
+    overflow-x: hidden;
 }
 
 .main-content {
@@ -1566,40 +1560,6 @@ body {
     grid-column: 1 / -1;
 }
 
-/* --- MOBILE OVERHAUL --- */
-@media (max-width: 768px) {
-    body {
-        padding-bottom: 70px; /* Space for bottom nav */
-    }
-
-    /* Hide Sidebar, Show Bottom Nav */
-    .nav-links {
-        display: none !important;
-    }
-
-    /* VIEWPORT WINDOWS */
-    .history-table-container,
-    .logbook-viewport {
-        height: calc(100vh - 210px) !important;
-        overflow: auto !important;
-        -webkit-overflow-scrolling: touch;
-        background: rgba(0,0,0,0.1);
-        border-radius: 12px;
-        margin-bottom: 20px; /* Reduced since nav is gone */
-    }
-
-.version-label {
-    position: fixed;
-    bottom: 80px; /* Above bottom nav on mobile */
-    right: 20px;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    opacity: 0.4;
-    pointer-events: none;
-    z-index: 1100;
-    font-family: 'JetBrains Mono', monospace;
-}
-
 /* --- COMPACT TOOLBAR --- */
 .compact-toolbar {
     display: flex;
@@ -1616,12 +1576,6 @@ body {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-}
-
-.toolbar-divider {
-    width: 1px;
-    height: 20px;
-    background: rgba(255,255,255,0.1);
 }
 
 .btn-nav {
@@ -1656,7 +1610,59 @@ body {
     width: 120px;
 }
 
-/* --- UPLOAD PAGE POWER-STACK (MOBILE) --- */
+.version-label {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 1100;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* --- RESPONSIVE OVERHAUL --- */
+@media (max-width: 768px) {
+    .dashboard-grid, .dashboard-top-row {
+        grid-template-columns: 1fr;
+    }
+    .header-content {
+        flex-direction: column;
+        height: auto;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    .nav-links {
+        margin-left: 0;
+        gap: 1rem;
+        font-size: 0.85rem;
+    }
+    .container {
+        padding: 1rem 0.5rem;
+    }
+    .manual-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+    .form-group-pair {
+        flex-direction: column;
+    }
+    .flying-hours-columns {
+        flex-direction: column;
+    }
+
+    /* VIEWPORT WINDOWS */
+    .history-table-container,
+    .logbook-viewport {
+        height: calc(100vh - 180px) !important;
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch;
+        background: rgba(0,0,0,0.1);
+        border-radius: 12px;
+    }
+}
+
 @media (max-width: 600px) {
     .compact-toolbar {
         flex-direction: column;
@@ -1673,7 +1679,7 @@ body {
         width: 110px;
     }
 
-    /* --- UPLOAD PAGE SINGLE-COLUMN (MOBILE) --- */
+    /* SINGLE-COLUMN STACKING */
     .upload-grid, 
     .manual-grid,
     .form-row-tri,
@@ -1685,10 +1691,7 @@ body {
     }
     
     .form-row-tri .form-group,
-    .form-row-tri .form-group:nth-child(n),
-    .form-row-quad .form-group,
-    .form-row-quad .form-group:nth-child(n),
-    .flying-group-box .form-row-quad .form-group {
+    .form-row-quad .form-group {
         grid-column: span 1 !important;
         width: 100% !important;
     }
@@ -1698,8 +1701,6 @@ body {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        border-radius: 12px;
-        background: rgba(0,0,0,0.2);
     }
 
     .history-table {
@@ -1707,7 +1708,7 @@ body {
         font-size: 0.8rem;
     }
 
-    /* Professional Filter Drawer */
+    /* Professional Filter Drawer (Mobile) */
     .filter-bar.glass {
         display: none !important;
     }
@@ -1726,7 +1727,6 @@ body {
         cursor: pointer;
     }
 
-    /* Professional Filter Drawer Vertical Slate */
     #mobile-filter-container {
         display: flex;
         flex-direction: column;
@@ -1739,7 +1739,8 @@ body {
         gap: 1rem !important;
     }
 
-    #mobile-filter-container select {
+    #mobile-filter-container select,
+    #mobile-filter-container .date-range input {
         width: 100% !important;
         height: 44px !important;
         background: rgba(255,255,255,0.05) !important;
@@ -1753,20 +1754,9 @@ body {
         display: flex !important;
         flex-direction: column !important;
         gap: 0.8rem !important;
-        background: none !important;
-        padding: 0 !important;
-    }
-
-    #mobile-filter-container .date-range input {
-        width: 100% !important;
-        height: 44px !important;
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 8px !important;
-        padding: 0 12px !important;
     }
 
     #mobile-filter-container .date-range span {
-        display: none; /* Hide 'to' text as stack is self-explanatory */
+        display: none;
     }
 }

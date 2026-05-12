@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.2.17"
+APP_VERSION = "1.2.21"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -135,8 +135,10 @@ async def google_login(request: Request, link: Optional[bool] = False, current_u
     
     # Smart Redirect URI detection
     host = request.headers.get('host', 'localhost:8000')
-    scheme = 'https' if 'synology.me' in host else 'http'
-    redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+    scheme = 'https' if 'synology.me' in host or 'render.com' in host else 'http'
+    
+    # Prioritize GOOGLE_REDIRECT_URI from env if set
+    redirect_uri = GOOGLE_REDIRECT_URI or f"{scheme}://{host}/api/auth/google/callback"
     
     import urllib.parse
     params = {
@@ -170,8 +172,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         link_user_id = request.cookies.get("link_user_id")
         
         host = request.headers.get('host', 'localhost:8000')
-        scheme = 'https' if 'synology.me' in host else 'http'
-        redirect_uri = f"{scheme}://{host}/api/auth/google/callback"
+        scheme = 'https' if 'synology.me' in host or 'render.com' in host else 'http'
+        
+        # Prioritize GOOGLE_REDIRECT_URI from env if set
+        redirect_uri = GOOGLE_REDIRECT_URI or f"{scheme}://{host}/api/auth/google/callback"
         import requests as httprequests
         token_url = "https://oauth2.googleapis.com/token"
         data = {
@@ -734,11 +738,27 @@ async def update_synonyms_ai(data: dict, user: User = Depends(get_current_user))
 
 @app.get("/api/history")
 async def get_history(current_user: User = Depends(get_current_user)):
-    from engine import CAD407Logbook
-    logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
-    # Sort history by date descending for management view
-    sorted_history = sorted(logbook.history, key=lambda x: x.get('date_obj', datetime(1900,1,1)), reverse=True)
-    return {"history": sorted_history}
+    try:
+        from engine import CAD407Logbook
+        logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+        
+        # Safer sorting key to prevent TypeError between datetime and str
+        def get_sort_key(entry):
+            dt = entry.get('date_obj')
+            if isinstance(dt, datetime):
+                return dt
+            if isinstance(dt, str):
+                try:
+                    return datetime.fromisoformat(dt.replace('Z', '+00:00'))
+                except:
+                    pass
+            return datetime(1900, 1, 1)
+
+        sorted_history = sorted(logbook.history, key=get_sort_key, reverse=True)
+        return {"history": sorted_history}
+    except Exception as e:
+        print(f"[API ERROR] /api/history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/entry/{entry_id}")
 async def delete_entry(entry_id: str, category: Optional[str] = Query(None), q: Optional[str] = Query(None), current_user: User = Depends(get_current_user)):
@@ -953,7 +973,6 @@ async def import_excel(
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
     
     # Check for mapping confirmation
-    mapping_confirmed = Form(False)
 
     try:
         import io
@@ -989,8 +1008,11 @@ async def import_excel(
                 df = pd.DataFrame(data[header_row_index+1:], columns=headers)
                 df = df.dropna(how='all')
                 
+                # Initialize mapping variables for this sheet
+                col_map = {}
+                needs_confirmation = False
+
                 # Handle confirmation and custom mapping
-                custom_mapping_raw = Form(None)
                 if custom_mapping_raw:
                     try:
                         col_map = json.loads(custom_mapping_raw)
@@ -998,7 +1020,8 @@ async def import_excel(
                         print(f"[IMPORT] Using user-provided custom mapping: {col_map}")
                     except:
                         pass
-                else:
+                
+                if not col_map:
                     col_map, needs_confirmation = logbook.detect_columns_smart(df)
                 
                 # If AI was used and user hasn't confirmed yet, PAUSE and ask
@@ -1030,6 +1053,7 @@ async def import_excel(
                     if entry:
                         if (not entry.get('ac_type') or entry.get('ac_type') == 'None') and ac_type:
                             entry['ac_type'] = ac_type
+                        all_entries.append(entry)
                         logbook.merge_or_add_entry(entry)
                 
             except Exception as e:
@@ -1037,7 +1061,16 @@ async def import_excel(
                 continue
 
         logbook.save_data()
-        return {"message": "Import complete.", "data": get_mvp_data(logbook)}
+        
+        # Check if we actually imported anything
+        total_imported = len(all_entries)
+        if total_imported == 0:
+            raise HTTPException(status_code=400, detail="No flight data was found in the Excel file. Please check that your column headers (Date, Reg, etc.) are on the first or second row.")
+            
+        return {
+            "message": f"Import complete. {total_imported} flights processed.", 
+            "data": get_mvp_data(logbook)
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error parsing Excel: {str(e)}")
 
