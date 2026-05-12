@@ -1157,6 +1157,11 @@ async function handleUpdateProfile(event) {
             showToast("Profile updated successfully!");
             closeEditProfileModal();
             await fetchUser(); // Refresh UI
+            if (document.body.dataset.page === 'manage') {
+                loadFlightHistory();
+                loadSynonyms();
+                loadSystemStatus();
+            }
             if (document.body.dataset.page === 'dashboard') {
                 await fetchDashboard(); // Refresh stats in case pilot name changed
             }
@@ -1166,6 +1171,49 @@ async function handleUpdateProfile(event) {
         }
     } catch (error) {
         showToast("An error occurred during update", true);
+    }
+}
+
+async function loadSystemStatus() {
+    try {
+        const response = await fetch('/api/system-status', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        const status = await response.json();
+        
+        const calElement = document.getElementById('status-calamine');
+        const csvElement = document.getElementById('status-xlsx2csv');
+        const gemElement = document.getElementById('status-gemini');
+        
+        if (calElement) {
+            calElement.textContent = status.calamine_installed ? '✅ Ready' : '❌ Missing';
+            calElement.style.color = status.calamine_installed ? '#10b981' : '#ef4444';
+        }
+        if (csvElement) {
+            csvElement.textContent = status.xlsx2csv_installed ? '✅ Ready' : '❌ Missing';
+            csvElement.style.color = status.xlsx2csv_installed ? '#10b981' : '#ef4444';
+        }
+        if (gemElement) {
+            gemElement.textContent = status.gemini_api_configured ? '✅ Configured' : '❌ Key Missing';
+            gemElement.style.color = status.gemini_api_configured ? '#10b981' : '#ef4444';
+        }
+    } catch (err) {
+        console.error("Failed to load system status:", err);
+    }
+}
+
+async function handleSystemRepair() {
+    showToast("🛠️ Starting self-repair. This may take 30-60 seconds...");
+    try {
+        const response = await fetch('/api/system-repair', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        const result = await response.json();
+        showToast("✅ Repair attempt finished. Results: " + result.results.join(', '));
+        loadSystemStatus();
+    } catch (err) {
+        showToast("❌ Repair failed: " + err.message, true);
     }
 }
 
@@ -1392,24 +1440,75 @@ function showToast(message, isError = false) {
         }
     }
     
-    toast.textContent = displayMsg;
+    // Add to Error History if it's an error
+    if (isError) {
+        addErrorToHistory(displayMsg);
+    }
+    
+    toast.innerHTML = `<span>${displayMsg}</span> <span style="margin-left: 10px; cursor: pointer; opacity: 0.7;">✕</span>`;
     toast.className = 'toast show';
     if (isError) toast.classList.add('error');
     else toast.classList.remove('error');
     
-    const duration = isError ? 8000 : 3000;
-    
     if (window._toastTimeout) clearTimeout(window._toastTimeout);
     
-    window._toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-    }, duration);
-
-    toast.onclick = () => {
-        toast.classList.remove('show');
-        if (window._toastTimeout) clearTimeout(window._toastTimeout);
-    };
+    if (!isError) {
+        window._toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
 }
+
+function addErrorToHistory(msg) {
+    let history = JSON.parse(localStorage.getItem('error_history') || '[]');
+    history.unshift({ msg, time: new Date().toLocaleTimeString() });
+    if (history.length > 5) history.pop();
+    localStorage.setItem('error_history', JSON.stringify(history));
+    updateErrorBell();
+}
+
+function updateErrorBell() {
+    let bell = document.getElementById('error-bell');
+    if (!bell) {
+        bell = document.createElement('div');
+        bell.id = 'error-bell';
+        bell.style = "position:fixed; bottom:20px; right:20px; width:40px; height:40px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.5); font-size:20px;";
+        bell.innerHTML = "🔔";
+        bell.onclick = toggleErrorHistory;
+        document.body.appendChild(bell);
+    }
+    const history = JSON.parse(localStorage.getItem('error_history') || '[]');
+    bell.style.display = history.length > 0 ? 'flex' : 'none';
+}
+
+function toggleErrorHistory() {
+    let panel = document.getElementById('error-history-panel');
+    if (panel) {
+        panel.remove();
+        return;
+    }
+    
+    panel = document.createElement('div');
+    panel.id = 'error-history-panel';
+    panel.style = "position:fixed; bottom:70px; right:20px; width:300px; background:#1a1b1e; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px; z-index:10000; box-shadow:0 10px 25px rgba(0,0,0,0.5);";
+    
+    const history = JSON.parse(localStorage.getItem('error_history') || '[]');
+    let html = '<h4 style="margin:0 0 10px 0; color:#ef4444;">Error History</h4>';
+    if (history.length === 0) html += '<p style="font-size:0.8rem; opacity:0.5;">No errors yet.</p>';
+    history.forEach(item => {
+        html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0;">
+                    <div style="font-size:0.7rem; opacity:0.4;">${item.time}</div>
+                    <div style="font-size:0.85rem;">${item.msg}</div>
+                 </div>`;
+    });
+    html += '<button onclick="localStorage.removeItem(\'error_history\'); updateErrorBell(); this.parentElement.remove();" style="width:100%; margin-top:10px; background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:5px; border-radius:4px; cursor:pointer;">Clear History</button>';
+    
+    panel.innerHTML = html;
+    document.body.appendChild(panel);
+}
+
+// Check bell on load
+window.addEventListener('DOMContentLoaded', updateErrorBell);
 
 function showForgotPassword(event) {
     if (event) event.preventDefault();

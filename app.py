@@ -59,7 +59,49 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic (if any) can go here
 
+APP_VERSION = "1.5.0-RESILIENT"
+
 app = FastAPI(lifespan=lifespan)
+
+@app.on_event("startup")
+async def startup_event():
+    print(f"=======================================")
+    print(f" LOGBOOK SERVER STARTING (v{APP_VERSION})")
+    print(f"=======================================")
+
+@app.get("/api/system-status")
+async def get_system_status(current_user: User = Depends(get_current_user)):
+    status_info = {
+        "python_version": sys.version,
+        "calamine_installed": False,
+        "xlsx2csv_installed": False,
+        "gemini_api_configured": bool(os.getenv("GEMINI_API_KEY")),
+        "last_logs": []
+    }
+    
+    try:
+        import calamine
+        status_info["calamine_installed"] = True
+    except: pass
+    
+    try:
+        import xlsx2csv
+        status_info["xlsx2csv_installed"] = True
+    except: pass
+    
+    # We'll just return the status for now
+    return status_info
+
+@app.post("/api/system-repair")
+async def system_repair(current_user: User = Depends(get_current_user)):
+    results = []
+    for lib in ["python-calamine", "xlsx2csv"]:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+            results.append(f"Successfully installed {lib}")
+        except Exception as e:
+            results.append(f"Failed to install {lib}: {e}")
+    return {"results": results}
 
 @app.get("/test")
 async def test_route():
@@ -909,13 +951,28 @@ async def import_excel(
                 
             use_calamine = True
         except Exception as e:
-            print(f"[IMPORT] Direct Calamine failed: {e}. Falling back to standard pandas...")
-            use_calamine = False
+            print(f"[IMPORT] Direct Calamine failed: {e}. Trying Nuclear Option (xlsx2csv)...")
             try:
-                xl = pd.ExcelFile(io.BytesIO(contents))
-                sheet_names = xl.sheet_names
+                from xlsx2csv import Xlsx2csv
+                import io as python_io
+                output = python_io.StringIO()
+                Xlsx2csv(io.BytesIO(contents), outputencoding="utf-8").convert(output)
+                output.seek(0)
+                # xlsx2csv converts the WHOLE file to one big CSV, usually the first sheet
+                df_raw = pd.read_csv(output, header=None)
+                sheet_names = ["Imported"]
+                use_calamine = False
+                use_xlsx2csv = True
             except Exception as e2:
-                raise HTTPException(status_code=400, detail=f"Critical Excel Error: {e2}. If this is a circular reference, please ensure 'python-calamine' is installed.")
+                print(f"[IMPORT] Nuclear Option failed: {e2}. Falling back to standard pandas...")
+                use_calamine = False
+                use_xlsx2csv = False
+                try:
+                    xl = pd.ExcelFile(io.BytesIO(contents))
+                    sheet_names = xl.sheet_names
+                except Exception as e3:
+                    # RETHROW specifically as HTTPException to bubble up past the generic handler
+                    raise HTTPException(status_code=400, detail=f"Critical Excel Error: {e3}. If this is a circular reference, please ensure 'python-calamine' is installed.")
 
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
@@ -928,6 +985,10 @@ async def import_excel(
             try:
                 if use_calamine:
                     df_raw = calamine_to_df(sheet_name)
+                    data = [list(row) for row in df_raw.values]
+                elif 'use_xlsx2csv' in locals() and use_xlsx2csv:
+                    # df_raw is already defined in the except block above for xlsx2csv
+                    # so we just use it
                     data = [list(row) for row in df_raw.values]
                 else:
                     df_raw = xl.parse(sheet_name, header=None)
