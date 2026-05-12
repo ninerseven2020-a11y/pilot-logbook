@@ -879,25 +879,100 @@ async def import_excel(
     try:
         import io
         import pandas as pd
+        import openpyxl
         contents = await file.read()
-        # Read without header first to find the correct header row
-        df_raw = pd.read_excel(io.BytesIO(contents), header=None)
         
-        # Find the row that contains 'Month/Date' or 'DEP' or other known headers
-        # Dynamic header detection using DEP synonyms
+        # Load workbook with data_only=True to skip formula evaluation (fixes circular references)
+        try:
+            wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+            sheet_names = wb.sheetnames
+        except Exception as e:
+            print(f"[IMPORT] openpyxl failed, falling back to pandas default: {e}")
+            sheet_names = pd.ExcelFile(io.BytesIO(contents)).sheet_names
+
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
         
-        header_row_index = 0
-        for i, row in df_raw.iterrows():
-            row_values = [str(v).strip().upper() for v in row.values if not pd.isna(v)]
-            if any(h in row_values for h in dep_synonyms):
-                header_row_index = i
-                break
+        all_entries = []
+        best_sheet_name = None
         
-        # Re-read with the correct header row
-        df = pd.read_excel(io.BytesIO(contents), header=header_row_index)
-        col_map = logbook.detect_columns(df.columns)
+        for sheet_name in sheet_names:
+            print(f"[IMPORT] Scanning sheet: {sheet_name}")
+            try:
+                # Use the already loaded workbook values (respects data_only=True)
+                sheet = wb[sheet_name]
+                data = list(sheet.values)
+                if not data:
+                    continue
+                    
+                df_raw = pd.DataFrame(data)
+                
+                header_row_index = -1
+                for i, row in df_raw.iterrows():
+                    row_values = [str(v).strip().upper() for v in row.values if not pd.isna(v)]
+                    if any(h in row_values for h in dep_synonyms):
+                        header_row_index = i
+                        break
+                
+                if header_row_index == -1:
+                    continue
+                    
+                # Create DF with the correct header
+                df = pd.DataFrame(data[header_row_index+1:], columns=data[header_row_index])
+                # Remove rows that are all NaN
+                df = df.dropna(how='all')
+                
+                # Use SMART detection
+                col_map = logbook.detect_columns_smart(df)
+                
+                # Verify if we found enough data
+                critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
+                found_critical = sum(1 for k in critical_keys if k in col_map and col_map[k] in df.columns)
+                
+                if found_critical < 2:
+                    continue
+                
+                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns.")
+                
+                # Parse rows for this sheet
+                sheet_entries = []
+                for _, row in df.iterrows():
+                    entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
+                    if entry:
+                        sheet_entries.append(entry)
+                
+                if sheet_entries:
+                    all_entries.extend(sheet_entries)
+                    best_sheet_name = sheet_name
+                    
+            except Exception as e:
+                print(f"[IMPORT] Error scanning sheet {sheet_name}: {e}")
+                continue
+
+        if not all_entries:
+            raise HTTPException(status_code=400, detail="Could not find any valid flight data in any of the Excel sheets.")
+
+        # Dedup and Merge
+        added_count = 0
+        updated_count = 0
+        
+        for entry in all_entries:
+            # SMART UPDATE: Find existing entry by flight ID
+            existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
+            if existing:
+                # Merge logic: Fill in missing data from the new entry
+                for k, v in entry.items():
+                    if k == 'flight_id' or k == 'timestamp': continue
+                    # If existing has no data but new has data, update it
+                    if not existing.get(k) and v:
+                        existing[k] = v
+                    # Specifically for times and route/remarks, always refresh to latest
+                    elif k in ['dep_time', 'arr_time', 'route', 'remarks', 'metadata']:
+                        if v: existing[k] = v
+                updated_count += 1
+            else:
+                logbook.history.append(entry)
+                added_count += 1
         
         print(f"[IMPORT] Header Row Index: {header_row_index}")
         
