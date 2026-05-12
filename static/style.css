@@ -1580,30 +1580,65 @@ body {
     .bottom-nav {
         display: flex !important;
         position: fixed;
-        bottom: 15px; /* Floating look */
-        left: 15px;
-        right: 15px;
-        height: 65px;
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        z-index: 9999; /* Ensure it stays above everything */
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        height: 60px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        z-index: 9999;
         justify-content: space-around;
         align-items: center;
-        padding: 0 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        padding: 0 5px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .nav-item-mobile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: rgba(255,255,255,0.5);
+        text-decoration: none;
+        width: 25%;
+        height: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .nav-item-mobile.active {
+        color: var(--accent-color);
+    }
+
+    .nav-item-mobile svg {
+        width: 22px !important;
+        height: 22px !important;
+        stroke: currentColor;
+        transition: transform 0.2s ease;
+    }
+
+    .nav-item-mobile span {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .nav-item-mobile.active svg {
+        transform: translateY(-2px);
     }
 
     /* VIEWPORT WINDOWS */
     .history-table-container,
     .logbook-viewport {
-        height: calc(100vh - 220px) !important; /* Fixed viewport between header and nav */
+        height: calc(100vh - 210px) !important;
         overflow: auto !important;
         -webkit-overflow-scrolling: touch;
         background: rgba(0,0,0,0.1);
         border-radius: 12px;
+        margin-bottom: 80px; /* Space for the floating nav */
     }
 
 .version-label {
