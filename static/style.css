@@ -192,6 +192,7 @@ input[type=number] {
     top: calc(100% + 10px);
     right: 0;
     width: 280px;
+    max-width: calc(100vw - 1rem);
     background: #1e293b;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -710,18 +711,56 @@ header {
         grid-template-columns: 1fr;
     }
     .header-content {
-        flex-direction: column;
+        flex-direction: row;         /* Keep avatar + nav on ONE line */
+        flex-wrap: wrap;
         height: auto;
-        padding: 1rem;
-        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .logo-section {
+        flex: 1;
+        flex-wrap: wrap;
+        min-width: 0;
     }
     .nav-links {
-        margin-left: 0;
-        gap: 1rem;
-        font-size: 0.85rem;
+        margin-left: 0.75rem;
+        gap: 0.75rem;
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+    }
+    .nav-item.active::after {
+        bottom: -4px;  /* tighter underline on mobile */
+    }
+    /* Profile popover: on mobile, anchor left so it can't go off-screen */
+    .profile-popover {
+        right: auto;
+        left: 0;
     }
     .container {
-        padding: 1rem 0.5rem;
+        padding: 1rem 0.75rem;
+    }
+    /* Upload page: stack operator/label grid */
+    .upload-grid {
+        grid-template-columns: 1fr !important;
+    }
+    /* All fixed-width inputs become fluid on mobile */
+    .w-short, .w-micro {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    input[type="date"] {
+        width: 100% !important;
+        max-width: 100%;
+    }
+    .manual-grid {
+        gap: 0.5rem;
+    }
+    .input-group-row {
+        flex-wrap: wrap;
+    }
+    .flying-group {
+        min-width: 100% !important;
     }
     .manual-grid {
         grid-template-columns: 1fr !important;
@@ -733,7 +772,23 @@ header {
     .flying-hours-columns {
         flex-direction: column;
     }
+    /* Data migration grid — stack on mobile */
+    .upload-form-card [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
 }
+
+/* Extra-small phones */
+@media (max-width: 400px) {
+    .nav-links {
+        gap: 0.5rem;
+        font-size: 0.75rem;
+    }
+    .nav-item {
+        padding: 0.25rem 0;
+    }
+}
+
 
 .stats-card {
     text-align: center;
