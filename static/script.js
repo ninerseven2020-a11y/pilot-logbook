@@ -804,14 +804,14 @@ function renderLogbookTable() {
         <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals brought forward</td>
         <td style="border: 1px solid #94a3b8;"></td>
         <td style="border: 1px solid #94a3b8;"></td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1us)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p2)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_dual)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1us)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p2)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(1)</span>${fmt(bf.day_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(2)</span>${fmt(bf.day_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(3)</span>${fmt(bf.day_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(4)</span>${fmt(bf.day_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(5)</span>${fmt(bf.night_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(6)</span>${fmt(bf.night_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(7)</span>${fmt(bf.night_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(8)</span>${fmt(bf.night_dual)}</td>
         <td style="border: 1px solid #94a3b8;">${fmt(bf.inst_flying)}</td>
         <td style="border: 1px solid #94a3b8;">${fmt(bf.sim_time)}</td>
         <td style="border: 1px solid #94a3b8;"></td>
@@ -895,14 +895,14 @@ function renderLogbookTable() {
         <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals carried forward</td>
         <td style="border: 1px solid #94a3b8;"></td>
         <td style="border: 1px solid #94a3b8;"></td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1us)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p2)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_dual)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1us)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p2)}</td>
-        <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(1)</span>${fmt(cf.day_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(2)</span>${fmt(cf.day_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(3)</span>${fmt(cf.day_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(4)</span>${fmt(cf.day_dual)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(5)</span>${fmt(cf.night_p1)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(6)</span>${fmt(cf.night_p1us)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(7)</span>${fmt(cf.night_p2)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(8)</span>${fmt(cf.night_dual)}</td>
         <td style="border: 1px solid #94a3b8;">${fmt(cf.inst_flying)}</td>
         <td style="border: 1px solid #94a3b8;">${fmt(cf.sim_time)}</td>
         <td style="border: 1px solid #94a3b8;"></td>
@@ -1399,14 +1399,14 @@ function renderLogbookPageToHTML(pageData) {
             <td></td><td></td><td></td><td></td><td></td><td></td>
             <td colspan="3" style="text-align: center; border: 1px solid #94a3b8;">Totals brought forward</td>
             <td style="border: 1px solid #94a3b8;"></td><td style="border: 1px solid #94a3b8;"></td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1us)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p2)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_dual)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1us)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p2)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(1)</span>${fmt(bf.day_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(2)</span>${fmt(bf.day_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(3)</span>${fmt(bf.day_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(4)</span>${fmt(bf.day_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(5)</span>${fmt(bf.night_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(6)</span>${fmt(bf.night_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(7)</span>${fmt(bf.night_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(8)</span>${fmt(bf.night_dual)}</td>
             <td style="border: 1px solid #94a3b8;">${fmt(bf.inst_flying)}</td>
             <td style="border: 1px solid #94a3b8;">${fmt(bf.sim_time)}</td>
             <td style="border: 1px solid #94a3b8;"></td>
@@ -1473,14 +1473,14 @@ function renderLogbookPageToHTML(pageData) {
             <td></td><td></td><td></td><td></td><td></td><td></td>
             <td colspan="3" style="text-align: center; border: 1px solid #94a3b8;">Totals carried forward</td>
             <td style="border: 1px solid #94a3b8;"></td><td style="border: 1px solid #94a3b8;"></td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1us)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p2)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_dual)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1us)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p2)}</td>
-            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(1)</span>${fmt(cf.day_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(2)</span>${fmt(cf.day_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(3)</span>${fmt(cf.day_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(4)</span>${fmt(cf.day_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(5)</span>${fmt(cf.night_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(6)</span>${fmt(cf.night_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(7)</span>${fmt(cf.night_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.55rem; color:#64748b;">(8)</span>${fmt(cf.night_dual)}</td>
             <td style="border: 1px solid #94a3b8;">${fmt(cf.inst_flying)}</td>
             <td style="border: 1px solid #94a3b8;">${fmt(cf.sim_time)}</td>
             <td style="border: 1px solid #94a3b8;"></td>
