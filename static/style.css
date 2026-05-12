@@ -727,7 +727,13 @@ header {
         margin-left: 0.75rem;
         gap: 0.75rem;
         font-size: 0.8rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Hide scrollbar for cleaner look */
+    }
+    .nav-links::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome/Safari */
     }
     .nav-item.active::after {
         bottom: -4px;  /* tighter underline on mobile */
