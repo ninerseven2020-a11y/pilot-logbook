@@ -180,14 +180,39 @@ RULES:
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(prompt)
-                text = response.text
-                if "```json" in text:
-                    text = text.split("```json")[1].split("```")[0]
-                elif "```" in text:
-                    text = text.split("```")[1].split("```")[0]
-                return json.loads(text.strip())
+                
+                # Model fallback list
+                model_names = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro']
+                last_error = None
+                
+                for m_name in model_names:
+                    try:
+                        print(f"[SMART ENGINE] Trying model: {m_name}")
+                        model = genai.GenerativeModel(m_name)
+                        response = model.generate_content(prompt)
+                        text = response.text
+                        if "```json" in text:
+                            text = text.split("```json")[1].split("```")[0]
+                        elif "```" in text:
+                            text = text.split("```")[1].split("```")[0]
+                        return json.loads(text.strip())
+                    except Exception as e:
+                        last_error = str(e)
+                        if "404" in last_error:
+                            print(f"[SMART ENGINE] Model {m_name} not found (404).")
+                            continue
+                        raise e
+                
+                if last_error:
+                    print(f"[SMART ENGINE] All models failed. Last error: {last_error}")
+                    # Diagnostic: List all available models to logs
+                    try:
+                        print("[SMART ENGINE] DIAGNOSTIC: Listing all available models for this key:")
+                        for m in genai.list_models():
+                            if 'generateContent' in m.supported_generation_methods:
+                                print(f" - {m.name}")
+                    except: pass
+
             except Exception as e:
                 print(f"[SMART ENGINE] Gemini error: {e}")
 

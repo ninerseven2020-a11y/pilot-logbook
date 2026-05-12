@@ -947,14 +947,16 @@ async def import_excel(
                 col_map = logbook.detect_columns_smart(df)
                 
                 # Verify if we found enough data
-                critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
-                found_critical = sum(1 for k in critical_keys if k in col_map and col_map[k] in df.columns)
+                # We need Date, AC Type, AC Reg AND (Total OR both ATD and ATA)
+                has_basic = all(col_map.get(k) and col_map[k] in df.columns for k in ['DEP', 'AC_TYPE', 'AC_REG'])
+                has_total = bool(col_map.get('TOTAL') and col_map['TOTAL'] in df.columns)
+                has_times = all(col_map.get(k) and col_map[k] in df.columns for k in ['ATD', 'ATA'])
                 
-                if found_critical < 2:
-                    print(f"[IMPORT] Sheet '{sheet_name}' rejected: only {found_critical} critical columns found.")
+                if not (has_basic and (has_total or has_times)):
+                    print(f"[IMPORT] Sheet '{sheet_name}' rejected: missing critical columns (Basic: {has_basic}, Total: {has_total}, Times: {has_times})")
                     continue
                 
-                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns.")
+                print(f"[IMPORT] Found valid data on sheet '{sheet_name}'. (Total Found: {has_total}, Using ATD/ATA Fallback: {not has_total and has_times})")
                 
                 # Check for partial dates if not already confirmed
                 if not confirm_year and logbook.has_partial_dates(df, col_map):
