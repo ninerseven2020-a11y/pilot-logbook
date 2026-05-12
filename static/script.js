@@ -1503,31 +1503,30 @@ function renderLogbookPageToHTML(pageData) {
                 <thead>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
                         <th id="current-year" style="border: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; font-weight: 700;">Year / ${pageData.year || '----'}</th>
-                        <th colspan="2" rowspan="2" style="border: 1px solid #94a3b8;">Aircraft / Simulator</th>
+                        <th colspan="2" style="border: 1px solid #94a3b8;">Aircraft / Simulator</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Pilot-In-Command</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Co-Pilot Or Student</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Holder's Operating Capacity</th>
                         <th colspan="3" style="border: 1px solid #94a3b8;">Journey Or Nature Of Flight</th>
-                        <th colspan="2" rowspan="2" style="border: 1px solid #94a3b8;">No. Of</th>
-                        <th colspan="4" rowspan="2" style="border: 1px solid #94a3b8;">Day Flying</th>
-                        <th colspan="4" rowspan="2" style="border: 1px solid #94a3b8;">Night Flying</th>
+                        <th colspan="2" style="border: 1px solid #94a3b8;">No. Of</th>
+                        <th colspan="4" style="border: 1px solid #94a3b8;">Day Flying</th>
+                        <th colspan="4" style="border: 1px solid #94a3b8;">Night Flying</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Instrument Flying</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Simulator Time</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Remarks</th>
                     </tr>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
-                        <th style="border: 1px solid #94a3b8; border-top: none;">Month / Date</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8; border-top: none;">Month / Date</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Type</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Registration</th>
                         <th colspan="3" style="border: 1px solid #94a3b8;">From To</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Take-Offs</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Landings</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">P1</th><th rowspan="2" style="border: 1px solid #94a3b8;">P1(U/S)</th><th rowspan="2" style="border: 1px solid #94a3b8;">P2/P2X</th><th rowspan="2" style="border: 1px solid #94a3b8;">P/UT</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">P1</th><th rowspan="2" style="border: 1px solid #94a3b8;">P1(U/S)</th><th rowspan="2" style="border: 1px solid #94a3b8;">P2/P2X</th><th rowspan="2" style="border: 1px solid #94a3b8;">P/UT</th>
                     </tr>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
-                        <th style="border: 1px solid #94a3b8; border-top: none;"></th>
-                        <th style="border: 1px solid #94a3b8;">Type</th>
-                        <th style="border: 1px solid #94a3b8;">Registration</th>
                         <th colspan="3" style="border: 1px solid #94a3b8;">(Dep) (Times) (Arr)</th>
-                        <th style="border: 1px solid #94a3b8;">Take-Offs</th>
-                        <th style="border: 1px solid #94a3b8;">Landings</th>
-                        <th style="border: 1px solid #94a3b8;">P1</th><th style="border: 1px solid #94a3b8;">P1(U/S)</th><th style="border: 1px solid #94a3b8;">P2/P2X</th><th style="border: 1px solid #94a3b8;">P/UT</th>
-                        <th style="border: 1px solid #94a3b8;">P1</th><th style="border: 1px solid #94a3b8;">P1(U/S)</th><th style="border: 1px solid #94a3b8;">P2/P2X</th><th style="border: 1px solid #94a3b8;">P/UT</th>
                     </tr>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700; height: 30px;">
                         <th colspan="11" style="border: 1px solid #94a3b8;"></th>
