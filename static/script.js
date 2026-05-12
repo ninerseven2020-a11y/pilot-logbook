@@ -1502,7 +1502,7 @@ function renderLogbookPageToHTML(pageData) {
                 </colgroup>
                 <thead>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
-                        <th rowspan="3" style="border: 1px solid #94a3b8; border-bottom: none;">Year / ${pageData.year || '----'}</th>
+                        <th id="current-year" style="border: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; font-weight: 700;">Year / ${pageData.year || '----'}</th>
                         <th colspan="2" rowspan="2" style="border: 1px solid #94a3b8;">Aircraft / Simulator</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Pilot-In-Command</th>
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Co-Pilot Or Student</th>
@@ -1516,9 +1516,11 @@ function renderLogbookPageToHTML(pageData) {
                         <th rowspan="3" style="border: 1px solid #94a3b8;">Remarks</th>
                     </tr>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                        <th style="border: 1px solid #94a3b8; border-top: none;">Month / Date</th>
                         <th colspan="3" style="border: 1px solid #94a3b8;">From To</th>
                     </tr>
                     <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                        <th style="border: 1px solid #94a3b8; border-top: none;"></th>
                         <th style="border: 1px solid #94a3b8;">Type</th>
                         <th style="border: 1px solid #94a3b8;">Registration</th>
                         <th colspan="3" style="border: 1px solid #94a3b8;">(Dep) (Times) (Arr)</th>
