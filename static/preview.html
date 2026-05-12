@@ -9,7 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.44">
+    <link rel="stylesheet" href="static/style.css?v=1.2.45">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -263,6 +263,24 @@
                         <input type="email" id="edit-email" placeholder="e.g. pilot@gmail.com">
                     </div>
                 </div>
+
+                <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+                    <h3 style="font-size: 0.9rem; color: var(--accent-color); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Manage Labels</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">OPERATORS</label>
+                            <div id="manage-operators-list" class="label-management-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">FLIGHT NATURES</label>
+                            <div id="manage-labels-list" class="label-management-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-group" style="margin-top: 1.5rem; text-align: right;">
                     <button type="button" class="btn btn-secondary" onclick="closeEditProfileModal()" style="margin-right: 0.5rem;">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -384,9 +402,9 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.44</div>
+    <div class="version-label">v1.2.45</div>
 
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script src="static/script.js?v=1.2.44"></script>
+    <script src="static/script.js?v=1.2.45"></script>
 </body>
 </html>

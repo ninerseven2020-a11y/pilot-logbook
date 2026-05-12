@@ -1143,7 +1143,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function openEditProfileModal() {
+async function openEditProfileModal() {
     closeProfilePopover();
     if (currentUserData) {
         document.getElementById('edit-full-name').value = currentUserData.full_name || '';
@@ -1154,6 +1154,119 @@ function openEditProfileModal() {
         if (emailInput) emailInput.value = currentUserData.email || '';
     }
     document.getElementById('profile-modal').classList.add('show');
+    
+    // Fetch and render labels
+    try {
+        const response = await apiFetch('/api/upload_metadata');
+        if (response.ok) {
+            const data = await response.json();
+            renderLabelManagement(data);
+        }
+    } catch (error) {
+        console.error("Error loading labels for management:", error);
+    }
+}
+
+function renderLabelManagement(data) {
+    const opsContainer = document.getElementById('manage-operators-list');
+    const labelsContainer = document.getElementById('manage-labels-list');
+    
+    if (!opsContainer || !labelsContainer) return;
+    
+    const renderList = (container, items, type) => {
+        container.innerHTML = items.length === 0 ? '<div class="text-muted" style="font-size: 0.75rem; padding: 0.5rem;">No labels found</div>' : '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'label-management-item';
+            div.id = `meta-item-${type}-${item.id}`;
+            div.innerHTML = `
+                <span class="label-name" id="label-text-${type}-${item.id}">${item.name}</span>
+                <div class="label-item-actions">
+                    <button type="button" class="btn-label-action" onclick="startEditMetadata('${type}', ${item.id}, '${item.name.replace(/'/g, "\\'")}')" title="Rename">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button type="button" class="btn-label-action btn-label-delete" onclick="deleteMetadata('${type}', ${item.id})" title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    };
+    
+    renderList(opsContainer, data.operators || [], 'operator');
+    renderList(labelsContainer, data.labels || [], 'label');
+}
+
+function startEditMetadata(type, id, currentName) {
+    const textSpan = document.getElementById(`label-text-${type}-${id}`);
+    if (!textSpan) return;
+    
+    const originalHTML = textSpan.parentElement.innerHTML;
+    const parent = textSpan.parentElement;
+    
+    parent.innerHTML = `
+        <input type="text" class="label-edit-input" value="${currentName}" id="edit-input-${type}-${id}" onkeydown="if(event.key==='Enter') saveMetadata('${type}', ${id}); if(event.key==='Escape') cancelEditMetadata('${type}', ${id}, '${currentName.replace(/'/g, "\\'")}')">
+        <div class="label-item-actions">
+            <button type="button" class="btn-label-action" onclick="saveMetadata('${type}', ${id})" title="Save">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button type="button" class="btn-label-action" onclick="cancelEditMetadata('${type}', ${id}, '${currentName.replace(/'/g, "\\'")}')" title="Cancel">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `;
+    
+    const input = document.getElementById(`edit-input-${type}-${id}`);
+    input.focus();
+    input.select();
+}
+
+async function saveMetadata(type, id) {
+    const input = document.getElementById(`edit-input-${type}-${id}`);
+    const newName = input.value.trim();
+    if (!newName) return;
+    
+    try {
+        const response = await apiFetch(`/api/metadata/${type}/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name: newName })
+        });
+        
+        if (response.ok) {
+            // Re-render whole list to be safe
+            const metaResponse = await apiFetch('/api/upload_metadata');
+            if (metaResponse.ok) {
+                renderLabelManagement(await metaResponse.json());
+            }
+        }
+    } catch (error) {
+        console.error("Error saving metadata:", error);
+    }
+}
+
+function cancelEditMetadata(type, id, originalName) {
+    // Re-render whole list
+    apiFetch('/api/upload_metadata').then(res => res.json()).then(data => renderLabelManagement(data));
+}
+
+async function deleteMetadata(type, id) {
+    if (!confirm(`Are you sure you want to delete this ${type === 'operator' ? 'operator' : 'flight nature'} label? This will remove the suggestion from dropdowns but will NOT delete existing flight records using this label.`)) return;
+    
+    try {
+        const response = await apiFetch(`/api/metadata/${type}/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            const metaResponse = await apiFetch('/api/upload_metadata');
+            if (metaResponse.ok) {
+                renderLabelManagement(await metaResponse.json());
+            }
+        }
+    } catch (error) {
+        console.error("Error deleting metadata:", error);
+    }
 }
 
 function closeEditProfileModal() {

@@ -672,9 +672,46 @@ async def get_upload_metadata(current_user: User = Depends(get_current_user), db
     natures = db.query(FlightNature).filter(FlightNature.user_id == current_user.id).all()
     
     return {
-        "operators": list(set([o.name for o in orgs])),
-        "labels": list(set([n.name for n in natures]))
+        "operators": [{"id": o.id, "name": o.name} for o in orgs],
+        "labels": [{"id": n.id, "name": n.name} for n in natures]
     }
+
+@app.delete("/api/metadata/{type}/{id}")
+async def delete_metadata(type: str, id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if type == "operator":
+        item = db.query(Organization).filter(Organization.id == id, Organization.user_id == current_user.id).first()
+    elif type == "label":
+        item = db.query(FlightNature).filter(FlightNature.id == id, FlightNature.user_id == current_user.id).first()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type")
+        
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    db.delete(item)
+    db.commit()
+    return {"status": "success"}
+
+@app.put("/api/metadata/{type}/{id}")
+async def rename_metadata(type: str, id: int, request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    data = await request.json()
+    new_name = data.get("name")
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name required")
+        
+    if type == "operator":
+        item = db.query(Organization).filter(Organization.id == id, Organization.user_id == current_user.id).first()
+    elif type == "label":
+        item = db.query(FlightNature).filter(FlightNature.id == id, FlightNature.user_id == current_user.id).first()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type")
+        
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    item.name = new_name
+    db.commit()
+    return {"status": "success"}
 
 @app.get("/upload")
 async def read_upload():
