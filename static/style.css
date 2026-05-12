@@ -1699,45 +1699,24 @@ body {
         width: 110px;
     }
 
-    .upload-grid {
-        grid-template-columns: 1fr !important; /* Stack Operator and Label */
-    }
-
-    /* Stack DEP/ARR/TOTAL */
-    .form-row-tri {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.75rem !important;
-    }
-    
-    .form-row-tri .form-group:nth-child(1),
-    .form-row-tri .form-group:nth-child(2) {
-        grid-column: span 2; /* DEP and ARR take full width to stack */
-    }
-    
-    .form-row-tri .form-group:nth-child(3) {
-        grid-column: span 2; /* TOTAL also full width */
-    }
-
-    /* Stack T/O and LDG */
-    .form-row-quad {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.75rem !important;
-    }
-
-    .form-row-quad .form-group:nth-child(1),
-    .form-row-quad .form-group:nth-child(2) {
-        grid-column: span 2; /* T/O and LDG stack */
-    }
-
-    /* Day/Night flying boxes: Stack into 2x2 grid for better thumb access */
+    /* --- UPLOAD PAGE SINGLE-COLUMN (MOBILE) --- */
+    .upload-grid, 
+    .manual-grid,
+    .form-row-tri,
+    .form-row-quad,
     .flying-group-box .form-row-quad {
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        gap: 1rem !important;
     }
     
+    .form-row-tri .form-group,
+    .form-row-tri .form-group:nth-child(n),
+    .form-row-quad .form-group,
+    .form-row-quad .form-group:nth-child(n),
     .flying-group-box .form-row-quad .form-group {
-        grid-column: span 1 !important; /* Back to 2 columns for the P1/P2 grid */
+        grid-column: span 1 !important;
+        width: 100% !important;
     }
 
     /* MANAGE PAGE: Horizontal Overflow Table */
@@ -1750,32 +1729,26 @@ body {
     }
 
     .history-table {
-        min-width: 900px; /* Force overflow so all columns are legible */
+        min-width: 900px;
         font-size: 0.8rem;
     }
 
-    /* Tidy Filters */
+    /* Professional Filter Drawer */
     .filter-bar.glass {
-        padding: 0.75rem !important;
-        gap: 0.5rem !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
+        display: none !important; /* Hide the old messy bar on mobile */
     }
 
-    .filter-bar .form-group {
-        margin-bottom: 0 !important;
-    }
-
-    .filter-bar .select-group {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.5rem !important;
-    }
-
-    .filter-bar .date-range {
-        display: grid !important;
-        grid-template-columns: 1fr auto 1fr !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
+    .mobile-filter-trigger {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 8px 16px;
+        border-radius: 8px;
+        color: white;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
     }
 }

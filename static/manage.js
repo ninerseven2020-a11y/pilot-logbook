@@ -822,3 +822,44 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchHistory();
     fetchSyncAdjustments();
 });
+
+// --- Mobile Filter Drawer Logic ---
+function openFilterModal() {
+    const modal = document.getElementById('filter-modal');
+    const container = document.getElementById('mobile-filter-container');
+    const selectGroup = document.querySelector('.select-group');
+    const dateRange = document.querySelector('.date-range');
+    
+    if (modal && container && selectGroup && dateRange) {
+        // Move original filter elements into modal
+        container.innerHTML = '';
+        container.appendChild(selectGroup);
+        container.appendChild(dateRange);
+        modal.classList.add('show');
+    }
+}
+
+function closeFilterModal() {
+    const modal = document.getElementById('filter-modal');
+    if (modal) modal.classList.remove('show');
+}
+
+function syncSearchAndFilter(input) {
+    const mainSearch = document.getElementById('history-search');
+    if (mainSearch) {
+        mainSearch.value = input.value;
+        filterHistory();
+    }
+}
+
+function resetFilters() {
+    const selects = document.querySelectorAll('.select-group select');
+    selects.forEach(s => s.value = 'ALL');
+    const dates = document.querySelectorAll('.date-range input');
+    dates.forEach(d => d.value = '');
+    const search = document.getElementById('history-search');
+    const searchMobile = document.getElementById('history-search-mobile');
+    if (search) search.value = '';
+    if (searchMobile) searchMobile.value = '';
+    filterHistory();
+}
