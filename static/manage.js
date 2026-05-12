@@ -113,6 +113,8 @@ function renderHistory(history) {
             <td class="route-cell" title="${entry.pic || ''}">${entry.pic || '---'}</td>
             <td class="route-cell" title="${entry.copilot || ''}">${entry.copilot || '---'}</td>
             <td class="route-cell" title="${entry.route || ''}">${entry.route || '---'}</td>
+            <td style="text-align: center; color: var(--accent-color); font-weight: 600;">${entry.takeoff || 0}</td>
+            <td style="text-align: center; color: var(--accent-color); font-weight: 600;">${entry.landing || 0}</td>
             <td>${entry.day_p1 || 0.0}</td>
             <td>${entry.day_p1us || 0.0}</td>
             <td>${entry.day_p2 || 0.0}</td>
@@ -402,6 +404,8 @@ function openFlightDetailModal(id) {
     document.getElementById('detail-flight-id').value = entry.flight_id || '';
     document.getElementById('detail-dep-time').value = entry.dep_time || '';
     document.getElementById('detail-arr-time').value = entry.arr_time || '';
+    document.getElementById('detail-takeoff').value = entry.takeoff || 0;
+    document.getElementById('detail-landing').value = entry.landing || 0;
     document.getElementById('detail-nature').value = entry.remarks || ''; // Map nature to remarks for manual
 
     // Hours
@@ -468,6 +472,8 @@ async function handleFlightDetailSubmit(event) {
         night_dual: parseFloat(document.getElementById('detail-night-put').value) || 0,
         inst_flying: parseFloat(document.getElementById('detail-inst').value) || 0,
         sim_time: parseFloat(document.getElementById('detail-sim').value) || 0,
+        takeoff: parseInt(document.getElementById('detail-takeoff').value) || 0,
+        landing: parseInt(document.getElementById('detail-landing').value) || 0,
         operator: document.getElementById('detail-operator').value,
         label: document.getElementById('detail-label').value
     };
@@ -779,3 +785,40 @@ async function exportLogbookJSON() {
         showToast('Server error during export', 'error');
     }
 }
+
+async function handleAiMapping() {
+    const input = document.getElementById('ai-mapping-input');
+    const instruction = input.value.trim();
+    if (!instruction) {
+        showToast('Please type an instruction for the AI', true);
+        return;
+    }
+    
+    showToast('AI is updating your mappings...');
+    try {
+        const response = await apiFetch('/api/synonyms/ai', {
+            method: 'POST',
+            body: JSON.stringify({ instruction })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            showToast(result.message);
+            input.value = '';
+            // Show summary
+            const summary = document.getElementById('mapping-summary');
+            summary.style.display = 'block';
+            summary.textContent = `Updated keys: ${result.updated_keys.join(', ')}. Your Excel imports will now use these new rules.`;
+        } else {
+            showToast(result.detail || 'AI mapping failed', true);
+        }
+    } catch (e) {
+        showToast('Server error during AI mapping', true);
+    }
+}
+
+// Initial loads
+document.addEventListener('DOMContentLoaded', () => {
+    fetchHistory();
+    fetchSyncAdjustments();
+});

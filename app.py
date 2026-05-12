@@ -692,6 +692,45 @@ async def update_synonyms(new_map: dict, user: User = Depends(get_current_user))
     logbook.update_synonyms(new_map)
     return {"message": "Synonyms updated successfully"}
 
+@app.post("/api/synonyms/ai")
+async def update_synonyms_ai(data: dict, user: User = Depends(get_current_user)):
+    instruction = data.get('instruction')
+    if not instruction:
+        raise HTTPException(status_code=400, detail="No instruction provided")
+    
+    from engine import CAD407Logbook
+    logbook = CAD407Logbook(user_id=user.id, pilot_name=user.pilot_name)
+    
+    # Use LLM to extract the mapping update
+    prompt = f"""
+    The user wants to update their Excel header mapping for a pilot logbook.
+    Current Mapping: {json.dumps(logbook.COLUMN_MAP)}
+    
+    User Instruction: "{instruction}"
+    
+    Return a JSON object representing the UPDATED mapping. 
+    Only change the keys mentioned in the instruction. 
+    Ensure you return the FULL mapping object with your changes included.
+    
+    Standard Keys: DEP, FLT_SN, AC_TYPE, AC_REG, CAPTAIN, COPILOT, CAPACITY, ROUTE, DAY_P1, DAY_P1US, DAY_P2, DAY_DUAL, NIGHT_P1, NIGHT_P1US, NIGHT_P2, NIGHT_DUAL, INSTRUMENT, SIM_DAY, SIM_NIGHT, REMARKS, ARR, ATD, ATA, TOTAL, TAKEOFF, LANDING.
+    """
+    
+    try:
+        from engine import LLMEngine
+        llm = LLMEngine()
+        updated_map_str = llm.generate(prompt)
+        # Extract JSON from potential markdown
+        import re
+        match = re.search(r'(\{.*\})', updated_map_str, re.DOTALL)
+        if match:
+            updated_map = json.loads(match.group(1))
+            logbook.update_synonyms(updated_map)
+            return {"message": "AI successfully updated your mappings.", "updated_keys": list(updated_map.keys())}
+    except Exception as e:
+        print(f"[AI MAPPING] Error: {e}")
+        
+    raise HTTPException(status_code=500, detail="AI could not process the mapping instruction. Please try being more specific.")
+
 @app.get("/api/history")
 async def get_history(current_user: User = Depends(get_current_user)):
     from engine import CAD407Logbook
@@ -808,6 +847,7 @@ async def import_excel(
     operator: str = Form("Default"),
     label: str = Form("Default"),
     confirm_year: bool = Form(False),
+    confirm_mapping: bool = Form(False),
     # Manual entry fields
     date: Optional[str] = Form(None),
     ac_type: Optional[str] = Form(None),
@@ -829,6 +869,8 @@ async def import_excel(
     night_put: float = Form(0.0),
     instr: float = Form(0.0),
     sim: float = Form(0.0),
+    takeoff: int = Form(0),
+    landing: int = Form(0),
     remarks: str = Form(""),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -883,6 +925,8 @@ async def import_excel(
             "night_dual": night_put, # P U/T mapped to dual
             "inst_flying": instr,
             "sim_time": sim,
+            "takeoff": takeoff,
+            "landing": landing,
             "remarks": remarks,
             "operator": operator,
             "label": label,
@@ -891,10 +935,14 @@ async def import_excel(
             "timestamp": datetime.now().isoformat()
         }
 
-        logbook.history.append(entry)
+        status, msg = logbook.merge_or_add_entry(entry)
         logbook.save_data()
-        msg = f"Manual entry added successfully."
-        return {"message": msg, "data": get_mvp_data(logbook)}
+        
+        return {
+            "message": msg, 
+            "status": status,
+            "data": get_mvp_data(logbook)
+        }
 
     if not file:
         raise HTTPException(status_code=400, detail="No file or manual entry provided.")
@@ -902,14 +950,16 @@ async def import_excel(
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
     
+    # Check for mapping confirmation
+    mapping_confirmed = Form(False)
+
     try:
         import io
         import pandas as pd
         contents = await file.read()
         
         try:
-            # Simple pandas load (uses openpyxl for .xlsx)
-            xl = pd.ExcelFile(io.BytesIO(contents))
+            xl = pd.ExcelFile(io.BytesIO(contents), engine='openpyxl', engine_kwargs={'data_only': True})
             sheet_names = xl.sheet_names
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to open Excel file: {e}. Please ensure it is a valid .xlsx file.")
@@ -920,13 +970,10 @@ async def import_excel(
         all_entries = []
         
         for sheet_name in sheet_names:
-            print(f"[IMPORT] Scanning sheet: {sheet_name}")
             try:
                 df_raw = xl.parse(sheet_name, header=None)
                 data = [list(row) for row in df_raw.values]
-                
-                if not data:
-                    continue
+                if not data: continue
                 
                 header_row_index = -1
                 for i, row in df_raw.iterrows():
@@ -934,65 +981,47 @@ async def import_excel(
                     if any(h in row_values for h in dep_synonyms):
                         header_row_index = i
                         break
-                
-                if header_row_index == -1:
-                    continue
+                if header_row_index == -1: continue
                     
-                # Create DF with the correct header
                 headers = [str(h) for h in data[header_row_index]]
                 df = pd.DataFrame(data[header_row_index+1:], columns=headers)
                 df = df.dropna(how='all')
                 
-                # Use SMART detection (Synonyms + LLM fallback)
-                col_map = logbook.detect_columns_smart(df)
+                # SMART detection with confirmation check
+                col_map, needs_confirmation = logbook.detect_columns_smart(df)
                 
-                # Verify if we found enough data
-                # We need Date, AC Type, AC Reg AND (Total OR both ATD and ATA)
-                has_basic = all(col_map.get(k) and col_map[k] in df.columns for k in ['DEP', 'AC_TYPE', 'AC_REG'])
-                has_total = bool(col_map.get('TOTAL') and col_map['TOTAL'] in df.columns)
-                has_times = all(col_map.get(k) and col_map[k] in df.columns for k in ['ATD', 'ATA'])
+                # If AI was used and user hasn't confirmed yet, PAUSE and ask
+                if needs_confirmation and not confirm_mapping:
+                    return JSONResponse(
+                        status_code=422, # Unprocessable Entity - needs user input
+                        content={
+                            "requires_mapping_confirmation": True,
+                            "proposed_mapping": col_map,
+                            "message": "The system is not 100% sure about your Excel columns. Please confirm the mapping below before we proceed."
+                        }
+                    )
                 
-                if not (has_basic and (has_total or has_times)):
-                    print(f"[IMPORT] Sheet '{sheet_name}' rejected: missing critical columns (Basic: {has_basic}, Total: {has_total}, Times: {has_times})")
-                    continue
-                
-                print(f"[IMPORT] Found valid data on sheet '{sheet_name}'. (Total Found: {has_total}, Using ATD/ATA Fallback: {not has_total and has_times})")
-                
-                # Check for partial dates if not already confirmed
+                # Proceed with verified or confirmed mapping
                 if not confirm_year and logbook.has_partial_dates(df, col_map):
                     current_year = datetime.now().year
                     return JSONResponse(
                         status_code=409,
                         content={
                             "requires_confirmation": True,
-                            "message": f"Some dates in your Excel file are missing the year (e.g., '28-Jan'). Would you like to import them using the current year ({current_year})?"
+                            "message": f"Some dates in your Excel file are missing the year (e.g., '28-Jan'). Import using {current_year}?"
                         }
                     )
 
-                # Parse rows for this sheet
                 for _, row in df.iterrows():
                     entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
                     if entry:
-                        # Fallback for AC_TYPE if missing in Excel but provided in UI
                         if (not entry.get('ac_type') or entry.get('ac_type') == 'None') and ac_type:
                             entry['ac_type'] = ac_type
-                        
-                        # Dedup and Merge
-                        existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
-                        if existing:
-                            # Refresh existing record with new data
-                            for k, v in entry.items():
-                                if k in ['dep_time', 'arr_time', 'route', 'remarks', 'metadata', 'day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual', 'inst_flying', 'sim_time']:
-                                    existing[k] = v
-                        else:
-                            logbook.history.append(entry)
+                        logbook.merge_or_add_entry(entry)
                 
             except Exception as e:
                 print(f"[IMPORT] Error scanning sheet {sheet_name}: {e}")
                 continue
-
-        if not logbook.history:
-             raise HTTPException(status_code=400, detail="Could not find any valid flight data in the uploaded file.")
 
         logbook.save_data()
         return {"message": "Import complete.", "data": get_mvp_data(logbook)}

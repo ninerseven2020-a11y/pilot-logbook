@@ -700,21 +700,32 @@ header {
 }
 
 @media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    .dashboard-top-row {
+    .dashboard-grid, .dashboard-top-row {
         grid-template-columns: 1fr;
     }
     .header-content {
         flex-direction: column;
         height: auto;
         padding: 1rem;
+        gap: 0.75rem;
+    }
+    .nav-links {
+        margin-left: 0;
+        gap: 1rem;
+        font-size: 0.85rem;
+    }
+    .container {
+        padding: 1rem 0.5rem;
+    }
+    .manual-grid {
+        grid-template-columns: 1fr !important;
         gap: 1rem;
     }
-    .actions {
-        width: 100%;
-        justify-content: space-between;
+    .form-group-pair {
+        flex-direction: column;
+    }
+    .flying-hours-columns {
+        flex-direction: column;
     }
 }
 
@@ -782,7 +793,14 @@ header {
 
 .toast.error {
     background-color: #ef4444;
-    border-left: 4px solid #b91c1c;
+    border-left: 5px solid #b91c1c;
+}
+
+.toast.warning {
+    background-color: #f59e0b; /* Aviation Yellow */
+    color: #000;
+    border-left: 5px solid #d97706;
+    box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
 }
 
 .auth-helper-links {
@@ -1470,4 +1488,65 @@ input:focus, select:focus {
 .tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+}
+
+/* Stacked Manual Entry Layout */
+.manual-stacked-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.form-row-tri {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-row-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-row-quad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+
+.flying-group-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.5rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+    .form-row-tri, .form-row-split {
+        grid-template-columns: 1fr;
+    }
+    .form-row-quad {
+        grid-template-columns: 1fr 1fr;
+    }
+    .manual-stacked-layout {
+        gap: 1rem;
+    }
 }

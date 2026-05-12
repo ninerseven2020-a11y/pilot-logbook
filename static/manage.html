@@ -487,6 +487,8 @@
                                     <th rowspan="2">PIC</th>
                                     <th rowspan="2">Co-Pilot</th>
                                     <th rowspan="2">Route</th>
+                                    <th rowspan="2">T/O</th>
+                                    <th rowspan="2">LDG</th>
                                     <th colspan="4" class="header-day">Day</th>
                                     <th colspan="4" class="header-night">Night</th>
                                     <th rowspan="2">IF</th>
@@ -511,77 +513,42 @@
                         </table>
                     </div>
                 </div>
-            <!-- Advanced Settings (Synonyms) -->
+            <!-- AI Header Mapping Assistant (Simplified) -->
             <section class="card glass" id="synonym-settings" style="margin-top: 2rem; border-top: 2px solid var(--accent-color);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <div>
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"></path></svg>
-                            Excel Header Mapping
-                            <div class="tooltip-container">
-                                <span class="info-icon">i</span>
-                                <span class="tooltip-text">Tell the system which Excel columns match our internal fields. For example, if your Excel says 'A/C Type', add that as a synonym for 'Aircraft Type'.</span>
-                            </div>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            AI Mapping Assistant
                         </h2>
                         <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
-                            Configure synonyms for each logbook field to enable automatic Excel column detection.
+                            Tell the engine how to map your Excel headers if it gets confused.
                         </p>
                     </div>
-                    <button class="btn btn-primary" onclick="saveSynonyms()">
-                        <span>Save Mappings</span>
-                    </button>
                 </div>
 
-                <div class="table-container" style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                        <thead style="background: rgba(255,255,255,0.03);">
-                            <tr>
-                                <th style="text-align: left; padding: 1rem; color: var(--accent-color); text-transform: uppercase; font-size: 0.7rem; width: 30%;">Internal Field</th>
-                                <th style="text-align: left; padding: 1rem; color: var(--accent-color); text-transform: uppercase; font-size: 0.7rem;">Excel Synonyms (Comma Separated)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="synonym-table-body">
-                            <!-- Populated by JS -->
-                        </tbody>
-                    </table>
+                <div class="ai-mapping-container glass" style="background: rgba(255,255,255,0.03); padding: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; display: block; opacity: 0.7;">Natural Language Instruction</label>
+                        <textarea id="ai-mapping-input" placeholder="e.g. 'The column called Pilot Name is actually the PIC' or 'The column No. of TO means Takeoffs'" 
+                                  style="width: 100%; min-height: 80px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; padding: 1rem; font-family: inherit; font-size: 0.95rem; resize: none;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="handleAiMapping()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                            Ask AI to Update Mapping
+                        </button>
+                    </div>
+                </div>
+
+                <div id="mapping-summary" style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); display: none;">
+                    <!-- Filled by JS after AI update -->
                 </div>
             </section>
             
             <!-- Data Migration (JSON Backup/Restore) -->
             </section>
             
-            <!-- System Diagnostics (New) -->
-            <section class="card glass" id="system-diagnostics" style="margin-top: 2rem; border-top: 2px solid #ef4444;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <div>
-                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.8rem;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                            System Diagnostics
-                        </h2>
-                        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
-                            Check logbook engine status and perform self-repair.
-                        </p>
-                    </div>
-                    <button class="btn btn-primary" style="background: #ef4444;" onclick="handleSystemRepair()">
-                        Force Self-Repair (Install Engines)
-                    </button>
-                </div>
-                
-                <div id="diagnostics-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                    <div class="glass" style="padding: 1rem; border-radius: 8px;">
-                        <label style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.5;">Calamine Engine</label>
-                        <div id="status-calamine" style="font-weight: 600; margin-top: 0.5rem;">Checking...</div>
-                    </div>
-                    <div class="glass" style="padding: 1rem; border-radius: 8px;">
-                        <label style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.5;">Nuclear Engine (xlsx2csv)</label>
-                        <div id="status-xlsx2csv" style="font-weight: 600; margin-top: 0.5rem;">Checking...</div>
-                    </div>
-                    <div class="glass" style="padding: 1rem; border-radius: 8px;">
-                        <label style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.5;">Gemini AI Brain</label>
-                        <div id="status-gemini" style="font-weight: 600; margin-top: 0.5rem;">Checking...</div>
-                    </div>
-                </div>
-            </section>
         </div>
     </main>
 
@@ -656,6 +623,14 @@
                         <div class="detail-group">
                             <label>Arr Time</label>
                             <input type="text" id="detail-arr-time" placeholder="HH:MM">
+                        </div>
+                        <div class="detail-group">
+                            <label>Takeoffs</label>
+                            <input type="number" id="detail-takeoff" min="0">
+                        </div>
+                        <div class="detail-group">
+                            <label>Landings</label>
+                            <input type="number" id="detail-landing" min="0">
                         </div>
                         <div class="detail-group">
                             <label>Nature of Flight</label>
@@ -736,6 +711,8 @@
                     <option value="sim_time">Sim</option>
                     <option value="operator">Operator</option>
                     <option value="label">Label</option>
+                    <option value="takeoff">Takeoffs</option>
+                    <option value="landing">Landings</option>
                 </select>
             </div>
             <div class="form-group" style="margin-bottom:1.5rem">

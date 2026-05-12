@@ -664,8 +664,8 @@ async function fetchPreview(retries = 3) {
     let url = '/api/preview?page=1';
     const dateFrom = document.getElementById('filter-date-from')?.value;
     const dateTo = document.getElementById('filter-date-to')?.value;
-    if (dateFrom) url += `&date_from=${dateFrom}`;
-    if (dateTo) url += `&date_to=${dateTo}`;
+    if (dateFrom && dateFrom !== "") url += `&date_from=${dateFrom}`;
+    if (dateTo && dateTo !== "") url += `&date_to=${dateTo}`;
 
     try {
         // Fetch adjustments in parallel
@@ -847,8 +847,8 @@ function renderLogbookTable() {
                 <td>${entry.copilot || ''}</td>
                 <td>${entry.capacity || ''}</td>
                 <td>${entry.operator === 'GFS' ? 'VHHH VHHH' : (entry.route || '')}</td> <!-- Journey -->
-                <td></td> <!-- Take-offs -->
-                <td></td> <!-- Landings -->
+                <td style="text-align: center;">${entry.takeoff || ''}</td> <!-- Take-offs -->
+                <td style="text-align: center;">${entry.landing || ''}</td> <!-- Landings -->
                 <td>${fmt(entry.day_p1)}</td>
                 <td>${fmt(entry.day_p1us)}</td>
                 <td>${fmt(entry.day_p2)}</td>
@@ -1427,7 +1427,7 @@ function confirmExportPDF() {
     closePDFModal();
 }
 
-function showToast(message, isError = false) {
+function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     if (!toast) return;
     
@@ -1440,22 +1440,29 @@ function showToast(message, isError = false) {
         }
     }
     
+    // Legacy support for boolean isError
+    let toastType = type;
+    if (type === true) toastType = 'error';
+    if (type === false) toastType = 'success';
+    
     // Add to Error History if it's an error
-    if (isError) {
+    if (toastType === 'error') {
         addErrorToHistory(displayMsg);
     }
     
-    toast.innerHTML = `<span>${displayMsg}</span> <span style="margin-left: 10px; cursor: pointer; opacity: 0.7;">✕</span>`;
-    toast.className = 'toast show';
-    if (isError) toast.classList.add('error');
-    else toast.classList.remove('error');
+    const icon = toastType === 'error' ? '🚫' : (toastType === 'warning' ? '⚠️' : '✅');
+    
+    toast.innerHTML = `<span style="margin-right: 8px;">${icon}</span> <span>${displayMsg}</span> <span style="margin-left: 10px; cursor: pointer; opacity: 0.7;" onclick="this.parentElement.classList.remove('show')">✕</span>`;
+    
+    toast.className = 'toast show ' + toastType;
     
     if (window._toastTimeout) clearTimeout(window._toastTimeout);
     
-    if (!isError) {
+    // Auto-hide unless it's a critical error
+    if (toastType !== 'error') {
         window._toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3000);
+        }, 4000);
     }
 }
 
@@ -1712,6 +1719,8 @@ async function handleAdvancedUpload(event) {
         
         formData.append('instr', document.getElementById('manual-instr').value);
         formData.append('sim', document.getElementById('manual-sim').value);
+        formData.append('takeoff', document.getElementById('manual-takeoff').value);
+        formData.append('landing', document.getElementById('manual-landing').value);
         formData.append('remarks', document.getElementById('manual-remarks').value);
     } else if (fileInput.files[0]) {
         formData.append('file', fileInput.files[0]);
@@ -1727,6 +1736,15 @@ async function handleAdvancedUpload(event) {
             body: formData
         });
         
+        // Handle Mapping Confirmation (Tiered AI detection)
+        if (response.status === 422) {
+            const result = await response.json();
+            if (result.requires_mapping_confirmation) {
+                showMappingModal(result.proposed_mapping);
+                return; // Stop here, modal will resume
+            }
+        }
+
         // Handle year confirmation request
         if (response.status === 409) {
             const result = await response.json();
@@ -1748,10 +1766,15 @@ async function handleAdvancedUpload(event) {
         
         if (response.ok) {
             const result = await response.json();
-            showToast(result.message);
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 2000);
+            if (result.status === "OVERLAP") {
+                showToast(result.message, 'warning');
+            } else if (result.status === "MERGED") {
+                showToast(result.message);
+                setTimeout(() => { window.location.href = '/preview'; }, 1500);
+            } else {
+                showToast(result.message || "Upload complete!");
+                setTimeout(() => { window.location.href = '/preview'; }, 1500);
+            }
         } else {
             const error = await response.json();
             showToast(error.detail || "Upload failed", true);
@@ -2046,6 +2069,85 @@ function checkGuide() {
     }
 }
 
+function showMappingModal(mapping) {
+    const modal = document.getElementById('mapping-modal');
+    const list = document.getElementById('mapping-list');
+    list.innerHTML = '';
+    
+    // Core fields to show/confirm
+    const coreFields = {
+        'DEP': 'Date',
+        'FLT_SN': 'Flight S/N',
+        'AC_TYPE': 'Aircraft Type',
+        'AC_REG': 'Aircraft Reg',
+        'TOTAL': 'Total Hours',
+        'ROUTE': 'Route',
+        'CAPTAIN': 'PIC Name',
+        'COPILOT': 'Copilot Name',
+        'TAKEOFF': 'Takeoffs',
+        'LANDING': 'Landings'
+    };
+    
+    Object.entries(coreFields).forEach(([key, label]) => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.marginBottom = '0.5rem';
+        row.style.padding = '0.5rem';
+        row.style.background = 'rgba(255,255,255,0.05)';
+        row.style.borderRadius = '4px';
+        
+        const colVal = mapping[key] || "--- NOT FOUND ---";
+        const isMissing = !mapping[key];
+        
+        row.innerHTML = `
+            <span style="font-weight: 600; font-size: 0.8rem;">${label}</span>
+            <span style="color: ${isMissing ? '#ef4444' : '#38bdf8'}; font-family: monospace;">${colVal}</span>
+        `;
+        list.appendChild(row);
+    });
+    
+    modal.classList.add('show');
+}
+
+function closeMappingModal() {
+    document.getElementById('mapping-modal').classList.remove('show');
+}
+
+async function confirmMapping() {
+    closeMappingModal();
+    // Re-trigger upload with confirm_mapping flag
+    const form = document.getElementById('upload-form');
+    const formData = new FormData(form);
+    
+    formData.append('confirm_mapping', 'true');
+    showToast("Finalizing import with confirmed mapping...");
+    
+    // Call the same handleAdvancedUpload logic or reuse the code
+    const fileInput = document.getElementById('excel-file');
+    if (fileInput.files[0]) {
+        formData.append('file', fileInput.files[0]);
+    }
+    
+    try {
+        const response = await apiFetch('/api/import', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(result.message || "Import successful!");
+            setTimeout(() => { window.location.href = '/preview'; }, 1500);
+        } else {
+            const err = await response.json();
+            showToast(err.detail || "Import failed", true);
+        }
+    } catch (e) {
+        showToast("Error during confirmation", true);
+    }
+}
 function dismissGuide() {
     localStorage.setItem('onboarding_guide_dismissed', 'true');
     const guide = document.getElementById('onboarding-guide');

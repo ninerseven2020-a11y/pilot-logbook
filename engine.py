@@ -5,7 +5,7 @@ import os
 from datetime import datetime, time
 import uuid
 try:
-    import google.generativeai as genai
+    from google import genai
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
@@ -13,12 +13,12 @@ except ImportError:
     try:
         import subprocess
         import sys
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai"])
-        import google.generativeai as genai
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "google-genai"])
+        from google import genai
         HAS_GENAI = True
-        print("[SYSTEM] google-generativeai installed successfully via self-repair.")
+        print("[SYSTEM] google-genai installed successfully via self-repair.")
     except:
-        print("[SYSTEM] google-generativeai missing and auto-install failed.")
+        print("[SYSTEM] google-genai missing and auto-install failed.")
 
 import requests
 
@@ -79,15 +79,22 @@ class CAD407Logbook:
             'SIM_DAY': ['SIM DAY', 'SIMULATOR DAY', 'SIM P1 DAY'],
             'SIM_NIGHT': ['SIM NIGHT', 'SIMULATOR NIGHT', 'SIM P1 NIGHT'],
             'REMARKS': ['REMARKS', 'NOTES', 'COMMENTS', 'FLIGHT DETAILS'],
-            'ARR': ['ARR', 'ARRIVAL', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME', 'ATA'],
+            'ARR': ['ARRIVAL', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME'],
             'ATD': ['ATD', 'DEP TIME', 'DEPARTURE TIME', 'DEP_TIME', 'OFF BLOCK'],
             'ATA': ['ATA', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME', 'ON BLOCK'],
-            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS', 'BLOCK TIME', 'TOTAL_TIME', 'DURATION']
+            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS', 'BLOCK TIME', 'TOTAL_TIME', 'DURATION'],
+            'TAKEOFF': ['TAKEOFF', 'TO', 'T/O', 'NO. OF TAKEOFF', 'TAKEOFFS'],
+            'LANDING': ['LANDING', 'LDG', 'LANDINGS', 'NO. OF LANDING', 'NO. OF LANDINGS']
         }
         if os.path.exists(self.synonyms_file):
             try:
                 with open(self.synonyms_file, 'r') as f:
-                    return json.load(f)
+                    stored = json.load(f)
+                    # Merge stored with defaults to ensure new keys (ATD, ATA, etc.) are always present
+                    for k, v in defaults.items():
+                        if k not in stored:
+                            stored[k] = v
+                    return stored
             except:
                 return defaults
         return defaults
@@ -117,38 +124,61 @@ class CAD407Logbook:
         with open(self.storage_file, "w") as f:
             json.dump(payload, f, default=encoder)
 
+    def detect_columns_exact(self, df):
+        """Tier 1: Look for exact standard CAD407 headers."""
+        exact_map = {}
+        standard_headers = {
+            'DEP': 'DATE',
+            'FLT_SN': 'FLT S/N',
+            'AC_TYPE': 'AIRCRAFT TYPE',
+            'AC_REG': 'AIRCRAFT REG',
+            'CAPTAIN': 'PIC NAME',
+            'COPILOT': 'COPILOT NAME',
+            'ROUTE': 'ROUTE',
+            'TOTAL': 'TOTAL TIME',
+            'TAKEOFF': 'T/O',
+            'LANDING': 'LDG'
+        }
+        for key, header in standard_headers.items():
+            if header in df.columns:
+                exact_map[key] = header
+        return exact_map
+
     def detect_columns_smart(self, df):
         """
-        Tries standard detection first. If critical columns are missing, tries LLM.
+        Tries Exact -> Synonyms -> AI. Returns (map, needs_confirmation).
         """
-        # Get standard mapping
-        standard_map = self.detect_columns(df.columns)
+        # 1. TIER 1: Exact CAD407 Match
+        exact_map = self.detect_columns_exact(df)
         
-        # Check if critical columns were found
+        # 2. TIER 2: Synonym Match
+        synonym_map = self.detect_columns(df)
+        
+        # Combined map (Exact takes priority)
+        final_map = {**synonym_map, **exact_map}
+        
+        # Check for critical missing columns
         critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
-        found_critical = sum(1 for k in critical_keys if k in standard_map and standard_map[k] in df.columns)
+        missing_critical = [k for k in critical_keys if not final_map.get(k)]
         
-        # If all critical keys found, we are happy
-        if found_critical >= len(critical_keys):
-            print(f"[SMART ENGINE] Standard detection successful ({found_critical}/{len(critical_keys)} critical keys).")
-            return standard_map
+        # If all critical keys found via Tier 1 or 2, we are relatively confident
+        if not missing_critical:
+            return final_map, False 
             
-        print(f"[SMART ENGINE] Confidence low ({found_critical}/{len(critical_keys)}). Engaging LLM Brain with sample data...")
+        # 3. TIER 3: AI DATA SCAN (Hypothesis)
+        print(f"[SMART ENGINE] Missing critical columns {missing_critical}. Engaging AI Brain...")
         try:
-            llm_map = self.detect_columns_llm(df)
-            if llm_map:
-                print(f"[SMART ENGINE] LLM Brain returned: {json.dumps(llm_map)}")
-                # Merge: Use LLM results to fill missing keys in standard map
-                for k, v in llm_map.items():
-                    if k in standard_map and standard_map[k] is None and v in df.columns:
-                        standard_map[k] = v
-                    elif k not in standard_map and v in df.columns:
-                        standard_map[k] = v
-                return standard_map
+            ai_map = self.detect_columns_llm(df) # This already uses sample data
+            if ai_map:
+                # Merge AI guesses
+                for k, v in ai_map.items():
+                    if k not in final_map or not final_map[k]:
+                        final_map[k] = v
+                return final_map, True # REQUIRES CONFIRMATION
         except Exception as e:
-            print(f"[SMART ENGINE] LLM mapping error: {e}")
+            print(f"[SMART ENGINE] AI error: {e}")
             
-        return standard_map
+        return final_map, len(missing_critical) > 0 # Confirm if anything is missing
 
     def detect_columns_llm(self, df):
         """
@@ -178,18 +208,20 @@ RULES:
         if api_key:
             print("[SMART ENGINE] Using Google Gemini API...")
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=api_key)
+                from google import genai
+                client = genai.Client(api_key=api_key)
                 
-                # Model fallback list
-                model_names = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-pro', 'gemini-pro']
+                # Model fallback list for google-genai
+                model_names = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro']
                 last_error = None
                 
                 for m_name in model_names:
                     try:
                         print(f"[SMART ENGINE] Trying model: {m_name}")
-                        model = genai.GenerativeModel(m_name)
-                        response = model.generate_content(prompt)
+                        response = client.models.generate_content(
+                            model=m_name,
+                            contents=prompt
+                        )
                         text = response.text
                         if "```json" in text:
                             text = text.split("```json")[1].split("```")[0]
@@ -205,13 +237,6 @@ RULES:
                 
                 if last_error:
                     print(f"[SMART ENGINE] All models failed. Last error: {last_error}")
-                    # Diagnostic: List all available models to logs
-                    try:
-                        print("[SMART ENGINE] DIAGNOSTIC: Listing all available models for this key:")
-                        for m in genai.list_models():
-                            if 'generateContent' in m.supported_generation_methods:
-                                print(f" - {m.name}")
-                    except: pass
 
             except Exception as e:
                 print(f"[SMART ENGINE] Gemini error: {e}")
@@ -305,13 +330,14 @@ RULES:
                     entry[col] = self.cad_round_up(entry[col])
 
             # Date string for rendering (Oct 31 format)
-            if 'date_str' not in entry and 'date_obj' in entry:
+            if 'date_obj' in entry:
                 try:
-                    dt_str = entry['date_obj']
-                    if isinstance(dt_str, str):
-                        dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                    dt_val = entry['date_obj']
+                    if isinstance(dt_val, str):
+                        dt = datetime.fromisoformat(dt_val.replace('Z', '+00:00'))
+                        entry['date_obj'] = dt # Convert string back to datetime object in memory
                     else:
-                        dt = dt_str
+                        dt = dt_val
                     entry['date_str'] = dt.strftime('%b %d')
                 except:
                     pass
@@ -380,11 +406,84 @@ RULES:
         except (ValueError, TypeError):
             return 0.0
 
-    def is_duplicate(self, entry):
-        """Checks if a flight serial number already exists in history."""
-        if not entry or not entry.get('flt_sn'):
-            return False
-        return any(h.get('flt_sn') == entry['flt_sn'] for h in self.history)
+    def merge_or_add_entry(self, entry):
+        """
+        Intelligently merges a new entry into history if it matches an existing flight.
+        Matches on: (Date + FLT_SN) OR (Date + Reg + ATD + ATA).
+        Returns True if merged, False if added as new.
+        """
+        if not entry: return False
+        
+        match = None
+        for h in self.history:
+            # 1. Match by Flight S/N (Strongest match)
+            if entry.get('flight_id') and str(h.get('flight_id')) == str(entry['flight_id']):
+                match = h
+                break
+            
+            # 2. Match by Date + Reg + Times (Flight key)
+            if (str(h.get('date_obj')) == str(entry.get('date_obj')) and 
+                str(h.get('reg')).upper() == str(entry.get('reg')).upper() and 
+                str(h.get('dep_time')) == str(entry.get('dep_time')) and 
+                str(h.get('arr_time')) == str(entry.get('arr_time'))):
+                match = h
+                break
+
+        # 3. OVERLAP CHECK (Collision Detection)
+        # If no exact match, check if the times overlap with ANY existing flight
+        if not match:
+            try:
+                new_dep = entry.get('dep_time')
+                new_arr = entry.get('arr_time')
+                new_date = str(entry.get('date_obj'))
+                
+                def to_min(t_str):
+                    if not t_str or ':' not in t_str: return None
+                    h, m = map(int, t_str.split(':'))
+                    return h * 60 + m
+
+                new_start = to_min(new_dep)
+                new_end = to_min(new_arr)
+                
+                if new_start is not None and new_end is not None:
+                    if new_end < new_start: new_end += 1440 # Midnight cross
+                    
+                    for h in self.history:
+                        if str(h.get('date_obj')) == new_date:
+                            h_start = to_min(h.get('dep_time'))
+                            h_end = to_min(h.get('arr_time'))
+                            if h_start is not None and h_end is not None:
+                                if h_end < h_start: h_end += 1440
+                                
+                                # Standard overlap formula: (StartA < EndB) and (EndA > StartB)
+                                if (new_start < h_end) and (new_end > h_start):
+                                    msg = f"TIME OVERLAP: New flight ({new_dep}-{new_arr}) conflicts with an existing flight ({h.get('dep_time')}-{h.get('arr_time')}) on {new_date}."
+                                    print(f"[ENGINE] BLOCKING: {msg}")
+                                    return "OVERLAP", msg
+            except Exception as e:
+                print(f"[ENGINE] Overlap check failed: {e}")
+
+        if match:
+            print(f"[ENGINE] Merging data into existing flight: {entry.get('flight_id') or entry.get('reg')}")
+            # Merge fields: take the non-zero or non-empty value
+            for k, v in entry.items():
+                if k in ['id', 'date_obj', 'date_str']: continue
+                
+                existing_val = match.get(k)
+                if isinstance(v, (int, float)):
+                    if not existing_val or existing_val == 0:
+                        match[k] = v
+                elif isinstance(v, str):
+                    if not existing_val or existing_val in ["", "---", "Default", "Unknown"]:
+                        match[k] = v
+            return "MERGED", "Merged into existing flight."
+        else:
+            # Not a match, add as new
+            if 'id' not in entry:
+                import uuid
+                entry['id'] = str(uuid.uuid4())
+            self.history.append(entry)
+            return "ADDED", "New flight added."
 
     def add_opening_balance(self, ac_type, year=1900, day_p1=0, day_p1us=0, day_p2=0, day_dual=0, 
                             night_p1=0, night_p1us=0, night_p2=0, night_dual=0, 
@@ -526,52 +625,74 @@ RULES:
         self.sync_adjustments = [a for a in self.sync_adjustments if a.get('id') != adj_id]
         self.save_data()
 
-    def detect_columns(self, df_columns):
+    def detect_columns(self, df):
         """
         Scans dataframe columns and maps them to internal keys based on synonyms.
-        Returns a dictionary mapping internal keys to actual column names found in the file.
+        Uses sample data to validate mapping (e.g. no decimals for landings).
         """
+        df_columns = df.columns
         detected_map = {}
-        # Convert all columns to uppercase and stripped for comparison
-        # Store as a list to handle potential duplicates (pandas renames them with .1, .2)
         all_cols = [str(col).strip() for col in df_columns]
-        cleaned_cols_map = {col.upper(): col for col in all_cols}
         
-        # Track used columns to avoid double mapping
+        # Explicitly ignore these confusing columns
+        IGNORE_LIST = ['DEPART. S/N', 'ARRIVAL S/N', 'DEPART S/N', 'ARR S/N']
+        
+        print(f"[ENGINE] Analyzing Columns: {all_cols}")
+        
+        # Track used columns (original names)
         used_cols = set()
+        for col in all_cols:
+            if col.upper() in IGNORE_LIST:
+                used_cols.add(col)
+                print(f"[ENGINE] Blacklisted: {col}")
 
-        # Priority 1: Exact or synonym match
         for key, synonyms in self.COLUMN_MAP.items():
             match_found = False
             
-            # 1. Look for Exact Match first
-            for col_name in cleaned_cols_map:
-                col_upper = col_name.upper()
+            # 1. Look for Exact Match
+            for col in all_cols:
+                if col in used_cols and key not in ['CAPTAIN', 'COPILOT']: continue
+                
+                col_upper = col.upper()
                 if any(syn.upper() == col_upper for syn in synonyms):
-                    col_found = cleaned_cols_map[col_name]
-                    if col_found not in used_cols:
-                        detected_map[key] = col_found
-                        used_cols.add(col_found)
-                        match_found = True
-                        break
+                    detected_map[key] = col
+                    used_cols.add(col)
+                    match_found = True
+                    break
             
-            # 2. Look for Partial Match only if not found and synonym is long enough
+            # 2. Look for Partial Match (aggressive)
             if not match_found:
-                for col_name in cleaned_cols_map:
-                    col_upper = col_name.upper()
-                    if col_name in used_cols:
-                        continue
+                for col in all_cols:
+                    if col in used_cols and key not in ['CAPTAIN', 'COPILOT']: continue
+                    col_upper = col.upper()
                     if any((len(col_upper) >= 3 and syn.upper() in col_upper) or 
                            (len(syn.upper()) >= 3 and col_upper in syn.upper()) for syn in synonyms):
-                        detected_map[key] = cleaned_cols_map[col_name]
-                        used_cols.add(cleaned_cols_map[col_name])
+                        # SANITY CHECK: If mapping to TAKEOFF or LANDING, ensure data is integer-like
+                        if key in ['TAKEOFF', 'LANDING']:
+                            # Check first 5 non-null values
+                            sample = df[col].dropna().head(5).tolist()
+                            is_decimal = False
+                            for val in sample:
+                                try:
+                                    f_val = float(val)
+                                    if f_val % 1 != 0: # Has decimal part
+                                        is_decimal = True
+                                        break
+                                except: pass
+                            
+                            if is_decimal:
+                                print(f"[ENGINE] Rejected '{col}' for {key} - detected decimals.")
+                                continue # Skip this column for this key
+                                
+                        detected_map[key] = col
+                        used_cols.add(col)
                         match_found = True
                         break
             
-            # Default to None if nothing found (don't guess, let SMART engine handle it)
             if not match_found:
                 detected_map[key] = None
-                
+        
+        print(f"[ENGINE] Mapped columns: { {k: v for k, v in detected_map.items() if v} }")
         return detected_map
 
     def parse_ias_row(self, row, operator="Default", label="Default", col_map=None):
@@ -594,6 +715,9 @@ RULES:
 
         dep_val = row.get(col_map.get('DEP'))
         if pd.isna(dep_val):
+            # Only log if it's not a completely empty row
+            if not row.dropna().empty:
+                print(f"[DEBUG] Skipping row: Date column '{col_map.get('DEP')}' is empty.")
             return None
 
         try:
@@ -608,9 +732,11 @@ RULES:
                     try:
                         current_year = datetime.now().year
                         dep_dt = pd.to_datetime(f"{dep_val}-{current_year}").to_pydatetime()
-                    except:
+                    except Exception as e:
+                        print(f"[DEBUG] Date parsing failed for '{dep_val}': {e}")
                         return None
-        except (ValueError, TypeError):
+        except Exception as e:
+            print(f"[DEBUG] Critical error in row parsing logic: {e}")
             return None
 
         # --- Capture raw metadata (exclude ALL standard-matching columns) ---
@@ -715,9 +841,20 @@ RULES:
         
         # Final fallback: Day + Night
         if total_val is None or total_val == 0:
-            total_val = float(get_val('DAY_P1', 0)) + float(get_val('NIGHT_P1', 0)) + \
-                        float(get_val('DAY_P2', 0)) + float(get_val('NIGHT_P2', 0)) + \
                         float(get_val('DAY_DUAL', 0)) + float(get_val('NIGHT_DUAL', 0))
+        
+        # --- Pilot Extraction with Smart Split ---
+        pic_raw = str(get_val('CAPTAIN', '')).strip()
+        copilot_raw = str(get_val('COPILOT', '')).strip()
+        
+        # If both mapped to same column and contains '/', split them
+        if col_map.get('CAPTAIN') == col_map.get('COPILOT') and '/' in pic_raw:
+            parts = pic_raw.split('/')
+            pic_raw = parts[0].strip()
+            copilot_raw = parts[1].strip() if len(parts) > 1 else ""
+            
+        pic_final = "SELF" if pic_raw.upper() == self.pilot_name.upper() else pic_raw
+        copilot_final = "SELF" if copilot_raw.upper() == self.pilot_name.upper() else copilot_raw
 
         entry = {
             'flight_id': get_val('FLT_SN', ''), # Standardized primary ID
@@ -726,8 +863,8 @@ RULES:
             'ac_type': "SIM" if is_sim else get_val('AC_TYPE', ''),
             'ac_category': 'HELI' if is_sim else self.get_ac_category(get_val('AC_TYPE', '')),
             'reg': f"GFS01 {get_val('AC_REG', '')}" if is_sim else get_val('AC_REG', ''),
-            'pic': "SELF" if str(get_val('CAPTAIN', '')).upper() == self.pilot_name.upper() else get_val('CAPTAIN', ''),
-            'copilot': "SELF" if str(get_val('COPILOT', '')).upper() == self.pilot_name.upper() else get_val('COPILOT', ''),
+            'pic': pic_final,
+            'copilot': copilot_final,
             'capacity': get_val('CAPACITY', ''),
             'route': clean_route,
             'day_p1': self.cad_round_up(get_val('DAY_P1')),
@@ -743,7 +880,9 @@ RULES:
             'remarks': remarks,
             'dep_time': format_time(dep_time_raw),
             'arr_time': format_time(arr_time_raw),
-            'total_time': self.cad_round_up(total_val), # Calculated or extracted
+            'total_time': self.cad_round_up(total_val), 
+            'takeoff': int(float(get_val('TAKEOFF', 0))),
+            'landing': int(float(get_val('LANDING', 0))),
             'is_opening': False,
             'is_adjustment': False,
             'operator': operator,
