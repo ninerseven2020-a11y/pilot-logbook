@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.34">
+    <link rel="stylesheet" href="static/style.css?v=1.2.35">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -288,19 +288,25 @@
 
                         <!-- Subsection 3: Journey & Times -->
                         <div class="manual-subsection-group">
+                            <!-- Row 1: Route -->
                             <div class="form-group full-width" style="margin-bottom: 1rem;">
                                 <label for="manual-route">ROUTE</label>
                                 <input type="text" id="manual-route" placeholder="e.g. VHHH VMMC">
                             </div>
 
-                            <div class="manual-grid">
-                                <div class="form-group"><label for="manual-dep">DEP</label><input type="text" id="manual-dep" class="w-short" placeholder="HHMM"></div>
-                                <div class="form-group"><label for="manual-arr">ARR</label><input type="text" id="manual-arr" class="w-short" placeholder="HHMM"></div>
-                                <div class="form-group"><label for="manual-total-input">TOTAL</label><input type="text" id="manual-total-input" class="smart-decimal w-short" value="0.0"></div>
-                                <div class="form-group"><label for="manual-takeoff">T/O</label><input type="number" id="manual-takeoff" class="w-micro" value="1" min="0"></div>
-                                <div class="form-group"><label for="manual-landing">LDG</label><input type="number" id="manual-landing" class="w-micro" value="1" min="0"></div>
-                                <div class="form-group"><label for="manual-instr">INST</label><input type="text" class="smart-decimal w-micro" id="manual-instr" value="0.0"></div>
-                                <div class="form-group"><label for="manual-sim">SIM</label><input type="text" class="smart-decimal w-micro" id="manual-sim" value="0.0"></div>
+                            <!-- Row 2: Primary Times -->
+                            <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-dep">DEP</label><input type="text" id="manual-dep" placeholder="HHMM"></div>
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-arr">ARR</label><input type="text" id="manual-arr" placeholder="HHMM"></div>
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-total-input">TOTAL</label><input type="text" id="manual-total-input" class="smart-decimal" value="0.0"></div>
+                            </div>
+
+                            <!-- Row 3: Ops & Extras -->
+                            <div style="display: flex; gap: 10px;">
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-takeoff">T/O</label><input type="number" id="manual-takeoff" value="1" min="0"></div>
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-landing">LDG</label><input type="number" id="manual-landing" value="1" min="0"></div>
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-instr">INST</label><input type="text" class="smart-decimal" id="manual-instr" value="0.0"></div>
+                                <div class="form-group" style="flex:1; min-width: 0;"><label for="manual-sim">SIM</label><input type="text" class="smart-decimal" id="manual-sim" value="0.0"></div>
                             </div>
                         </div>
 
@@ -459,8 +465,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.34</div>
-    <script>const APP_VERSION = "1.2.34"</script>
-    <script src="static/script.js?v=1.2.34"></script>
+    <div class="version-label">v1.2.35</div>
+    <script>const APP_VERSION = "1.2.35"</script>
+    <script src="static/script.js?v=1.2.35"></script>
 </body>
 </html>
