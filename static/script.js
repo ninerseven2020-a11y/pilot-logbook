@@ -171,7 +171,7 @@ function updateDashboard(data) {
 
     // Also include labels from metadata if available
     if (window._metadata && window._metadata.labels) {
-        window._metadata.labels.forEach(l => labels.add(l));
+        window._metadata.labels.forEach(l => labels.add(typeof l === 'object' ? l.name : l));
     }
     
     const container = document.getElementById('breakdown-filters');
@@ -1686,13 +1686,16 @@ async function fetchUploadMetadata() {
         
         const operatorList = document.getElementById('operator-list');
         const labelList = document.getElementById('label-list');
+        const editOperatorList = document.getElementById('edit-operator-list');
+        const editLabelList = document.getElementById('edit-label-list');
         
-        if (operatorList) {
-            operatorList.innerHTML = data.operators.map(org => `<option value="${org}">`).join('');
-        }
-        if (labelList) {
-            labelList.innerHTML = data.labels.map(nat => `<option value="${nat}">`).join('');
-        }
+        const opsOptions = data.operators.map(org => `<option value="${typeof org === 'object' ? org.name : org}">`).join('');
+        const labelsOptions = data.labels.map(nat => `<option value="${typeof nat === 'object' ? nat.name : nat}">`).join('');
+
+        if (operatorList) operatorList.innerHTML = opsOptions;
+        if (labelList) labelList.innerHTML = labelsOptions;
+        if (editOperatorList) editOperatorList.innerHTML = opsOptions;
+        if (editLabelList) editLabelList.innerHTML = labelsOptions;
     } catch (error) {
         console.error("Error fetching upload metadata:", error);
     }
