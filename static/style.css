@@ -1590,40 +1590,7 @@ input:focus, select:focus {
         height: 20px;
     }
 
-    /* Card-based History for Mobile */
-    #history-table thead {
-        display: none;
-    }
-    
-    #history-table, #history-table tbody, #history-table tr, #history-table td {
-        display: block;
-        width: 100%;
-    }
-
-    #history-table tr {
-        margin-bottom: 1rem;
-        background: rgba(255,255,255,0.03);
-        border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    #history-table td {
-        text-align: right;
-        padding: 0.5rem 0;
-        border: none !important;
-        position: relative;
-    }
-
-    #history-table td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 0;
-        font-weight: 700;
-        font-size: 0.7rem;
-        color: var(--accent-color);
-        text-transform: uppercase;
-    }
+    /* Horizontal Overflow for History Table is now handled in the Manage section at the bottom of the media query */
 }
 
 .bottom-nav {
@@ -1751,5 +1718,44 @@ input:focus, select:focus {
     
     .flying-group-box .form-row-quad .form-group {
         grid-column: span 1 !important; /* Back to 2 columns for the P1/P2 grid */
+    }
+
+    /* MANAGE PAGE: Horizontal Overflow Table */
+    .history-table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.2);
+    }
+
+    .history-table {
+        min-width: 900px; /* Force overflow so all columns are legible */
+        font-size: 0.8rem;
+    }
+
+    /* Tidy Filters */
+    .filter-bar.glass {
+        padding: 0.75rem !important;
+        gap: 0.5rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .filter-bar .form-group {
+        margin-bottom: 0 !important;
+    }
+
+    .filter-bar .select-group {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem !important;
+    }
+
+    .filter-bar .date-range {
+        display: grid !important;
+        grid-template-columns: 1fr auto 1fr !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
     }
 }
