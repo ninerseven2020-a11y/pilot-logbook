@@ -23,7 +23,6 @@ class User(Base):
     password_hash = Column(String)
     full_name = Column(String)
     pilot_name = Column(String)
-    age = Column(Integer)
     email = Column(String)
     license_type = Column(String)
     aircraft_type = Column(String)

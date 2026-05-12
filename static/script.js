@@ -1004,7 +1004,6 @@ async function handleRegister(event) {
     formData.append('password', document.getElementById('password').value);
     formData.append('full_name', document.getElementById('full_name').value);
     formData.append('pilot_name', document.getElementById('pilot_name').value);
-
     formData.append('email', document.getElementById('email').value);
     formData.append('license_type', document.getElementById('license_type').value);
     formData.append('aircraft_type', document.getElementById('aircraft_type').value);
@@ -1383,7 +1382,7 @@ function confirmExportPDF() {
 function showToast(message, isError = false) {
     const toast = document.getElementById('toast');
     if (!toast) return;
-
+    
     let displayMsg = message;
     if (typeof message === 'object' && message !== null) {
         if (message.detail) {
@@ -1392,14 +1391,45 @@ function showToast(message, isError = false) {
             displayMsg = JSON.stringify(message);
         }
     }
-
-    toast.innerText = displayMsg;
-    toast.style.background = isError ? '#ef4444' : '#10b981';
-    toast.classList.add('show');
-    setTimeout(() => {
+    
+    toast.textContent = displayMsg;
+    toast.className = 'toast show';
+    if (isError) toast.classList.add('error');
+    else toast.classList.remove('error');
+    
+    const duration = isError ? 8000 : 3000;
+    
+    if (window._toastTimeout) clearTimeout(window._toastTimeout);
+    
+    window._toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-    }, 4000);
+    }, duration);
+
+    toast.onclick = () => {
+        toast.classList.remove('show');
+        if (window._toastTimeout) clearTimeout(window._toastTimeout);
+    };
 }
+
+function showForgotPassword(event) {
+    if (event) event.preventDefault();
+    const email = prompt("Please enter your account email to receive a reset link:");
+    if (!email) return;
+    
+    const formData = new FormData();
+    formData.append('email', email);
+    
+    fetch('/api/forgot-password', {
+        method: 'POST',
+        body: formData
+    }).then(res => res.json())
+      .then(data => {
+          showToast(data.message);
+      }).catch(err => {
+          showToast("Failed to send reset link", true);
+      });
+}
+
 
 async function fetchUploadMetadata() {
     try {

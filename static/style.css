@@ -774,6 +774,34 @@ header {
     opacity: 0.6;
 }
 
+.toast.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s;
+    animation: fadein 0.5s;
+}
+
+.toast.error {
+    background-color: #ef4444;
+    border-left: 4px solid #b91c1c;
+}
+
+.auth-helper-links {
+    margin-top: 1rem;
+    text-align: right;
+    font-size: 0.85rem;
+}
+
+.auth-helper-links a {
+    color: var(--accent-color);
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.auth-helper-links a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
 .password-toggle:hover {
     color: #f8fafc;
     opacity: 1;

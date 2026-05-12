@@ -250,6 +250,103 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def favicon():
     return FileResponse("static/style.css") # Just return anything to avoid 404
 
+def send_reset_email(email: str, token: str, request: Request):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    # Get SMTP settings from env
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    
+    if not smtp_user or not smtp_pass:
+        print("[EMAIL ERROR] SMTP credentials not found. Reset link will be printed to console only.")
+        return False
+
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    reset_url = f"{scheme}://{host}/reset-password?token={token}"
+
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = email
+    msg['Subject'] = "Password Reset - Pilot Logbook"
+
+    body = f"""
+    Hello,
+
+    You requested a password reset for your Pilot Logbook account.
+    Please click the link below to reset your password:
+
+    {reset_url}
+
+    This link will expire in 30 minutes.
+
+    If you did not request this, please ignore this email.
+    """
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        server = smtplib.SMTP(smtp_host, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        return False
+
+@app.post("/api/forgot-password")
+async def forgot_password(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email.ilike(email)).first()
+    if not user:
+        # Don't reveal if user exists or not for security
+        return {"message": "If an account exists with that email, a reset link has been sent."}
+    
+    # Create reset token (30 mins)
+    reset_token = create_access_token(
+        data={"sub": user.username, "purpose": "reset"}, 
+        expires_delta=timedelta(minutes=30)
+    )
+    
+    success = send_reset_email(email, reset_token, request)
+    
+    # For local testing/dev, always print the link to console
+    host = request.headers.get('host', 'localhost:8000')
+    scheme = 'https' if 'synology.me' in host else 'http'
+    print(f"\n[DEBUG] RESET LINK for {email}: {scheme}://{host}/reset-password?token={reset_token}\n")
+
+    return {"message": "If an account exists with that email, a reset link has been sent."}
+
+@app.get("/reset-password")
+async def reset_password_page():
+    return FileResponse('static/reset_password.html')
+
+@app.post("/api/reset-password")
+async def reset_password(token: str = Form(...), new_password: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        purpose: str = payload.get("purpose")
+        
+        if not username or purpose != "reset":
+            raise HTTPException(status_code=400, detail="Invalid reset token")
+            
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Reset link has expired or is invalid")
+    
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.password_hash = get_password_hash(new_password)
+    db.commit()
+    
+    return {"message": "Password reset successfully. You can now login."}
+
 @app.get("/")
 async def read_root():
     return FileResponse('static/dashboard.html')
@@ -300,7 +397,6 @@ async def register(
     password: str = Form(...),
     full_name: str = Form(...),
     pilot_name: str = Form(...),
-    age: int = Form(...),
     email: str = Form(...),
     license_type: str = Form(...),
     aircraft_type: str = Form(...),
@@ -316,7 +412,6 @@ async def register(
         password_hash=hashed_password,
         full_name=full_name,
         pilot_name=pilot_name,
-        age=age,
         email=email,
         license_type=license_type,
         aircraft_type=aircraft_type
@@ -455,7 +550,6 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "username": current_user.username,
         "full_name": current_user.full_name,
         "pilot_name": current_user.pilot_name,
-        "age": current_user.age,
         "email": current_user.email,
         "license_type": current_user.license_type,
         "aircraft_type": current_user.aircraft_type,
