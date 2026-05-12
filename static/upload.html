@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.31">
+    <link rel="stylesheet" href="static/style.css?v=1.2.32">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -305,18 +305,21 @@
 
                         <!-- Subsection 4: Flying Times (Day & Night) -->
                         <div class="manual-subsection-group">
-                            <div class="manual-grid">
-                                <div class="form-group" style="flex:1; min-width: 120px;">
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <!-- Day Group -->
+                                <div class="flying-group">
                                     <span class="flying-group-header">Day Flying</span>
-                                    <div style="display: flex; gap: 8px;">
+                                    <div style="display: flex; gap: 12px;">
                                         <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="day-p1" value="0.0"></div>
                                         <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="day-p2" value="0.0"></div>
                                         <div class="form-group" style="flex:1"><label>PUT</label><input type="text" class="smart-decimal" id="day-put" value="0.0"></div>
                                     </div>
                                 </div>
-                                <div class="form-group" style="flex:1; min-width: 120px;">
+                                
+                                <!-- Night Group -->
+                                <div class="flying-group">
                                     <span class="flying-group-header">Night Flying</span>
-                                    <div style="display: flex; gap: 8px;">
+                                    <div style="display: flex; gap: 12px;">
                                         <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="night-p1" value="0.0"></div>
                                         <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="night-p2" value="0.0"></div>
                                         <div class="form-group" style="flex:1"><label>PUT</label><input type="text" class="smart-decimal" id="night-put" value="0.0"></div>
@@ -453,8 +456,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.31</div>
-    <script>const APP_VERSION = "1.2.31"</script>
-    <script src="static/script.js?v=1.2.31"></script>
+    <div class="version-label">v1.2.32</div>
+    <script>const APP_VERSION = "1.2.32"</script>
+    <script src="static/script.js?v=1.2.32"></script>
 </body>
 </html>
