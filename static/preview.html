@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.1">
+    <link rel="stylesheet" href="static/style.css?v=1.2.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -47,16 +47,14 @@
                 </nav>
             </div>
             <div class="actions">
-                <button class="btn btn-primary" onclick="exportPDF()">
-                    <span class="icon">📄</span> Export
-                </button>
+                <!-- Export moved to toolbar -->
             </div>
         </div>
     </header>
 
     <main class="container">
         <section class="preview-header">
-            <h2 style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; letter-spacing: 0.2em; color: var(--accent-color); margin-bottom: 1.5rem; text-transform: uppercase;">CAD 407</h2>
+            <h3 class="section-subtitle">CAD 407</h3>
             
             <div class="compact-toolbar glass">
                 <div class="toolbar-group">
@@ -72,6 +70,14 @@
                     <span style="color: rgba(255,255,255,0.3); font-size: 0.7rem;">to</span>
                     <input type="date" id="end-date" class="mini-input">
                     <button class="btn btn-sm btn-accent" onclick="applyDateFilter()">Go</button>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <div class="toolbar-group">
+                    <button class="btn btn-sm btn-primary" onclick="exportPDF()" style="padding: 4px 10px; font-size: 0.75rem;">
+                        <span class="icon" style="margin-right: 4px;">📄</span> Export
+                    </button>
                 </div>
             </div>
         </section>
@@ -367,9 +373,9 @@
         </a>
     </nav>
     <!-- Version Indicator -->
-    <div class="version-label">v1.2.1</div>
+    <div class="version-label">v1.2.2</div>
 
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script src="static/script.js?v=1.2.1"></script>
+    <script src="static/script.js?v=1.2.2"></script>
 </body>
 </html>
