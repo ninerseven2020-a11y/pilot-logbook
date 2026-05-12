@@ -534,32 +534,30 @@ class CAD407Logbook:
         # Priority 1: Exact or synonym match
         for key, synonyms in self.COLUMN_MAP.items():
             match_found = False
-            for syn in synonyms:
-                syn_upper = syn.upper()
-                # Check if this exact synonym exists in the cleaned columns
-                if syn_upper in cleaned_cols_map:
-                    col_name = cleaned_cols_map[syn_upper]
-                    # Check if this specific column instance is already used
-                    # (This helps distinguish between P1 and P1.1 if they are both in synonyms)
-                    if col_name not in used_cols:
-                        detected_map[key] = col_name
-                        used_cols.add(col_name)
+            
+            # 1. Look for Exact Match first
+            for col_name in cleaned_cols_map:
+                col_upper = col_name.upper()
+                if any(syn.upper() == col_upper for syn in synonyms):
+                    col_found = cleaned_cols_map[col_name]
+                    if col_found not in used_cols:
+                        detected_map[key] = col_found
+                        used_cols.add(col_found)
                         match_found = True
                         break
             
-            if match_found:
-                continue
-
-            # Priority 2: Partial matches as a fallback
-            for original_col in all_cols:
-                if original_col in used_cols:
-                    continue
-                col_upper = original_col.upper()
-                if any(syn.upper() in col_upper or col_upper in syn.upper() for syn in synonyms):
-                    detected_map[key] = original_col
-                    used_cols.add(original_col)
-                    match_found = True
-                    break
+            # 2. Look for Partial Match only if not found and synonym is long enough
+            if not match_found:
+                for col_name in cleaned_cols_map:
+                    col_upper = col_name.upper()
+                    if col_name in used_cols:
+                        continue
+                    if any((len(col_upper) >= 3 and syn.upper() in col_upper) or 
+                           (len(syn.upper()) >= 3 and col_upper in syn.upper()) for syn in synonyms):
+                        detected_map[key] = cleaned_cols_map[col_name]
+                        used_cols.add(cleaned_cols_map[col_name])
+                        match_found = True
+                        break
             
             # Default to None if nothing found (don't guess, let SMART engine handle it)
             if not match_found:

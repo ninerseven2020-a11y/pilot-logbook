@@ -1032,6 +1032,9 @@ async def import_excel(
                 for _, row in df.iterrows():
                     entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
                     if entry:
+                        # Fallback for AC_TYPE if missing in Excel but provided in UI
+                        if (not entry.get('ac_type') or entry.get('ac_type') == 'None') and ac_type:
+                            entry['ac_type'] = ac_type
                         sheet_entries.append(entry)
                 
                 if sheet_entries:
