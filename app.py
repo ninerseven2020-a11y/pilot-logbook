@@ -882,19 +882,14 @@ async def import_excel(
         import openpyxl
         contents = await file.read()
         
-        # Use Calamine engine if possible (ignores formulas, fixes circular references)
+        # Use Calamine engine ONLY (ignores formulas, fixes circular references)
         try:
             xl = pd.ExcelFile(io.BytesIO(contents), engine='calamine')
             sheet_names = xl.sheet_names
         except Exception as e:
-            print(f"[IMPORT] Calamine engine failed: {e}. Falling back to openpyxl...")
-            try:
-                wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
-                sheet_names = wb.sheetnames
-                xl = None # We'll handle wb directly
-            except Exception as e2:
-                print(f"[IMPORT] openpyxl also failed: {e2}")
-                raise HTTPException(status_code=400, detail=f"Could not read Excel file: {e2}")
+            error_msg = f"Excel Engine Error: {e}. Please ensure 'python-calamine' is installed on the NAS to bypass circular references."
+            print(f"[IMPORT] {error_msg}")
+            raise HTTPException(status_code=400, detail=error_detail if 'error_detail' in locals() else error_msg)
 
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
@@ -905,13 +900,10 @@ async def import_excel(
         for sheet_name in sheet_names:
             print(f"[IMPORT] Scanning sheet: {sheet_name}")
             try:
-                if 'xl' in locals() and xl is not None:
-                    df_raw = xl.parse(sheet_name, header=None)
-                    # Convert df_raw to a list of lists for consistency with the openpyxl path
-                    data = [list(row) for row in df_raw.values]
-                else:
-                    data = list(wb[sheet_name].values)
-                    df_raw = pd.DataFrame(data)
+                # Use Calamine engine data
+                df_raw = xl.parse(sheet_name, header=None)
+                # Convert df_raw to a list of lists
+                data = [list(row) for row in df_raw.values]
                 
                 if not data:
                     continue
