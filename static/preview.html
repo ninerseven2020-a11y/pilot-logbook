@@ -9,7 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.50">
+    <link rel="stylesheet" href="static/style.css?v=1.2.54">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -109,7 +109,7 @@
             <!-- Table content only -->
 
             
-            <div id="logbook-printable-area" style="background: white; padding: 40px; border-radius: 8px; color: #1e293b; width: 1485px; margin: 0 auto; overflow: visible; zoom: 0.9;">
+            <div id="logbook-printable-area" style="background: white; padding: 40px; border-radius: 8px; color: #1e293b; width: 1650px; margin: 0 auto; overflow: visible;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
                     <h2 style="font-size: 1.25rem; color: #1e293b; margin: 0; font-weight: 800; letter-spacing: -0.01em;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK</h2>
                     <div id="page-number-display" style="font-weight: 800; font-size: 1.2rem; color: #1e293b;">Page 1</div>
@@ -127,9 +127,9 @@
                             <col style="width: 65px;"> <!-- Holder's operating capacity -->
                             
                             <!-- Journey Columns: Now 3 separate boxes -->
-                            <col style="width: 48px;"> <!-- Dep -->
-                            <col style="width: 48px;"> <!-- Times (Total) -->
-                            <col style="width: 48px;"> <!-- Arr -->
+                            <col style="width: 70px;"> <!-- From (Dep) -->
+                            <col style="width: 60px;"> <!-- (Times) -->
+                            <col style="width: 70px;"> <!-- To (Arr) -->
                             
                             <col style="width: 48px;"> <!-- Take-offs -->
                             <col style="width: 48px;"> <!-- Landings -->
@@ -144,56 +144,69 @@
                             <col style="width: 48px;"> <!-- Night P2/P2X (7) -->
                             <col style="width: 48px;"> <!-- Night P/UT (8) -->
                             
-                            <col style="width: 48px;"> <!-- Instrument Flying -->
-                            <col style="width: 48px;"> <!-- Simulator Time -->
-                            <col style="width: 140px;"> <!-- Remarks -->
+                            <col style="width: 65px;"> <!-- Instrument Flying -->
+                            <col style="width: 65px;"> <!-- Simulator Time -->
+                            <col style="width: 200px;"> <!-- Remarks -->
                         </colgroup>
                         <thead>
-                            <tr>
+                            <tr class="header-main">
                                 <th id="current-year" style="border-bottom: 1px solid #94a3b8; font-weight: 700;">Year / ----</th>
                                 <th colspan="2">Aircraft / Simulator</th>
-                                <th rowspan="2">Pilot-in-command</th>
-                                <th rowspan="2">Co-pilot or student</th>
-                                <th rowspan="2">Holder's operating capacity</th>
-                                <th colspan="3">Journey or nature of flight</th>
-                                <th colspan="2">No. of</th>
-                                <th colspan="4">Day flying</th>
-                                <th colspan="4">Night flying</th>
-                                <th rowspan="2">Inst.</th>
-                                <th rowspan="2">Sim.</th>
+                                <th rowspan="2">Pilot-In-Command</th>
+                                <th rowspan="2">Co-Pilot Or Student</th>
+                                <th rowspan="2">Holder's Operating Capacity</th>
+                                <th colspan="3">Journey Or Nature Of Flight</th>
+                                <th colspan="2">No. Of</th>
+                                <th colspan="4">Day Flying</th>
+                                <th colspan="4">Night Flying</th>
+                                <th rowspan="2">Instrument Flying</th>
+                                <th rowspan="2">Simulator Time</th>
                                 <th rowspan="2">Remarks</th>
                             </tr>
-                            <tr>
+                            <tr class="header-sub">
                                 <th style="border-top: none;">Month / Date</th>
                                 <th>Type</th>
                                 <th>Registration</th>
                                 
-                                <!-- Journey sub-headers -->
-                                <th>Dep</th>
-                                <th>Total</th>
-                                <th>Arr</th>
+                                <th>From (Dep)</th>
+                                <th>(Times)</th>
+                                <th>To (Arr)</th>
                                 
-                                <th>T/O</th>
-                                <th>LDG</th>
+                                <th>Take-Offs</th>
+                                <th>Landings</th>
+                                
                                 <th>P1</th>
                                 <th>P1(U/S)</th>
-                                <th>P2</th>
-                                <th>PUT</th>
+                                <th>P2/P2X</th>
+                                <th>P/UT</th>
+                                
                                 <th>P1</th>
                                 <th>P1(U/S)</th>
-                                <th>P2</th>
-                                <th>PUT</th>
+                                <th>P2/P2X</th>
+                                <th>P/UT</th>
+                            </tr>
+                            <tr class="header-numbers">
+                                <th colspan="11"></th>
+                                <th>(1)</th>
+                                <th>(2)</th>
+                                <th>(3)</th>
+                                <th>(4)</th>
+                                <th>(5)</th>
+                                <th>(6)</th>
+                                <th>(7)</th>
+                                <th>(8)</th>
+                                <th colspan="3"></th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Populated by JS -->
                         </tbody>
                         <tfoot>
-                            <tr class="grand-total-row" style="background-color: var(--bg-grey) !important; color: #1e293b; font-weight: 700;">
-                                <td colspan="17" style="text-align: right; padding-right: 20px; border-right: none;">
+                            <tr class="grand-total-row">
+                                <td colspan="18" style="text-align: right; padding-right: 20px; border-right: none;">
                                     <strong>Grand total column (1) to (8):</strong>
                                 </td>
-                                <td colspan="3" id="grand-total-display" style="border-left: none;">0.0</td>
+                                <td colspan="3" id="grand-total-display" style="border-left: none; text-align: left; padding-left: 20px;">0.0</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -402,9 +415,9 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.50</div>
+    <div class="version-label">v1.2.54</div>
 
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script src="static/script.js?v=1.2.50"></script>
+    <script src="static/script.js?v=1.2.54"></script>
 </body>
 </html>

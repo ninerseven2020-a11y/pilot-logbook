@@ -809,14 +809,14 @@ function renderLogbookTable() {
         <td colspan="3" style="text-align: center; font-weight: 700;">Totals brought forward</td>
         <td></td>
         <td></td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(1)</span>${fmt(bf.day_p1)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(2)</span>${fmt(bf.day_p1us)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(3)</span>${fmt(bf.day_p2)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(4)</span>${fmt(bf.day_dual)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(5)</span>${fmt(bf.night_p1)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(6)</span>${fmt(bf.night_p1us)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(7)</span>${fmt(bf.night_p2)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(8)</span>${fmt(bf.night_dual)}</td>
+        <td style="text-align: center;">${fmt(bf.day_p1)}</td>
+        <td style="text-align: center;">${fmt(bf.day_p1us)}</td>
+        <td style="text-align: center;">${fmt(bf.day_p2)}</td>
+        <td style="text-align: center;">${fmt(bf.day_dual)}</td>
+        <td style="text-align: center;">${fmt(bf.night_p1)}</td>
+        <td style="text-align: center;">${fmt(bf.night_p1us)}</td>
+        <td style="text-align: center;">${fmt(bf.night_p2)}</td>
+        <td style="text-align: center;">${fmt(bf.night_dual)}</td>
         <td>${fmt(bf.inst_flying)}</td>
         <td>${fmt(bf.sim_time)}</td>
         <td></td>
@@ -905,14 +905,14 @@ function renderLogbookTable() {
         <td colspan="3" style="text-align: center; font-weight: 700;">Totals carried forward</td>
         <td></td>
         <td></td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(1)</span>${fmt(cf.day_p1)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(2)</span>${fmt(cf.day_p1us)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(3)</span>${fmt(cf.day_p2)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(4)</span>${fmt(cf.day_dual)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(5)</span>${fmt(cf.night_p1)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(6)</span>${fmt(cf.night_p1us)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(7)</span>${fmt(cf.night_p2)}</td>
-        <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.65rem; color:#64748b;">(8)</span>${fmt(cf.night_dual)}</td>
+        <td style="text-align: center;">${fmt(cf.day_p1)}</td>
+        <td style="text-align: center;">${fmt(cf.day_p1us)}</td>
+        <td style="text-align: center;">${fmt(cf.day_p2)}</td>
+        <td style="text-align: center;">${fmt(cf.day_dual)}</td>
+        <td style="text-align: center;">${fmt(cf.night_p1)}</td>
+        <td style="text-align: center;">${fmt(cf.night_p1us)}</td>
+        <td style="text-align: center;">${fmt(cf.night_p2)}</td>
+        <td style="text-align: center;">${fmt(cf.night_dual)}</td>
         <td>${fmt(cf.inst_flying)}</td>
         <td>${fmt(cf.sim_time)}</td>
         <td></td>
@@ -1405,21 +1405,21 @@ function renderLogbookPageToHTML(pageData) {
     const entries = pageData.entries || [];
 
     let rowsHtml = `
-        <tr class="totals-row brought-forward">
+        <tr style="background-color: #f1f5f9; font-weight: 700; height: 45px;">
             <td></td><td></td><td></td><td></td><td></td><td></td>
-            <td style="text-align: center;">Totals brought forward</td>
-            <td></td><td></td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(1)</span>${fmt(bf.day_p1)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(2)</span>${fmt(bf.day_p1us)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(3)</span>${fmt(bf.day_p2)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(4)</span>${fmt(bf.day_dual)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(5)</span>${fmt(bf.night_p1)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(6)</span>${fmt(bf.night_p1us)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(7)</span>${fmt(bf.night_p2)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(8)</span>${fmt(bf.night_dual)}</td>
-            <td>${fmt(bf.inst_flying)}</td>
-            <td>${fmt(bf.sim_time)}</td>
-            <td></td>
+            <td colspan="3" style="text-align: center; border: 1px solid #94a3b8;">Totals brought forward</td>
+            <td style="border: 1px solid #94a3b8;"></td><td style="border: 1px solid #94a3b8;"></td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.day_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(bf.night_dual)}</td>
+            <td style="border: 1px solid #94a3b8;">${fmt(bf.inst_flying)}</td>
+            <td style="border: 1px solid #94a3b8;">${fmt(bf.sim_time)}</td>
+            <td style="border: 1px solid #94a3b8;"></td>
         </tr>
     `;
 
@@ -1427,85 +1427,135 @@ function renderLogbookPageToHTML(pageData) {
         const entry = entries[i] || {};
         if (entry.is_monthly_total) {
             rowsHtml += `
-                <tr class="monthly-total-row">
-                    <td colspan="9" style="text-align: left; padding-left: 20px;"><strong>${entry.date_str}</strong></td>
-                    <td>${fmt(entry.day_p1)}</td><td>${fmt(entry.day_p1us)}</td><td>${fmt(entry.day_p2)}</td><td>${fmt(entry.day_dual)}</td>
-                    <td>${fmt(entry.night_p1)}</td><td>${fmt(entry.night_p1us)}</td><td>${fmt(entry.night_p2)}</td><td>${fmt(entry.night_dual)}</td>
-                    <td>${fmt(entry.inst_flying)}</td><td>${fmt(entry.sim_time)}</td><td></td>
+                <tr style="background-color: #dbeafe; font-weight: 800; height: 40px;">
+                    <td colspan="11" style="text-align: left; padding-left: 20px; border: 1px solid #94a3b8; border-bottom: 2px solid #334155;"><strong>${entry.date_str}</strong></td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.day_p1)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.day_p1us)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.day_p2)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.day_dual)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.night_p1)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.night_p1us)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.night_p2)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.night_dual)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.inst_flying)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;">${fmt(entry.sim_time)}</td>
+                    <td style="border: 1px solid #94a3b8; border-bottom: 2px solid #334155;"></td>
                 </tr>
             `;
         } else {
+            let route = entry.route || '';
+            let dep = '', arr = '';
+            if (entry.operator === 'GFS') { dep = 'VHHH'; arr = 'VHHH'; }
+            else if (route.includes(' ')) { const p = route.split(/\s+/); dep = p[0]; arr = p[p.length-1]; }
+            else { dep = route; }
+
             rowsHtml += `
-                <tr>
-                    <td>${entry.date_str || ''}</td><td>${entry.ac_type || ''}</td><td>${entry.reg || ''}</td><td>${entry.pic || ''}</td><td>${entry.copilot || ''}</td><td>${entry.capacity || ''}</td>
-                    <td>${entry.route || ''}</td><td></td><td></td>
-                    <td>${fmt(entry.day_p1)}</td><td>${fmt(entry.day_p1us)}</td><td>${fmt(entry.day_p2)}</td><td>${fmt(entry.day_dual)}</td>
-                    <td>${fmt(entry.night_p1)}</td><td>${fmt(entry.night_p1us)}</td><td>${fmt(entry.night_p2)}</td><td>${fmt(entry.night_dual)}</td>
-                    <td>${fmt(entry.inst_flying)}</td><td>${fmt(entry.sim_time)}</td><td><small>${entry.remarks || ''}</small></td>
+                <tr style="height: 38px;">
+                    <td style="border: 1px solid #94a3b8;">${entry.date_str || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${entry.ac_type || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${entry.reg || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${entry.pic || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${entry.copilot || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${entry.capacity || ''}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: center;">${dep}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: center; color: #64748b;">${entry.total_time_str || ''}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: center;">${arr}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: center;">${entry.takeoff || ''}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: center;">${entry.landing || ''}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1us)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p2)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.day_dual)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p1)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p1us)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.night_p2)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.night_dual)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.inst_flying)}</td>
+                    <td style="border: 1px solid #94a3b8;">${fmt(entry.sim_time)}</td>
+                    <td style="border: 1px solid #94a3b8; text-align: left; padding-left: 5px;"><small style="font-size: 0.65rem;">${entry.remarks || ''}</small></td>
                 </tr>
             `;
         }
     }
 
     rowsHtml += `
-        <tr class="totals-row carried-forward">
+        <tr style="background-color: #f1f5f9; font-weight: 700; height: 45px;">
             <td></td><td></td><td></td><td></td><td></td><td></td>
-            <td style="text-align: center;">Totals carried forward</td>
-            <td></td><td></td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(1)</span>${fmt(cf.day_p1)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(2)</span>${fmt(cf.day_p1us)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(3)</span>${fmt(cf.day_p2)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(4)</span>${fmt(cf.day_dual)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(5)</span>${fmt(cf.night_p1)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(6)</span>${fmt(cf.night_p1us)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(7)</span>${fmt(cf.night_p2)}</td>
-            <td style="position:relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#94a3b8;">(8)</span>${fmt(cf.night_dual)}</td>
-            <td>${fmt(cf.inst_flying)}</td>
-            <td>${fmt(cf.sim_time)}</td>
-            <td></td>
+            <td colspan="3" style="text-align: center; border: 1px solid #94a3b8;">Totals carried forward</td>
+            <td style="border: 1px solid #94a3b8;"></td><td style="border: 1px solid #94a3b8;"></td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.day_dual)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p1us)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_p2)}</td>
+            <td style="text-align: center; border: 1px solid #94a3b8;">${fmt(cf.night_dual)}</td>
+            <td style="border: 1px solid #94a3b8;">${fmt(cf.inst_flying)}</td>
+            <td style="border: 1px solid #94a3b8;">${fmt(cf.sim_time)}</td>
+            <td style="border: 1px solid #94a3b8;"></td>
         </tr>
     `;
 
     return `
-        <div class="pdf-page-wrapper" style="padding: 40px; background: white; color: black; min-height: 1000px; page-break-after: always;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                <h2 style="font-size: 1.2rem; color: #1e293b; margin: 0;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK</h2>
-                <div style="font-weight: bold; font-size: 1.1rem; color: #1e293b;">Page ${pageData.page_number}</div>
+        <div class="pdf-page-wrapper" style="padding: 30px; background: white; color: #1e293b; font-family: 'Inter', sans-serif; min-height: 1000px; page-break-after: always; width: 1650px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                <h2 style="font-size: 1.25rem; color: #1e293b; margin: 0; font-weight: 800; letter-spacing: -0.01em;">CIVIL AVIATION DEPARTMENT - PILOT'S LOG BOOK</h2>
+                <div style="font-weight: 800; font-size: 1.2rem; color: #1e293b;">Page ${pageData.page_number}</div>
             </div>
-            <div style="margin-bottom: 10px; font-weight: bold; color: #1e293b;">Year / ${pageData.year || '----'}</div>
-            <div class="cad407-wrapper" style="box-shadow: none; border: 1px solid #e2e8f0; padding: 0;">
-                <table class="cad407-table" style="margin-top: 0; font-size: 0.8rem; width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background-color: #1e293b; color: white;">
-                            <th rowspan="2" style="width: 70px; border: 1px solid #334155;">Date</th>
-                            <th rowspan="2" style="width: 55px; border: 1px solid #334155;">Type</th>
-                            <th rowspan="2" style="width: 80px; border: 1px solid #334155;">Reg</th>
-                            <th rowspan="2" style="width: 100px; border: 1px solid #334155;">P.I.C</th>
-                            <th rowspan="2" style="width: 100px; border: 1px solid #334155;">Co-Pilot</th>
-                            <th rowspan="2" style="width: 65px; border: 1px solid #334155;">Cap</th>
-                            <th rowspan="2" style="width: 220px; border: 1px solid #334155;">Journey</th>
-                            <th colspan="2" style="border: 1px solid #334155;">No. of</th>
-                            <th colspan="4" style="border: 1px solid #334155;">Day flying</th>
-                            <th colspan="4" style="border: 1px solid #334155;">Night flying</th>
-                            <th rowspan="2" style="width: 75px; border: 1px solid #334155;">Inst</th>
-                            <th rowspan="2" style="width: 75px; border: 1px solid #334155;">Sim</th>
-                            <th rowspan="2" style="width: 120px; border: 1px solid #334155;">Remarks</th>
-                        </tr>
-                        <tr style="background-color: #1e293b; color: white;">
-                            <th style="border: 1px solid #334155;">T/O</th><th style="border: 1px solid #334155;">Lnd</th>
-                            <th style="border: 1px solid #334155;">P1</th><th style="border: 1px solid #334155;">P1(U/S)</th><th style="border: 1px solid #334155;">P2</th><th style="border: 1px solid #334155;">P/UT</th>
-                            <th style="border: 1px solid #334155;">P1</th><th style="border: 1px solid #334155;">P1(U/S)</th><th style="border: 1px solid #334155;">P2</th><th style="border: 1px solid #334155;">P/UT</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rowsHtml}</tbody>
-                    <tfoot>
-                        <tr style="background: #f8fafc; color: #1e293b; font-weight: bold;">
-                            <td colspan="17" style="text-align: right; padding-right: 20px; border: 1px solid #e2e8f0;">Grand total column (1) to (8):</td>
-                            <td colspan="3" style="border: 1px solid #e2e8f0;">${pageData.grand_total_1_8.toFixed(1)}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.75rem;">
+                <colgroup>
+                    <col style="width: 70px;"> <col style="width: 55px;"> <col style="width: 80px;">
+                    <col style="width: 100px;"> <col style="width: 100px;"> <col style="width: 65px;">
+                    <col style="width: 70px;"> <col style="width: 60px;"> <col style="width: 70px;">
+                    <col style="width: 48px;"> <col style="width: 48px;">
+                    <col style="width: 48px;"> <col style="width: 48px;"> <col style="width: 48px;"> <col style="width: 48px;">
+                    <col style="width: 48px;"> <col style="width: 48px;"> <col style="width: 48px;"> <col style="width: 48px;">
+                    <col style="width: 65px;"> <col style="width: 65px;"> <col style="width: 200px;">
+                </colgroup>
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                        <th style="border: 1px solid #94a3b8; border-bottom: none;">Year / ${pageData.year || '----'}</th>
+                        <th colspan="2" style="border: 1px solid #94a3b8;">Aircraft / Simulator</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Pilot-In-Command</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Co-Pilot Or Student</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Holder's Operating Capacity</th>
+                        <th colspan="3" style="border: 1px solid #94a3b8;">Journey Or Nature Of Flight</th>
+                        <th colspan="2" style="border: 1px solid #94a3b8;">No. Of</th>
+                        <th colspan="4" style="border: 1px solid #94a3b8;">Day Flying</th>
+                        <th colspan="4" style="border: 1px solid #94a3b8;">Night Flying</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Instrument Flying</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Simulator Time</th>
+                        <th rowspan="2" style="border: 1px solid #94a3b8;">Remarks</th>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700;">
+                        <th style="border: 1px solid #94a3b8; border-top: none;">Month / Date</th>
+                        <th style="border: 1px solid #94a3b8;">Type</th>
+                        <th style="border: 1px solid #94a3b8;">Registration</th>
+                        <th style="border: 1px solid #94a3b8;">From (Dep)</th>
+                        <th style="border: 1px solid #94a3b8;">(Times)</th>
+                        <th style="border: 1px solid #94a3b8;">To (Arr)</th>
+                        <th style="border: 1px solid #94a3b8;">Take-Offs</th>
+                        <th style="border: 1px solid #94a3b8;">Landings</th>
+                        <th style="border: 1px solid #94a3b8;">P1</th><th style="border: 1px solid #94a3b8;">P1(U/S)</th><th style="border: 1px solid #94a3b8;">P2/P2X</th><th style="border: 1px solid #94a3b8;">P/UT</th>
+                        <th style="border: 1px solid #94a3b8;">P1</th><th style="border: 1px solid #94a3b8;">P1(U/S)</th><th style="border: 1px solid #94a3b8;">P2/P2X</th><th style="border: 1px solid #94a3b8;">P/UT</th>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; color: #1e293b; font-weight: 700; height: 30px;">
+                        <th colspan="11" style="border: 1px solid #94a3b8;"></th>
+                        <th style="border: 1px solid #94a3b8;">(1)</th><th style="border: 1px solid #94a3b8;">(2)</th><th style="border: 1px solid #94a3b8;">(3)</th><th style="border: 1px solid #94a3b8;">(4)</th>
+                        <th style="border: 1px solid #94a3b8;">(5)</th><th style="border: 1px solid #94a3b8;">(6)</th><th style="border: 1px solid #94a3b8;">(7)</th><th style="border: 1px solid #94a3b8;">(8)</th>
+                        <th colspan="3" style="border: 1px solid #94a3b8;"></th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+                <tfoot>
+                    <tr style="background: #f1f5f9; color: #1e293b; font-weight: 800; height: 45px;">
+                        <td colspan="18" style="text-align: right; padding-right: 20px; border: 1px solid #94a3b8;">Grand total column (1) to (8):</td>
+                        <td colspan="3" style="border: 1px solid #94a3b8; text-align: left; padding-left: 20px;">${pageData.grand_total_1_8.toFixed(1)}</td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     `;
 }

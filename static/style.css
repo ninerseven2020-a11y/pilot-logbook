@@ -1247,14 +1247,15 @@ td {
 }
 
 .cad407-table thead th {
-    background-color: #f8fafc;
-    color: #475569;
-    font-weight: 600;
-    font-size: 0.75rem;
+    background-color: #f1f5f9; /* Light grey header */
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 0.7rem;
     text-transform: capitalize;
-    white-space: normal; /* allow wrapping */
-    overflow: visible; /* prevent truncation */
+    white-space: normal;
+    overflow: visible;
     line-height: 1.2;
+    border: 1px solid #94a3b8;
 }
 
 /* Remarks can wrap */
@@ -1428,13 +1429,12 @@ body {
 
 /* Monthly Summary Row Styling */
 .cad407-table tr.monthly-total-row {
-    background-color: #e2e8f0 !important;
-    font-weight: 700;
+    background-color: #dbeafe !important; /* Light blue for monthly totals */
+    font-weight: 800;
 }
 
 .cad407-table tr.monthly-total-row td {
-    border-top: 2px solid #64748b;
-    border-bottom: 2px solid #64748b;
+    border-bottom: 2px solid #334155;
     color: #1e293b;
 }
 
@@ -1465,11 +1465,10 @@ body {
 }
 
 .cad407-table tfoot .grand-total-row {
-    background-color: #1e293b !important;
-    color: var(--accent-color);
+    background-color: #f1f5f9 !important;
+    color: #1e293b;
     font-weight: 800;
-    font-size: 0.9rem;
-    font-family: var(--font-mono);
+    font-size: 0.85rem;
 }
 
 .cad407-table tfoot .grand-total-row td {
