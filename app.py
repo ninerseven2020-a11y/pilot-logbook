@@ -882,13 +882,19 @@ async def import_excel(
         import openpyxl
         contents = await file.read()
         
-        # Load workbook with data_only=True to skip formula evaluation (fixes circular references)
+        # Use Calamine engine if possible (ignores formulas, fixes circular references)
         try:
-            wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
-            sheet_names = wb.sheetnames
+            xl = pd.ExcelFile(io.BytesIO(contents), engine='calamine')
+            sheet_names = xl.sheet_names
         except Exception as e:
-            print(f"[IMPORT] openpyxl failed, falling back to pandas default: {e}")
-            sheet_names = pd.ExcelFile(io.BytesIO(contents)).sheet_names
+            print(f"[IMPORT] Calamine engine failed: {e}. Falling back to openpyxl...")
+            try:
+                wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+                sheet_names = wb.sheetnames
+                xl = None # We'll handle wb directly
+            except Exception as e2:
+                print(f"[IMPORT] openpyxl also failed: {e2}")
+                raise HTTPException(status_code=400, detail=f"Could not read Excel file: {e2}")
 
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
@@ -899,13 +905,16 @@ async def import_excel(
         for sheet_name in sheet_names:
             print(f"[IMPORT] Scanning sheet: {sheet_name}")
             try:
-                # Use the already loaded workbook values (respects data_only=True)
-                sheet = wb[sheet_name]
-                data = list(sheet.values)
+                if 'xl' in locals() and xl is not None:
+                    df_raw = xl.parse(sheet_name, header=None)
+                    # Convert df_raw to a list of lists for consistency with the openpyxl path
+                    data = [list(row) for row in df_raw.values]
+                else:
+                    data = list(wb[sheet_name].values)
+                    df_raw = pd.DataFrame(data)
+                
                 if not data:
                     continue
-                    
-                df_raw = pd.DataFrame(data)
                 
                 header_row_index = -1
                 for i, row in df_raw.iterrows():
@@ -918,7 +927,9 @@ async def import_excel(
                     continue
                     
                 # Create DF with the correct header
-                df = pd.DataFrame(data[header_row_index+1:], columns=data[header_row_index])
+                # If we have headers, use data[header_row_index] as column names
+                headers = [str(h) for h in data[header_row_index]]
+                df = pd.DataFrame(data[header_row_index+1:], columns=headers)
                 # Remove rows that are all NaN
                 df = df.dropna(how='all')
                 
