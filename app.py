@@ -69,39 +69,6 @@ async def startup_event():
     print(f" LOGBOOK SERVER STARTING (v{APP_VERSION})")
     print(f"=======================================")
 
-@app.get("/api/system-status")
-async def get_system_status(current_user: User = Depends(get_current_user)):
-    status_info = {
-        "python_version": sys.version,
-        "calamine_installed": False,
-        "xlsx2csv_installed": False,
-        "gemini_api_configured": bool(os.getenv("GEMINI_API_KEY")),
-        "last_logs": []
-    }
-    
-    try:
-        import calamine
-        status_info["calamine_installed"] = True
-    except: pass
-    
-    try:
-        import xlsx2csv
-        status_info["xlsx2csv_installed"] = True
-    except: pass
-    
-    # We'll just return the status for now
-    return status_info
-
-@app.post("/api/system-repair")
-async def system_repair(current_user: User = Depends(get_current_user)):
-    results = []
-    for lib in ["python-calamine", "xlsx2csv"]:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
-            results.append(f"Successfully installed {lib}")
-        except Exception as e:
-            results.append(f"Failed to install {lib}: {e}")
-    return {"results": results}
 
 @app.get("/test")
 async def test_route():
@@ -145,6 +112,40 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
     if user is None:
         raise credentials_exception
     return user
+
+@app.get("/api/system-status")
+async def get_system_status(current_user: User = Depends(get_current_user)):
+    status_info = {
+        "python_version": sys.version,
+        "calamine_installed": False,
+        "xlsx2csv_installed": False,
+        "gemini_api_configured": bool(os.getenv("GEMINI_API_KEY")),
+        "last_logs": []
+    }
+    
+    try:
+        import calamine
+        status_info["calamine_installed"] = True
+    except: pass
+    
+    try:
+        import xlsx2csv
+        status_info["xlsx2csv_installed"] = True
+    except: pass
+    
+    # We'll just return the status for now
+    return status_info
+
+@app.post("/api/system-repair")
+async def system_repair(current_user: User = Depends(get_current_user)):
+    results = []
+    for lib in ["python-calamine", "xlsx2csv"]:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+            results.append(f"Successfully installed {lib}")
+        except Exception as e:
+            results.append(f"Failed to install {lib}: {e}")
+    return {"results": results}
 
 # --- Google OAuth Endpoints ---
 
