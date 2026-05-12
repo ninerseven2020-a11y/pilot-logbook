@@ -896,14 +896,26 @@ async def import_excel(
         import openpyxl
         contents = await file.read()
         
-        # Use Calamine engine ONLY (ignores formulas, fixes circular references)
+        # Use Calamine directly (the most resilient way to bypass circular references)
         try:
-            xl = pd.ExcelFile(io.BytesIO(contents), engine='calamine')
-            sheet_names = xl.sheet_names
+            from calamine import CalamineWorkbook
+            workbook = CalamineWorkbook.from_fileobject(io.BytesIO(contents))
+            sheet_names = workbook.sheet_names
+            
+            # Helper to convert calamine sheet to DataFrame
+            def calamine_to_df(sheet_name):
+                sheet_data = workbook.get_sheet_by_name(sheet_name).to_python()
+                return pd.DataFrame(sheet_data)
+                
+            use_calamine = True
         except Exception as e:
-            error_msg = f"Excel Engine Error: {e}. Please ensure 'python-calamine' is installed on the NAS to bypass circular references."
-            print(f"[IMPORT] {error_msg}")
-            raise HTTPException(status_code=400, detail=error_detail if 'error_detail' in locals() else error_msg)
+            print(f"[IMPORT] Direct Calamine failed: {e}. Falling back to standard pandas...")
+            use_calamine = False
+            try:
+                xl = pd.ExcelFile(io.BytesIO(contents))
+                sheet_names = xl.sheet_names
+            except Exception as e2:
+                raise HTTPException(status_code=400, detail=f"Critical Excel Error: {e2}. If this is a circular reference, please ensure 'python-calamine' is installed.")
 
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
@@ -914,10 +926,12 @@ async def import_excel(
         for sheet_name in sheet_names:
             print(f"[IMPORT] Scanning sheet: {sheet_name}")
             try:
-                # Use Calamine engine data
-                df_raw = xl.parse(sheet_name, header=None)
-                # Convert df_raw to a list of lists
-                data = [list(row) for row in df_raw.values]
+                if use_calamine:
+                    df_raw = calamine_to_df(sheet_name)
+                    data = [list(row) for row in df_raw.values]
+                else:
+                    df_raw = xl.parse(sheet_name, header=None)
+                    data = [list(row) for row in df_raw.values]
                 
                 if not data:
                     continue
