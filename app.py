@@ -1,12 +1,14 @@
-import subprocess
 import sys
+import subprocess
 
 # Auto-install missing dependencies (Self-Repair)
 try:
-    import calamine
+    import python_calamine
+    print("[SYSTEM] python-calamine detected and ready.")
 except ImportError:
     print("[SYSTEM] python-calamine is missing. Attempting auto-install...")
     try:
+        import subprocess
         subprocess.check_call([sys.executable, "-m", "pip", "install", "python-calamine"])
         print("[SYSTEM] python-calamine installed successfully!")
     except Exception as e:
@@ -941,7 +943,7 @@ async def import_excel(
         
         # Use Calamine directly (the most resilient way to bypass circular references)
         try:
-            from calamine import CalamineWorkbook
+            from python_calamine import CalamineWorkbook
             workbook = CalamineWorkbook.from_fileobject(io.BytesIO(contents))
             sheet_names = workbook.sheet_names
             
@@ -952,7 +954,7 @@ async def import_excel(
                 
             use_calamine = True
         except Exception as e:
-            print(f"[IMPORT] Direct Calamine failed: {e}. Trying Nuclear Option (xlsx2csv)...")
+            print(f"[IMPORT] Direct python_calamine failed: {e}. Trying Nuclear Option (xlsx2csv)...")
             try:
                 from xlsx2csv import Xlsx2csv
                 import io as python_io
