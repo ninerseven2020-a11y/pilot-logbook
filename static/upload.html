@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.36">
+    <link rel="stylesheet" href="static/style.css?v=1.2.37">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -270,16 +270,16 @@
 
                         <!-- Subsection 2: Crew Info -->
                         <div class="manual-subsection-group">
-                            <div class="manual-grid">
-                                <div class="form-group">
+                            <div style="display: flex; gap: 10px;">
+                                <div class="form-group" style="flex:1.5; min-width: 0;">
                                     <label for="manual-pic">*CAPTAIN</label>
-                                    <input type="text" id="manual-pic" style="width: 180px; max-width: 100%;">
+                                    <input type="text" id="manual-pic" placeholder="Pilot Name">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" style="flex:1.5; min-width: 0;">
                                     <label for="manual-copilot">COPILOT</label>
-                                    <input type="text" id="manual-copilot" style="width: 180px; max-width: 100%;">
+                                    <input type="text" id="manual-copilot" placeholder="Copilot Name">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" style="flex:1; min-width: 0;">
                                     <label for="manual-capacity">*CAPACITY</label>
                                     <input type="text" id="manual-capacity" class="w-short" placeholder="P1">
                                 </div>
@@ -456,8 +456,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.36</div>
-    <script>const APP_VERSION = "1.2.36"</script>
-    <script src="static/script.js?v=1.2.36"></script>
+    <div class="version-label">v1.2.37</div>
+    <script>const APP_VERSION = "1.2.37"</script>
+    <script src="static/script.js?v=1.2.37"></script>
 </body>
 </html>
