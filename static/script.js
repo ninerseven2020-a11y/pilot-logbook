@@ -863,9 +863,7 @@ function renderLogbookTable() {
                 <td>${entry.copilot || ''}</td>
                 <td>${entry.capacity || ''}</td>
                 
-                <td style="text-align: center;">${dep}</td>
-                <td style="text-align: center; color: #64748b; font-weight: 500;">${entry.total_time_str || ''}</td>
-                <td style="text-align: center;">${arr}</td>
+                <td colspan="3" style="text-align: center;">${dep} ${entry.total_time_str || ''} ${arr}</td>
                 
                 <td style="text-align: center;">${entry.takeoff || ''}</td>
                 <td style="text-align: center;">${entry.landing || ''}</td>
@@ -1447,9 +1445,7 @@ function renderLogbookPageToHTML(pageData) {
                     <td style="border: 1px solid #94a3b8;">${entry.pic || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${entry.copilot || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${entry.capacity || ''}</td>
-                    <td style="border: 1px solid #94a3b8; text-align: center;">${dep}</td>
-                    <td style="border: 1px solid #94a3b8; text-align: center; color: #64748b;">${entry.total_time_str || ''}</td>
-                    <td style="border: 1px solid #94a3b8; text-align: center;">${arr}</td>
+                    <td colspan="3" style="border: 1px solid #94a3b8; text-align: center;">${dep} ${entry.total_time_str || ''} ${arr}</td>
                     <td style="border: 1px solid #94a3b8; text-align: center;">${entry.takeoff || ''}</td>
                     <td style="border: 1px solid #94a3b8; text-align: center;">${entry.landing || ''}</td>
                     <td style="border: 1px solid #94a3b8;">${fmt(entry.day_p1)}</td>
