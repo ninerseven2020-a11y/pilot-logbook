@@ -48,41 +48,37 @@
             </div>
             <div class="actions">
                 <button class="btn btn-primary" onclick="exportPDF()">
-                    <span class="icon">📄</span> Export PDF
+                    <span class="icon">📄</span> Export
                 </button>
             </div>
         </div>
     </header>
 
     <main class="container">
-        <!-- Logbook Preview Section -->
-        <section id="preview" class="card-section">
-            <div class="section-header">
-                <div class="title-section">
-                    <h2>CAD 407 Logbook</h2>
+        <section class="preview-header">
+            <h2 style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; letter-spacing: 0.2em; color: var(--accent-color); margin-bottom: 1.5rem; text-transform: uppercase;">CAD 407</h2>
+            
+            <div class="compact-toolbar glass">
+                <div class="toolbar-group">
+                    <button class="btn-nav" onclick="prevPage()">&larr;</button>
+                    <span id="page-info" style="font-size: 0.8rem; min-width: 60px; text-align: center;">Page 1</span>
+                    <button class="btn-nav" onclick="nextPage()">&rarr;</button>
                 </div>
-                <div class="filter-controls" style="display: flex; gap: 1rem; align-items: center; margin-right: auto; margin-left: 2rem; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <label for="filter-date-from" style="color: #64748b; font-size: 0.9rem;">From:</label>
-                        <input type="date" id="filter-date-from" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem 0.5rem; color-scheme: dark;">
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <label for="filter-date-to" style="color: #64748b; font-size: 0.9rem;">To:</label>
-                        <input type="date" id="filter-date-to" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.3rem 0.5rem; color-scheme: dark;">
-                    </div>
-                    <button class="btn btn-primary btn-sm" onclick="applyDateFilter()">Filter</button>
-                    <button class="btn btn-secondary btn-sm" onclick="clearDateFilter()">Clear</button>
-                </div>
-                <div class="pagination-controls">
-                    <button class="btn btn-secondary btn-sm" onclick="firstPage()">⏮ First</button>
-                    <button class="btn btn-secondary btn-sm" onclick="prevPage()">← Previous</button>
-                    <select id="page-select" onchange="jumpToPage()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; color: white; padding: 0.2rem 0.5rem; font-family: var(--font-mono); font-weight: bold;"></select>
-                    <button class="btn btn-secondary btn-sm" onclick="nextPage()">Next →</button>
-                    <div class="page-input-group" style="border-left: 1px solid var(--glass-border); padding-left: 1rem; margin-left: 0.5rem;">
-                        <button class="btn btn-secondary btn-sm" onclick="lastPage()">Last ⏭</button>
-                    </div>
+                
+                <div class="toolbar-divider"></div>
+                
+                <div class="toolbar-group">
+                    <input type="date" id="start-date" class="mini-input">
+                    <span style="color: rgba(255,255,255,0.3); font-size: 0.7rem;">to</span>
+                    <input type="date" id="end-date" class="mini-input">
+                    <button class="btn btn-sm btn-accent" onclick="applyDateFilter()">Go</button>
                 </div>
             </div>
+        </section>
+
+        <!-- Logbook Preview Section -->
+        <section id="preview" class="card-section">
+            <!-- Table content only -->
 
             
             <div id="logbook-printable-area" style="background: white; padding: 40px; border-radius: 8px; color: #1e293b; width: 1650px; margin: 0 auto; overflow: visible;">

@@ -757,6 +757,12 @@ function lastPage() {
 function updateNavigation() {
     const select = document.getElementById('page-select');
     if (select) select.value = currentPageIndex;
+    
+    const pageInfo = document.getElementById('page-info');
+    if (pageInfo && allPages[currentPageIndex]) {
+        pageInfo.innerText = `Page ${allPages[currentPageIndex].page_number}`;
+    }
+    
     renderLogbookTable();
 }
 

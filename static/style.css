@@ -1642,8 +1642,114 @@ input:focus, select:focus {
     font-family: 'JetBrains Mono', monospace;
 }
 
-@media (min-width: 769px) {
-    .version-label {
-        bottom: 20px;
+/* --- COMPACT TOOLBAR --- */
+.compact-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-nav {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-nav:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.mini-input {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: white;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    width: 120px;
+}
+
+/* --- UPLOAD PAGE POWER-STACK (MOBILE) --- */
+@media (max-width: 768px) {
+    .compact-toolbar {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .toolbar-divider {
+        display: none;
+    }
+    
+    .mini-input {
+        width: 110px;
+    }
+
+    .upload-grid {
+        grid-template-columns: 1fr !important; /* Stack Operator and Label */
+    }
+
+    /* Stack DEP/ARR/TOTAL */
+    .form-row-tri {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem !important;
+    }
+    
+    .form-row-tri .form-group:nth-child(1),
+    .form-row-tri .form-group:nth-child(2) {
+        grid-column: span 2; /* DEP and ARR take full width to stack */
+    }
+    
+    .form-row-tri .form-group:nth-child(3) {
+        grid-column: span 2; /* TOTAL also full width */
+    }
+
+    /* Stack T/O and LDG */
+    .form-row-quad {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    .form-row-quad .form-group:nth-child(1),
+    .form-row-quad .form-group:nth-child(2) {
+        grid-column: span 2; /* T/O and LDG stack */
+    }
+
+    /* Day/Night flying boxes: Stack into 2x2 grid for better thumb access */
+    .flying-group-box .form-row-quad {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    .flying-group-box .form-row-quad .form-group {
+        grid-column: span 1 !important; /* Back to 2 columns for the P1/P2 grid */
     }
 }
