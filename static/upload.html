@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.30">
+    <link rel="stylesheet" href="static/style.css?v=1.2.31">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -22,15 +22,23 @@
         .upload-form-card.glass {
             padding: 1.5rem !important;
             width: 100%;
-            max-width: 650px; /* Standardized width */
+            max-width: 650px; /* Standardized width for the outer container */
             margin-bottom: 1.5rem;
         }
 
         .upload-methods-container {
             display: flex !important;
-            flex-direction: column !important; /* Force vertical stacking */
-            gap: 0 !important; /* Use internal spacing instead */
+            flex-direction: column !important; /* Stack vertically */
+            gap: 1.5rem !important;
             width: 100%;
+        }
+
+        .manual-input-section, .file-input-section {
+            width: 100% !important; /* Force both to match the outer container */
+            flex: none !important;
+            padding: 0 !important; /* Use internal spacing */
+            background: transparent !important;
+            border: none !important;
         }
 
         .section-header {
@@ -38,13 +46,29 @@
         }
 
         /* Standardized subsection spacing */
-        .manual-subsection-group {
-            margin-bottom: 1.25rem;
-            padding: 0.75rem 1rem;
+        .manual-subsection-group, .file-drop-zone {
+            margin-bottom: 1rem;
+            padding: 1rem;
             background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
             width: 100%;
             box-sizing: border-box;
+        }
+
+        .file-drop-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-drop-zone:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
         }
 
         .section-subtitle {
@@ -53,6 +77,9 @@
             color: var(--accent-color);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .upload-grid {
@@ -89,12 +116,6 @@
         .w-micro { width: 70px !important; }
 
         .full-width { width: 100%; }
-
-        /* Excel & JSON sections */
-        .file-input-section {
-            margin-bottom: 2rem;
-            width: 100%;
-        }
 
         .migration-grid {
             display: grid; 
@@ -432,8 +453,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.30</div>
-    <script>const APP_VERSION = "1.2.30"</script>
-    <script src="static/script.js?v=1.2.30"></script>
+    <div class="version-label">v1.2.31</div>
+    <script>const APP_VERSION = "1.2.31"</script>
+    <script src="static/script.js?v=1.2.31"></script>
 </body>
 </html>
