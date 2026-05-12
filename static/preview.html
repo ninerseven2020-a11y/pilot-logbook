@@ -60,25 +60,21 @@
             
             <div class="compact-toolbar glass">
                 <div class="toolbar-group">
-                    <button class="btn btn-sm btn-nav" onclick="prevPage()">&larr; Previous</button>
+                    <button class="btn-nav" onclick="prevPage()">&larr; Previous</button>
                     <span id="page-info" style="font-size: 0.85rem; font-weight: 600; min-width: 80px; text-align: center;">Page 1</span>
-                    <button class="btn btn-sm btn-nav" onclick="nextPage()">Next &rarr;</button>
+                    <button class="btn-nav" onclick="nextPage()">Next &rarr;</button>
                 </div>
-                
-                <div class="toolbar-divider"></div>
                 
                 <div class="toolbar-group">
                     <input type="date" id="start-date" class="mini-input">
                     <span style="color: rgba(255,255,255,0.3); font-size: 0.7rem;">to</span>
                     <input type="date" id="end-date" class="mini-input">
-                    <button class="btn btn-sm btn-accent" onclick="applyDateFilter()">Go</button>
+                    <button class="btn-nav" onclick="applyDateFilter()" style="padding: 4px 12px; font-size: 0.75rem;">Go</button>
                 </div>
 
-                <div class="toolbar-divider"></div>
-
                 <div class="toolbar-group">
-                    <button class="btn btn-sm btn-primary" onclick="exportPDF()" style="padding: 4px 10px; font-size: 0.75rem;">
-                        <span class="icon" style="margin-right: 4px;">📄</span> Export
+                    <button class="btn-nav" onclick="exportPDF()" style="padding: 6px 14px; font-size: 0.75rem;">
+                        <span class="icon" style="margin-right: 6px;">📄</span> Export
                     </button>
                 </div>
             </div>
@@ -365,10 +361,10 @@
 
 
     <!-- Version Indicator -->
-    <div class="version-label">v1.2.16</div>
+    <div class="version-label">v1.2.17</div>
 
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script>const APP_VERSION = "1.2.16";</script>
-    <script src="static/script.js?v=1.2.16"></script>
+    <script>const APP_VERSION = "1.2.17";</script>
+    <script src="static/script.js?v=1.2.17"></script>
 </body>
 </html>
