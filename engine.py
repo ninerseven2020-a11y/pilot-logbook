@@ -215,40 +215,26 @@ RULES:
                         self.pilot_name = data.get('pilot_name', self.pilot_name)
                         self.history = data.get('history', [])
                         self.sync_adjustments = data.get('sync_adjustments', [])
+                        
                         # Ensure all entries have an ID
+                        ids_added = False
                         for entry in self.history:
                             if 'id' not in entry:
                                 import uuid
                                 entry['id'] = str(uuid.uuid4())
+                                ids_added = True
+                        
+                        if ids_added:
+                            self.save_data()
                         self.normalize_history()
                     else:
                         self.history = data
             except (json.JSONDecodeError, ValueError) as e:
                 print(f"[SYSTEM] Logbook file corrupted ({e}). Resetting to clean slate.")
                 self.history = []
-                self.save_data() # Wipe the corruption
+                self.save_data()
             except Exception as e:
-                print(f"[SYSTEM] Error loading data: {e}")
-                self.history = []
-                        if ids_added:
-                            self.save_data()
-                        self.normalize_history()
-                        
-                    for adj in self.sync_adjustments:
-                        if 'date' in adj and isinstance(adj.get('date'), str):
-                            try:
-                                adj['date_obj'] = datetime.strptime(adj['date'], "%Y-%m-%d")
-                            except:
-                                adj['date_obj'] = datetime.now()
-
-                    for entry in self.history:
-                        if 'date_obj' in entry and isinstance(entry['date_obj'], str):
-                            entry['date_obj'] = datetime.fromisoformat(entry['date_obj'].replace('Z', '+00:00'))
-                        elif 'date_obj' not in entry:
-                            # Default to 1900 if missing
-                            entry['date_obj'] = datetime(1900, 1, 1)
-            except Exception as e:
-                print(f"Error loading logbook data for user {self.user_id}: {e}")
+                print(f"[SYSTEM] Error loading data for user {self.user_id}: {e}")
                 self.history = []
 
     def normalize_history(self):
