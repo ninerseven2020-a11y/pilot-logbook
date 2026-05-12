@@ -6,83 +6,54 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.28">
+    <link rel="stylesheet" href="static/style.css?v=1.2.29">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         .container {
-            padding-top: 0.5rem !important;
-            padding-bottom: 0.5rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center everything */
         }
 
         .upload-form-card.glass {
-            padding: 1rem !important;
+            padding: 1.5rem !important;
+            width: 100%;
+            max-width: 650px; /* Standardized width */
+            margin-bottom: 1.5rem;
         }
 
         .section-header {
+            margin-bottom: 1rem !important;
+        }
+
+        /* Standardized subsection spacing */
+        .manual-subsection-group {
+            margin-bottom: 1.25rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section-subtitle {
             margin-bottom: 0.75rem !important;
+            font-size: 1rem;
+            color: var(--accent-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
         }
 
         .upload-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .manual-subsection-group {
-            margin-bottom: 1.5rem; /* Increased space between rows */
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 0.5rem;
-        }
-
-        .section-subtitle {
-            margin-bottom: 0.5rem !important;
-            font-size: 0.95rem;
-        }
-
-        .upload-methods-container {
             gap: 1rem;
-        }
-
-        .manual-input-section h3 {
-            margin-top: 0.25rem;
-        }
-
-        .form-actions {
-            margin-top: 1rem !important;
-        }
-
-        .full-width {
+            margin-bottom: 1.5rem;
             width: 100%;
-        }
-
-        .full-width input {
-            max-width: 770px; /* Matches total width of 7 tracking inputs + gaps */
-            width: 100% !important;
-        }
-
-        /* Specific input widths for compact alignment */
-        .manual-grid input {
-            padding: 0.4rem 0.5rem !important;
-            font-size: 0.85rem !important;
-            box-sizing: border-box; /* Crucial for exact width matching */
-        }
-
-        /* Narrow inputs with FIXED widths for perfect alignment */
-        .w-short { width: 90px !important; flex-shrink: 0; }
-        .w-micro { width: 65px !important; flex-shrink: 0; }
-        
-        .form-group label {
-            font-size: 0.65rem !important;
-            margin-bottom: 2px !important; /* Move label closer to input */
-            display: block;
         }
 
         .manual-grid {
@@ -90,75 +61,54 @@
             flex-wrap: wrap;
             gap: 12px;
             align-items: flex-end;
-        }
-
-        .full-width {
             width: 100%;
         }
 
-        .full-width input {
-            /* Total: (3 * 90px) + (4 * 65px) + (6 * 12px gap) = 270 + 260 + 72 = 602px */
-            max-width: 602px; 
-            width: 100% !important;
-        }
-
-        .flying-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            max-width: 602px;
-            width: 100%;
-        }
-
-        .flying-grid .form-group {
-            flex: 1;
-            min-width: 60px;
-        }
-
-        .flying-grid input {
-            width: 100% !important;
-        }
-
-        .flying-group-header {
-            font-size: 0.6rem;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-            opacity: 0.8;
-            font-weight: 700;
+        /* Inputs */
+        .form-group label {
+            font-size: 0.65rem !important;
+            margin-bottom: 4px !important;
             display: block;
+            font-weight: 600;
+            color: #94a3b8;
         }
 
-        .flying-group {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 295px; /* Threshold to wrap as soon as 602px is not available */
+        .form-group input {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.9rem !important;
         }
 
-        .input-group-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: nowrap; /* Keep items in this group together */
-        }
+        .w-short { width: 100px !important; }
+        .w-micro { width: 70px !important; }
 
-        .manual-subsection-group {
-            max-width: 602px;
+        .full-width { width: 100%; }
+
+        /* Excel & JSON sections */
+        .file-input-section {
+            margin-bottom: 2rem;
             width: 100%;
         }
 
-        .manual-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
+        .migration-grid {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 1rem; 
             width: 100%;
         }
 
-        .manual-grid .form-group {
-            margin-bottom: 0;
-            flex-shrink: 0;
+        @media (max-width: 600px) {
+            .upload-grid, .migration-grid {
+                grid-template-columns: 1fr;
+            }
+            .manual-grid {
+                gap: 8px;
+            }
+            .w-short, .w-micro {
+                flex: 1;
+                min-width: 80px;
+            }
         }
+    </style>
     </style>
 </head>
 <body data-page="upload">
@@ -239,139 +189,131 @@
                 </div>
 
                 <div class="upload-methods-container">
+                    <!-- Excel Import Section (Moved to top) -->
+                    <div class="file-input-section">
+                        <h3 class="section-subtitle">Import via excel or image
+                            <div class="tooltip-container">
+                                <span class="info-icon">i</span>
+                                <span class="tooltip-text">Upload an Excel file (.xlsx) to bulk import flight records. The system will automatically map the columns.</span>
+                            </div>
+                        </h3>
+                        <div class="form-group">
+                            <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('excel-file').click()">
+                                <span class="icon">📄</span>
+                                <p id="file-name">Click to add or drag files here</p>
+                                <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="updateFileName(this)">
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 1rem; text-align: right;">
+                            <button type="submit" class="btn btn-primary">Upload Excel</button>
+                        </div>
+                    </div>
+
+                    <div style="height: 2rem;"></div>
+
                     <!-- Manual Input Section -->
                     <div class="manual-input-section">
-                        <h3 class="section-subtitle">Manual Input
+                        <h3 class="section-subtitle">Manual Entry
                             <div class="tooltip-container">
                                 <span class="info-icon">i</span>
                                 <span class="tooltip-text">Manually add a single flight entry to your logbook.</span>
                             </div>
                         </h3>
                     
-                    <!-- Subsection 1: Aircraft Info -->
-                    <div class="manual-subsection-group">
-                        <div class="manual-grid">
-                            <div class="form-group">
-                                <label for="manual-date">*DATE</label>
-                                <input type="date" id="manual-date" style="width: 130px; max-width: 100%;">
-                            </div>
-                            <div class="form-group">
-                                <label for="manual-ac-type">*TYPE</label>
-                                <input type="text" id="manual-ac-type" class="w-short" placeholder="EC175">
-                            </div>
-                            <div class="form-group">
-                                <label for="manual-ac-reg">*REG</label>
-                                <input type="text" id="manual-ac-reg" class="w-short" placeholder="B-LVD">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Subsection 2: Crew Info -->
-                    <div class="manual-subsection-group">
-                        <div class="manual-grid">
-                            <div class="form-group">
-                                <label for="manual-pic">*CAPTAIN</label>
-                                <input type="text" id="manual-pic" style="width: 160px; max-width: 100%;">
-                            </div>
-                            <div class="form-group">
-                                <label for="manual-copilot">COPILOT</label>
-                                <input type="text" id="manual-copilot" style="width: 160px; max-width: 100%;">
-                            </div>
-                            <div class="form-group">
-                                <label for="manual-capacity">*CAPACITY</label>
-                                <input type="text" id="manual-capacity" class="w-short" placeholder="P1">
+                        <!-- Subsection 1: Aircraft Info -->
+                        <div class="manual-subsection-group">
+                            <div class="manual-grid">
+                                <div class="form-group">
+                                    <label for="manual-date">*DATE</label>
+                                    <input type="date" id="manual-date" style="width: 140px; max-width: 100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manual-ac-type">*TYPE</label>
+                                    <input type="text" id="manual-ac-type" class="w-short" placeholder="EC175">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manual-ac-reg">*REG</label>
+                                    <input type="text" id="manual-ac-reg" class="w-short" placeholder="B-LVD">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Subsection 3: Journey & Times -->
-                    <div class="manual-subsection-group">
-                        <!-- Row 1: Route -->
-                        <div class="form-group full-width">
-                            <label for="manual-route">ROUTE</label>
-                            <input type="text" id="manual-route" placeholder="e.g. VHHH VMMC">
+                        <!-- Subsection 2: Crew Info -->
+                        <div class="manual-subsection-group">
+                            <div class="manual-grid">
+                                <div class="form-group">
+                                    <label for="manual-pic">*CAPTAIN</label>
+                                    <input type="text" id="manual-pic" style="width: 180px; max-width: 100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manual-copilot">COPILOT</label>
+                                    <input type="text" id="manual-copilot" style="width: 180px; max-width: 100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manual-capacity">*CAPACITY</label>
+                                    <input type="text" id="manual-capacity" class="w-short" placeholder="P1">
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Row 2: Times -->
-                        <div class="manual-grid">
-                            <div class="input-group-row">
+                        <!-- Subsection 3: Journey & Times -->
+                        <div class="manual-subsection-group">
+                            <div class="form-group full-width" style="margin-bottom: 1rem;">
+                                <label for="manual-route">ROUTE</label>
+                                <input type="text" id="manual-route" placeholder="e.g. VHHH VMMC">
+                            </div>
+
+                            <div class="manual-grid">
                                 <div class="form-group"><label for="manual-dep">DEP</label><input type="text" id="manual-dep" class="w-short" placeholder="HHMM"></div>
                                 <div class="form-group"><label for="manual-arr">ARR</label><input type="text" id="manual-arr" class="w-short" placeholder="HHMM"></div>
                                 <div class="form-group"><label for="manual-total-input">TOTAL</label><input type="text" id="manual-total-input" class="smart-decimal w-short" value="0.0"></div>
-                            </div>
-                            <div class="input-group-row">
-                                <div class="form-group"><label for="manual-takeoff">T/O</label><input type="number" id="manual-takeoff" class="w-micro" value="1" min="0" onfocus="this.select()"></div>
-                                <div class="form-group"><label for="manual-landing">LDG</label><input type="number" id="manual-landing" class="w-micro" value="1" min="0" onfocus="this.select()"></div>
+                                <div class="form-group"><label for="manual-takeoff">T/O</label><input type="number" id="manual-takeoff" class="w-micro" value="1" min="0"></div>
+                                <div class="form-group"><label for="manual-landing">LDG</label><input type="number" id="manual-landing" class="w-micro" value="1" min="0"></div>
                                 <div class="form-group"><label for="manual-instr">INST</label><input type="text" class="smart-decimal w-micro" id="manual-instr" value="0.0"></div>
                                 <div class="form-group"><label for="manual-sim">SIM</label><input type="text" class="smart-decimal w-micro" id="manual-sim" value="0.0"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Subsection 4: Flying Times (Day & Night) -->
-                    <div class="manual-subsection-group">
-                        <div class="flying-grid">
-                            <!-- Day Column -->
-                            <div class="flying-group">
-                                <span class="flying-group-header">Day Flying</span>
-                                <div style="display: flex; gap: 12px;">
-                                    <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="day-p1" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P1(U/S)</label><input type="text" class="smart-decimal" id="day-p1us" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="day-p2" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P U/T</label><input type="text" class="smart-decimal" id="day-put" value="0.0"></div>
+                        <!-- Subsection 4: Flying Times (Day & Night) -->
+                        <div class="manual-subsection-group">
+                            <div class="manual-grid">
+                                <div class="form-group" style="flex:1; min-width: 120px;">
+                                    <span class="flying-group-header">Day Flying</span>
+                                    <div style="display: flex; gap: 8px;">
+                                        <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="day-p1" value="0.0"></div>
+                                        <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="day-p2" value="0.0"></div>
+                                        <div class="form-group" style="flex:1"><label>PUT</label><input type="text" class="smart-decimal" id="day-put" value="0.0"></div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Night Column -->
-                            <div class="flying-group">
-                                <span class="flying-group-header">Night Flying</span>
-                                <div style="display: flex; gap: 12px;">
-                                    <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="night-p1" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P1(U/S)</label><input type="text" class="smart-decimal" id="night-p1us" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="night-p2" value="0.0"></div>
-                                    <div class="form-group" style="flex:1"><label>P U/T</label><input type="text" class="smart-decimal" id="night-put" value="0.0"></div>
+                                <div class="form-group" style="flex:1; min-width: 120px;">
+                                    <span class="flying-group-header">Night Flying</span>
+                                    <div style="display: flex; gap: 8px;">
+                                        <div class="form-group" style="flex:1"><label>P1</label><input type="text" class="smart-decimal" id="night-p1" value="0.0"></div>
+                                        <div class="form-group" style="flex:1"><label>P2</label><input type="text" class="smart-decimal" id="night-p2" value="0.0"></div>
+                                        <div class="form-group" style="flex:1"><label>PUT</label><input type="text" class="smart-decimal" id="night-put" value="0.0"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Subsection 5: Remarks -->
-                    <div class="manual-subsection-group">
-                        <div class="form-group full-width">
-                            <label for="manual-remarks">REMARKS</label>
-                            <input type="text" id="manual-remarks" placeholder="Add flight details...">
+                        <!-- Subsection 5: Remarks -->
+                        <div class="manual-subsection-group">
+                            <div class="form-group full-width">
+                                <label for="manual-remarks">REMARKS</label>
+                                <input type="text" id="manual-remarks" placeholder="Add flight details...">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-actions" style="margin-top: 1.5rem; text-align: right;">
-                        <button type="button" class="btn btn-primary" onclick="handleManualSubmit()">Save</button>
-                    </div>
-                </div>
-
-                <div class="file-input-section">
-                    <h3 class="section-subtitle">Import via excel or image
-                        <div class="tooltip-container">
-                            <span class="info-icon">i</span>
-                            <span class="tooltip-text">Upload an Excel file (.xlsx) to bulk import flight records. The system will automatically map the columns.</span>
+                        <div class="form-actions" style="margin-top: 1rem; text-align: right;">
+                            <button type="button" class="btn btn-primary" onclick="handleManualSubmit()">Save Entry</button>
                         </div>
-                    </h3>
-                    <div class="form-group">
-                        <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('excel-file').click()">
-                            <span class="icon">📄</span>
-                            <p id="file-name">Click to add or drag files here</p>
-                            <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="updateFileName(this)">
-                        </div>
-                    </div>
-
-                    <div class="form-actions" style="margin-top: 2rem; text-align: right;">
-                        <button type="submit" class="btn btn-primary">Upload</button>
                     </div>
                 </div>
             </form>
         </div>
 
-        <!-- Data Migration Section (JSON Backup/Restore) -->
-        <div class="upload-form-card glass" style="margin-top: 2rem;">
+        <div class="upload-form-card glass">
             <div class="section-header">
                 <h2>Data Migration (JSON)
                     <div class="tooltip-container">
@@ -381,20 +323,20 @@
                 </h2>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1rem 0;">
-                <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <div style="font-size: 2rem; margin-bottom: 1rem;">📤</div>
-                    <h3 style="margin-bottom: 0.5rem;">Export Backup</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Download your entire logbook and settings as a .json file.</p>
-                    <button onclick="exportLogbookJSON()" class="btn btn-secondary" style="width: 100%;">Download JSON</button>
+            <div class="migration-grid">
+                <div style="background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📤</div>
+                    <h3 style="margin-bottom: 0.25rem; font-size: 1rem;">Export Backup</h3>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Download your entire logbook and settings as a .json file.</p>
+                    <button onclick="exportLogbookJSON()" class="btn btn-secondary" style="width: 100%; font-size: 0.8rem;">Download JSON</button>
                 </div>
 
-                <div style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                    <div style="font-size: 2rem; margin-bottom: 1rem;">📥</div>
-                    <h3 style="margin-bottom: 0.5rem;">Restore from JSON</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Upload a previously exported .json file to replace your current logbook.</p>
+                <div style="background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📥</div>
+                    <h3 style="margin-bottom: 0.25rem; font-size: 1rem;">Restore from JSON</h3>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">Upload a previously exported .json file to replace your current logbook.</p>
                     <input type="file" id="restore-json-input" accept=".json" style="display: none;" onchange="handleRestoreLogbook(this)">
-                    <button onclick="document.getElementById('restore-json-input').click()" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-color); color: var(--accent-color);">Restore JSON</button>
+                    <button onclick="document.getElementById('restore-json-input').click()" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-color); color: var(--accent-color); font-size: 0.8rem;">Restore JSON</button>
                 </div>
             </div>
         </div>
@@ -483,8 +425,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.28</div>
-    <script>const APP_VERSION = "1.2.28"</script>
-    <script src="static/script.js?v=1.2.28"></script>
+    <div class="version-label">v1.2.29</div>
+    <script>const APP_VERSION = "1.2.29"</script>
+    <script src="static/script.js?v=1.2.29"></script>
 </body>
 </html>
