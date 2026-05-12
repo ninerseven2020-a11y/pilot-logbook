@@ -116,7 +116,7 @@ class CAD407Logbook:
         critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
         found_critical = sum(1 for k in critical_keys if k in standard_map and standard_map[k] in df.columns)
         
-        if found_critical >= 3:
+        if found_critical >= 10: # Forced high to ensure LLM is used
             print(f"[SMART ENGINE] Standard detection successful ({found_critical}/{len(critical_keys)} critical keys).")
             return standard_map
             
@@ -202,33 +202,34 @@ RULES:
         return None
 
     def load_data(self):
-        """Loads history and profile from JSON."""
+        """Loads history and profile from JSON. Self-heals if corrupted."""
         if os.path.exists(self.storage_file):
             try:
                 with open(self.storage_file, "r") as f:
-                    data = json.load(f)
+                    content = f.read().strip()
+                    if not content:
+                        self.history = []
+                        return
+                    data = json.loads(content)
                     if isinstance(data, dict):
                         self.pilot_name = data.get('pilot_name', self.pilot_name)
                         self.history = data.get('history', [])
                         self.sync_adjustments = data.get('sync_adjustments', [])
-                        # Ensure all entries have an ID and save if we added any
-                        ids_added = False
+                        # Ensure all entries have an ID
                         for entry in self.history:
                             if 'id' not in entry:
+                                import uuid
                                 entry['id'] = str(uuid.uuid4())
-                                ids_added = True
-                        
-                        if ids_added:
-                            self.save_data()
                         self.normalize_history()
                     else:
-                        # Handle legacy format where history was the root list
                         self.history = data
-                        ids_added = False
-                        for entry in self.history:
-                            if 'id' not in entry:
-                                entry['id'] = str(uuid.uuid4())
-                                ids_added = True
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"[SYSTEM] Logbook file corrupted ({e}). Resetting to clean slate.")
+                self.history = []
+                self.save_data() # Wipe the corruption
+            except Exception as e:
+                print(f"[SYSTEM] Error loading data: {e}")
+                self.history = []
                         if ids_added:
                             self.save_data()
                         self.normalize_history()
