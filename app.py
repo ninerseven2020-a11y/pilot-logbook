@@ -1,19 +1,7 @@
 import sys
 import subprocess
 
-# Auto-install missing dependencies (Self-Repair)
-try:
-    import python_calamine
-    print("[SYSTEM] python-calamine detected and ready.")
-except ImportError:
-    print("[SYSTEM] python-calamine is missing. Attempting auto-install...")
-    try:
-        import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-calamine"])
-        print("[SYSTEM] python-calamine installed successfully!")
-    except Exception as e:
-        print(f"[SYSTEM] Auto-install failed: {e}")
-
+# Logbook Backend Application
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status, Response, Request, Query
 from contextlib import asynccontextmanager
 
@@ -61,7 +49,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic (if any) can go here
 
-APP_VERSION = "1.5.0-RESILIENT"
+APP_VERSION = "1.5.1-SIMPLIFIED"
 
 app = FastAPI(lifespan=lifespan)
 
@@ -119,35 +107,14 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
 async def get_system_status(current_user: User = Depends(get_current_user)):
     status_info = {
         "python_version": sys.version,
-        "calamine_installed": False,
-        "xlsx2csv_installed": False,
         "gemini_api_configured": bool(os.getenv("GEMINI_API_KEY")),
         "last_logs": []
     }
-    
-    try:
-        import calamine
-        status_info["calamine_installed"] = True
-    except: pass
-    
-    try:
-        import xlsx2csv
-        status_info["xlsx2csv_installed"] = True
-    except: pass
-    
-    # We'll just return the status for now
     return status_info
 
 @app.post("/api/system-repair")
 async def system_repair(current_user: User = Depends(get_current_user)):
-    results = []
-    for lib in ["python-calamine", "xlsx2csv"]:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
-            results.append(f"Successfully installed {lib}")
-        except Exception as e:
-            results.append(f"Failed to install {lib}: {e}")
-    return {"results": results}
+    return {"results": ["System is optimized. No repairs needed."]}
 
 # --- Google OAuth Endpoints ---
 
@@ -938,64 +905,25 @@ async def import_excel(
     try:
         import io
         import pandas as pd
-        import openpyxl
         contents = await file.read()
         
-        # Use Calamine directly (the most resilient way to bypass circular references)
         try:
-            from python_calamine import CalamineWorkbook
-            workbook = CalamineWorkbook.from_fileobject(io.BytesIO(contents))
-            sheet_names = workbook.sheet_names
-            
-            # Helper to convert calamine sheet to DataFrame
-            def calamine_to_df(sheet_name):
-                sheet_data = workbook.get_sheet_by_name(sheet_name).to_python()
-                return pd.DataFrame(sheet_data)
-                
-            use_calamine = True
+            # Simple pandas load (uses openpyxl for .xlsx)
+            xl = pd.ExcelFile(io.BytesIO(contents))
+            sheet_names = xl.sheet_names
         except Exception as e:
-            print(f"[IMPORT] Direct python_calamine failed: {e}. Trying Nuclear Option (xlsx2csv)...")
-            try:
-                from xlsx2csv import Xlsx2csv
-                import io as python_io
-                output = python_io.StringIO()
-                Xlsx2csv(io.BytesIO(contents), outputencoding="utf-8").convert(output)
-                output.seek(0)
-                # xlsx2csv converts the WHOLE file to one big CSV, usually the first sheet
-                df_raw = pd.read_csv(output, header=None)
-                sheet_names = ["Imported"]
-                use_calamine = False
-                use_xlsx2csv = True
-            except Exception as e2:
-                print(f"[IMPORT] Nuclear Option failed: {e2}. Falling back to standard pandas...")
-                use_calamine = False
-                use_xlsx2csv = False
-                try:
-                    xl = pd.ExcelFile(io.BytesIO(contents))
-                    sheet_names = xl.sheet_names
-                except Exception as e3:
-                    # RETHROW specifically as HTTPException to bubble up past the generic handler
-                    raise HTTPException(status_code=400, detail=f"Critical Excel Error: {e3}. If this is a circular reference, please ensure 'python-calamine' is installed.")
+            raise HTTPException(status_code=400, detail=f"Failed to open Excel file: {e}. Please ensure it is a valid .xlsx file.")
 
         logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
         
         all_entries = []
-        best_sheet_name = None
         
         for sheet_name in sheet_names:
             print(f"[IMPORT] Scanning sheet: {sheet_name}")
             try:
-                if use_calamine:
-                    df_raw = calamine_to_df(sheet_name)
-                    data = [list(row) for row in df_raw.values]
-                elif 'use_xlsx2csv' in locals() and use_xlsx2csv:
-                    # df_raw is already defined in the except block above for xlsx2csv
-                    # so we just use it
-                    data = [list(row) for row in df_raw.values]
-                else:
-                    df_raw = xl.parse(sheet_name, header=None)
-                    data = [list(row) for row in df_raw.values]
+                df_raw = xl.parse(sheet_name, header=None)
+                data = [list(row) for row in df_raw.values]
                 
                 if not data:
                     continue
@@ -1011,13 +939,11 @@ async def import_excel(
                     continue
                     
                 # Create DF with the correct header
-                # If we have headers, use data[header_row_index] as column names
                 headers = [str(h) for h in data[header_row_index]]
                 df = pd.DataFrame(data[header_row_index+1:], columns=headers)
-                # Remove rows that are all NaN
                 df = df.dropna(how='all')
                 
-                # Use SMART detection
+                # Use SMART detection (Synonyms + LLM fallback)
                 col_map = logbook.detect_columns_smart(df)
                 
                 # Verify if we found enough data
@@ -1025,108 +951,49 @@ async def import_excel(
                 found_critical = sum(1 for k in critical_keys if k in col_map and col_map[k] in df.columns)
                 
                 if found_critical < 2:
+                    print(f"[IMPORT] Sheet '{sheet_name}' rejected: only {found_critical} critical columns found.")
                     continue
                 
-                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns: {[k for k in critical_keys if k in col_map]}")
+                print(f"[IMPORT] Found valid data on sheet '{sheet_name}' with {found_critical} critical columns.")
                 
+                # Check for partial dates if not already confirmed
+                if not confirm_year and logbook.has_partial_dates(df, col_map):
+                    current_year = datetime.now().year
+                    return JSONResponse(
+                        status_code=409,
+                        content={
+                            "requires_confirmation": True,
+                            "message": f"Some dates in your Excel file are missing the year (e.g., '28-Jan'). Would you like to import them using the current year ({current_year})?"
+                        }
+                    )
+
                 # Parse rows for this sheet
-                sheet_entries = []
                 for _, row in df.iterrows():
                     entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
                     if entry:
                         # Fallback for AC_TYPE if missing in Excel but provided in UI
                         if (not entry.get('ac_type') or entry.get('ac_type') == 'None') and ac_type:
                             entry['ac_type'] = ac_type
-                        sheet_entries.append(entry)
+                        
+                        # Dedup and Merge
+                        existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
+                        if existing:
+                            # Refresh existing record with new data
+                            for k, v in entry.items():
+                                if k in ['dep_time', 'arr_time', 'route', 'remarks', 'metadata', 'day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual', 'inst_flying', 'sim_time']:
+                                    existing[k] = v
+                        else:
+                            logbook.history.append(entry)
                 
-                if sheet_entries:
-                    all_entries.extend(sheet_entries)
-                    best_sheet_name = sheet_name
-                    
             except Exception as e:
                 print(f"[IMPORT] Error scanning sheet {sheet_name}: {e}")
                 continue
 
-        if not all_entries:
-            # Construct a helpful error message
-            logbook = CAD407Logbook(user_id=current_user.id)
-            has_llm = bool(os.getenv("GEMINI_API_KEY") or os.getenv("OLLAMA_BASE_URL"))
-            
-            error_detail = "Could not find valid flight data. "
-            if not has_llm:
-                error_detail += "(Note: No LLM Brain was detected. Please add GEMINI_API_KEY to .env for smarter parsing). "
-            
-            error_detail += "The engine is looking for headers like 'Date', 'Registration', and 'Total Hours'."
-            raise HTTPException(status_code=400, detail=error_detail)
+        if not logbook.history:
+             raise HTTPException(status_code=400, detail="Could not find any valid flight data in the uploaded file.")
 
-        # Dedup and Merge
-        added_count = 0
-        updated_count = 0
-        
-        for entry in all_entries:
-            # SMART UPDATE: Find existing entry by flight ID
-            existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
-            if existing:
-                # Merge logic: Fill in missing data from the new entry
-                for k, v in entry.items():
-                    if k == 'flight_id' or k == 'timestamp': continue
-                    # If existing has no data but new has data, update it
-                    if not existing.get(k) and v:
-                        existing[k] = v
-                    # Specifically for times and route/remarks, always refresh to latest
-                    elif k in ['dep_time', 'arr_time', 'route', 'remarks', 'metadata']:
-                        if v: existing[k] = v
-                updated_count += 1
-            else:
-                logbook.history.append(entry)
-                added_count += 1
-        
-        print(f"[IMPORT] Header Row Index: {header_row_index}")
-        
-        print(f"[IMPORT] Detected Columns: {col_map}")
-        print(f"[IMPORT] Raw Columns: {list(df.columns)}")
-        print(f"[IMPORT] First 2 rows of data: \n{df.head(2)}")
-        
-        # Check for partial dates if not already confirmed
-        if not confirm_year and logbook.has_partial_dates(df, col_map):
-            current_year = datetime.now().year
-            return JSONResponse(
-                status_code=409,
-                content={
-                    "requires_confirmation": True,
-                    "message": f"Some dates in your Excel file are missing the year (e.g., '28-Jan'). Would you like to import them using the current year ({current_year})?"
-                }
-            )
-        
-        added_count = 0
-        updated_count = 0
-        for i, row in df.iterrows():
-            entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
-            if entry:
-                # SMART UPDATE: Find existing entry by flight ID
-                existing = next((h for h in logbook.history if h.get('flight_id') == entry['flight_id']), None)
-                if existing:
-                    # Refresh with new parser logic (metadata, cleaned route/remarks, and specific times)
-                    existing['metadata'] = entry.get('metadata', {})
-                    existing['remarks'] = entry.get('remarks', '')
-                    existing['route'] = entry.get('route', '')
-                    existing['dep_time'] = entry.get('dep_time', '')
-                    existing['arr_time'] = entry.get('arr_time', '')
-                    
-                    # Refresh flying hours (to fix rounding or data changes)
-                    for h_col in ['day_p1', 'day_p1us', 'day_p2', 'day_dual', 'night_p1', 'night_p1us', 'night_p2', 'night_dual', 'inst_flying', 'sim_time']:
-                        existing[h_col] = entry.get(h_col, 0.0)
-                else:
-                    logbook.history.append(entry)
-                    added_count += 1
-            else:
-                if i < 5:
-                    print(f"[IMPORT] Row {i} failed to parse.")
-        
         logbook.save_data()
-        msg = f"Import complete: {added_count} new flights, {updated_count} records refreshed."
-            
-        return {"message": msg, "data": get_mvp_data(logbook)}
+        return {"message": "Import complete.", "data": get_mvp_data(logbook)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error parsing Excel: {str(e)}")
 

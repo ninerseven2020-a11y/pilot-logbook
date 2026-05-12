@@ -9,6 +9,16 @@ try:
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
+    # Attempt auto-install if missing (Self-Repair)
+    try:
+        import subprocess
+        import sys
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "google-generativeai"])
+        import google.generativeai as genai
+        HAS_GENAI = True
+        print("[SYSTEM] google-generativeai installed successfully via self-repair.")
+    except:
+        print("[SYSTEM] google-generativeai missing and auto-install failed.")
 
 import requests
 
@@ -69,8 +79,10 @@ class CAD407Logbook:
             'SIM_DAY': ['SIM DAY', 'SIMULATOR DAY', 'SIM P1 DAY'],
             'SIM_NIGHT': ['SIM NIGHT', 'SIMULATOR NIGHT', 'SIM P1 NIGHT'],
             'REMARKS': ['REMARKS', 'NOTES', 'COMMENTS', 'FLIGHT DETAILS'],
-            'ARR': ['ARR', 'ARRIVAL', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME'],
-            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS', 'BLOCK TIME', 'TOTAL_TIME']
+            'ARR': ['ARR', 'ARRIVAL', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME', 'ATA'],
+            'ATD': ['ATD', 'DEP TIME', 'DEPARTURE TIME', 'DEP_TIME', 'OFF BLOCK'],
+            'ATA': ['ATA', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME', 'ON BLOCK'],
+            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS', 'BLOCK TIME', 'TOTAL_TIME', 'DURATION']
         }
         if os.path.exists(self.synonyms_file):
             try:
@@ -107,7 +119,7 @@ class CAD407Logbook:
 
     def detect_columns_smart(self, df):
         """
-        Tries standard detection first. If low confidence, tries LLM.
+        Tries standard detection first. If critical columns are missing, tries LLM.
         """
         # Get standard mapping
         standard_map = self.detect_columns(df.columns)
@@ -116,18 +128,21 @@ class CAD407Logbook:
         critical_keys = ['DEP', 'AC_TYPE', 'AC_REG', 'TOTAL']
         found_critical = sum(1 for k in critical_keys if k in standard_map and standard_map[k] in df.columns)
         
-        if found_critical >= 10: # Forced high to ensure LLM is used
+        # If all critical keys found, we are happy
+        if found_critical >= len(critical_keys):
             print(f"[SMART ENGINE] Standard detection successful ({found_critical}/{len(critical_keys)} critical keys).")
             return standard_map
             
-        print(f"[SMART ENGINE] Confidence low ({found_critical}/4). Engaging LLM Brain with sample data...")
+        print(f"[SMART ENGINE] Confidence low ({found_critical}/{len(critical_keys)}). Engaging LLM Brain with sample data...")
         try:
             llm_map = self.detect_columns_llm(df)
             if llm_map:
                 print(f"[SMART ENGINE] LLM Brain returned: {json.dumps(llm_map)}")
-                # Merge: Use LLM results to override/fill standard map
+                # Merge: Use LLM results to fill missing keys in standard map
                 for k, v in llm_map.items():
-                    if v in df.columns:
+                    if k in standard_map and standard_map[k] is None and v in df.columns:
+                        standard_map[k] = v
+                    elif k not in standard_map and v in df.columns:
                         standard_map[k] = v
                 return standard_map
         except Exception as e:
@@ -645,6 +660,40 @@ RULES:
                     pass
             return str(val)
 
+        # --- Calculate Total Time Fallback ---
+        total_val = get_val('TOTAL', None)
+        if total_val is None or total_val == 0:
+            # Try ATA - ATD
+            atd_val = get_val('ATD', None)
+            ata_val = get_val('ATA', None)
+            
+            if atd_val and ata_val:
+                try:
+                    def to_minutes(v):
+                        if isinstance(v, (datetime, pd.Timestamp)):
+                            return v.hour * 60 + v.minute
+                        if isinstance(v, time):
+                            return v.hour * 60 + v.minute
+                        if isinstance(v, str) and ':' in v:
+                            p = v.split(':')
+                            return int(p[0]) * 60 + int(p[1])
+                        return None
+                    
+                    m1 = to_minutes(atd_val)
+                    m2 = to_minutes(ata_val)
+                    if m1 is not None and m2 is not None:
+                        diff = m2 - m1
+                        if diff < 0: diff += 1440 # Handle midnight crossover
+                        total_val = diff / 60.0
+                except:
+                    pass
+        
+        # Final fallback: Day + Night
+        if total_val is None or total_val == 0:
+            total_val = float(get_val('DAY_P1', 0)) + float(get_val('NIGHT_P1', 0)) + \
+                        float(get_val('DAY_P2', 0)) + float(get_val('NIGHT_P2', 0)) + \
+                        float(get_val('DAY_DUAL', 0)) + float(get_val('NIGHT_DUAL', 0))
+
         entry = {
             'flight_id': get_val('FLT_SN', ''), # Standardized primary ID
             'date_obj': dep_dt,
@@ -669,6 +718,7 @@ RULES:
             'remarks': remarks,
             'dep_time': format_time(dep_time_raw),
             'arr_time': format_time(arr_time_raw),
+            'total_time': self.cad_round_up(total_val), # Calculated or extracted
             'is_opening': False,
             'is_adjustment': False,
             'operator': operator,

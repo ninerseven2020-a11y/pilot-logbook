@@ -23,5 +23,3 @@ playwright==1.49.1
 gunicorn==23.0.0
 cryptography==44.0.2
 google-generativeai
-python-calamine
-xlsx2csv
