@@ -840,15 +840,11 @@ function renderLogbookTable() {
                 <td style="border: 1px solid #94a3b8;"></td>
             `;
         } else {
-            // Use full route for non-GFS flights, otherwise just start/end
-            let displayRoute = '';
-            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS');
-            
-            if (isGfs) {
-                displayRoute = `${entry.dep || ''} ${entry.arr || ''}`;
-            } else {
-                displayRoute = entry.route || `${entry.dep || ''} ${entry.arr || ''}`;
-            }
+            const reg = entry.reg || entry.ac_reg || '';
+            const oper = entry.operator || '';
+            const gfsRegs = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ'];
+            const isGfs = (oper === 'Government Flying Service' || oper === 'GFS' || gfsRegs.some(r => reg.startsWith(r)));
+            const displayRoute = isGfs ? 'VHHH VHHH' : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
 
             tr.innerHTML = `
                 <td>${entry.date_str || ''}</td>
@@ -934,7 +930,7 @@ function adjustFontSizeForFit() {
         document.body.appendChild(span);
         
         let currentSize = parseFloat(computedStyle.fontSize);
-        const APP_VERSION = "1.3.4";
+        const APP_VERSION = "1.3.5";
         const minSize = 6.5; 
         
         let textWidth = span.offsetWidth;
@@ -1431,7 +1427,7 @@ function renderLogbookPageToHTML(pageData) {
             const oper = entry.operator || '';
             const gfsRegs = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ'];
             const isGfs = (oper === 'Government Flying Service' || oper === 'GFS' || gfsRegs.some(r => reg.startsWith(r)));
-            let displayRoute = isGfs ? 'VHHH VHHH' : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
+            const displayRoute = isGfs ? 'VHHH VHHH' : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
 
             rowsHtml += `
                 <tr style="height: 38px;">

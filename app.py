@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.3.4"
+APP_VERSION = "1.3.5"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
