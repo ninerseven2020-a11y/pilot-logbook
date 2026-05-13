@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -957,6 +957,19 @@ async def import_excel(
     db: Session = Depends(get_db)
 ):
     log_function_used(current_user, db, "Excel Import")
+    
+    # Check for xlrd dependency and try to auto-fix if missing
+    try:
+        import xlrd
+    except ImportError:
+        print("[REPAIR] xlrd missing. Attempting automatic installation...")
+        import subprocess
+        import sys
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "xlrd>=2.0.1"])
+            print("[REPAIR] xlrd installed successfully.")
+        except Exception as e:
+            print(f"[REPAIR] Failed to install xlrd: {e}")
     # Resolve Human Readable Names for Ingestion
     final_operator = "Default"
     final_label = "Default"
