@@ -14,6 +14,7 @@ function removeToken() {
 
 const EYE_OPEN_SVG = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
 const EYE_CLOSED_SVG = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>`;
+const EXCLAMATION_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
 
 function togglePassword(inputId, button) {
     const input = document.getElementById(inputId);
@@ -1658,8 +1659,8 @@ function updateErrorBell() {
     if (!bell) {
         bell = document.createElement('div');
         bell.id = 'error-bell';
-        bell.style = "position:fixed; bottom:20px; right:20px; width:40px; height:40px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.5); font-size:20px;";
-        bell.innerHTML = "🔔";
+        bell.style = "position:fixed; bottom:20px; right:20px; width:40px; height:40px; background:#ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10000; box-shadow:0 4px 12px rgba(0,0,0,0.5);";
+        bell.innerHTML = EXCLAMATION_SVG;
         bell.onclick = toggleErrorHistory;
         document.body.appendChild(bell);
     }
@@ -1676,21 +1677,81 @@ function toggleErrorHistory() {
     
     panel = document.createElement('div');
     panel.id = 'error-history-panel';
-    panel.style = "position:fixed; bottom:70px; right:20px; width:300px; background:#1a1b1e; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px; z-index:10000; box-shadow:0 10px 25px rgba(0,0,0,0.5);";
+    panel.style = "position:fixed; bottom:70px; right:20px; width:320px; background:#1a1b1e; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px; z-index:10000; box-shadow:0 10px 25px rgba(0,0,0,0.5); color: white;";
     
     const history = JSON.parse(localStorage.getItem('error_history') || '[]');
-    let html = '<h4 style="margin:0 0 10px 0; color:#ef4444;">Error History</h4>';
-    if (history.length === 0) html += '<p style="font-size:0.8rem; opacity:0.5;">No errors yet.</p>';
-    history.forEach(item => {
-        html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:8px 0;">
-                    <div style="font-size:0.7rem; opacity:0.4;">${item.time}</div>
-                    <div style="font-size:0.85rem;">${item.msg}</div>
+    let html = '<h4 style="margin:0 0 10px 0; color:#ef4444; display:flex; align-items:center; justify-content:space-between;">' + 
+               '<span>System Alerts</span>' + 
+               '<span style="cursor:pointer; font-size:1.2rem;" onclick="this.parentElement.parentElement.remove()">×</span></h4>';
+    
+    if (history.length === 0) {
+        html += '<p style="font-size:0.8rem; opacity:0.5;">No errors yet.</p>';
+    } else {
+        const latest = history[0];
+        html += `<div style="background:rgba(239, 68, 68, 0.1); border-radius:8px; padding:10px; margin-bottom:15px;">
+                    <div style="font-size:0.7rem; opacity:0.5; margin-bottom:4px;">LATEST ERROR - ${latest.time}</div>
+                    <div style="font-size:0.85rem; font-weight:500; margin-bottom:10px;">${latest.msg}</div>
+                    <div style="font-size:0.75rem; margin-bottom:5px; opacity:0.8;">What were you doing?</div>
+                    <textarea id="error-desc" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:4px; color:white; font-size:0.8rem; padding:8px; height:60px; margin-bottom:8px; resize:none;" placeholder="e.g. Trying to import Excel..."></textarea>
+                    <button id="send-error-btn" onclick="sendErrorFeedback('${latest.msg.replace(/'/g, "\\'")}')" style="width:100%; background:#ef4444; border:none; color:white; padding:8px; border-radius:4px; cursor:pointer; font-size:0.8rem; font-weight:600;">Send to Admin</button>
                  </div>`;
-    });
-    html += '<button onclick="localStorage.removeItem(\'error_history\'); updateErrorBell(); this.parentElement.remove();" style="width:100%; margin-top:10px; background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:5px; border-radius:4px; cursor:pointer;">Clear History</button>';
+        
+        if (history.length > 1) {
+            html += '<div style="font-size:0.75rem; opacity:0.4; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Previous Errors</div>';
+            history.slice(1).forEach(item => {
+                html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:6px 0; opacity:0.6;">
+                            <div style="font-size:0.65rem;">${item.time}</div>
+                            <div style="font-size:0.75rem;">${item.msg}</div>
+                         </div>`;
+            });
+        }
+    }
+    
+    html += '<button onclick="localStorage.removeItem(\'error_history\'); updateErrorBell(); this.parentElement.remove();" style="width:100%; margin-top:10px; background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.5); padding:5px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Clear All</button>';
     
     panel.innerHTML = html;
     document.body.appendChild(panel);
+}
+
+async function sendErrorFeedback(errorMsg) {
+    const desc = document.getElementById('error-desc').value;
+    const btn = document.getElementById('send-error-btn');
+    
+    if (!desc.trim()) {
+        showToast("Please add a description", "warning");
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerText = "Sending...";
+    
+    try {
+        const res = await apiFetch('/api/error_feedback', {
+            method: 'POST',
+            body: JSON.stringify({
+                error_message: errorMsg,
+                description: desc
+            })
+        });
+        
+        if (res.ok) {
+            showToast("Feedback sent! Thank you.");
+            document.getElementById('error-history-panel').remove();
+            // Optional: remove the latest error from history since it's reported
+            let history = JSON.parse(localStorage.getItem('error_history') || '[]');
+            history.shift();
+            localStorage.setItem('error_history', JSON.stringify(history));
+            updateErrorBell();
+        } else {
+            showToast("Failed to send feedback", true);
+            btn.disabled = false;
+            btn.innerText = "Send to Admin";
+        }
+    } catch (err) {
+        showToast("Error sending feedback", true);
+        btn.disabled = false;
+        btn.innerText = "Send to Admin";
+    }
 }
 
 // Check bell on load

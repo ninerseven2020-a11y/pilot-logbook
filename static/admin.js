@@ -24,6 +24,7 @@ async function fetchAdminData() {
 
         const users = await response.json();
         renderAdminDashboard(users);
+        await fetchFeedbacks();
     } catch (error) {
         console.error('Admin Fetch Error:', error);
     }
@@ -137,6 +138,44 @@ function formatRelativeTime(date) {
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return date.toLocaleDateString();
+}
+
+async function fetchFeedbacks() {
+    const token = getToken();
+    try {
+        const response = await fetch('/api/admin/feedbacks', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+            const feedbacks = await response.json();
+            renderFeedbacks(feedbacks);
+        }
+    } catch (error) {
+        console.error('Feedback Fetch Error:', error);
+    }
+}
+
+function renderFeedbacks(feedbacks) {
+    const tbody = document.getElementById('feedback-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (feedbacks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.5; padding:2rem;">No feedback received yet.</td></tr>';
+        return;
+    }
+
+    feedbacks.forEach(f => {
+        const row = document.createElement('tr');
+        const date = new Date(f.timestamp);
+        row.innerHTML = `
+            <td style="font-weight: 600;">${f.username}</td>
+            <td style="font-size: 0.8rem; color: #ef4444;">${f.error_message}</td>
+            <td style="font-size: 0.85rem; max-width: 400px; white-space: normal;">${f.description}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${date.toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', fetchAdminData);

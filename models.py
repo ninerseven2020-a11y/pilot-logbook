@@ -37,6 +37,17 @@ class User(Base):
 
     organizations = relationship("Organization", back_populates="user")
     natures = relationship("FlightNature", back_populates="user")
+    error_feedbacks = relationship("ErrorFeedback", back_populates="user")
+
+class ErrorFeedback(Base):
+    __tablename__ = "error_feedbacks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    error_message = Column(String)
+    user_description = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="error_feedbacks")
 
 class Organization(Base):
     __tablename__ = "organizations"

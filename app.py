@@ -253,6 +253,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db), code:
         if email == "ninerseven2020@gmail.com":
             user.is_admin = True
             
+        # Update login stats
+        user.last_login = datetime.utcnow()
+        if user.login_count is None: user.login_count = 0
+        user.login_count += 1
+            
         db.commit()
         db.refresh(user)
         
@@ -552,6 +557,35 @@ async def get_admin_users(user: User = Depends(get_current_user), db: Session = 
             "functions_used": u.functions_used or ""
         })
     return user_list
+
+@app.post("/api/error_feedback")
+async def post_error_feedback(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models import ErrorFeedback
+    data = await request.json()
+    feedback = ErrorFeedback(
+        user_id=current_user.id,
+        error_message=data.get("error_message"),
+        user_description=data.get("description"),
+        timestamp=datetime.utcnow()
+    )
+    db.add(feedback)
+    db.commit()
+    return {"status": "success"}
+
+@app.get("/api/admin/feedbacks")
+async def get_admin_feedbacks(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from models import ErrorFeedback
+    feedbacks = db.query(ErrorFeedback).order_by(ErrorFeedback.timestamp.desc()).all()
+    return [{
+        "id": f.id,
+        "username": f.user.username if f.user else "Unknown",
+        "error_message": f.error_message,
+        "description": f.user_description,
+        "timestamp": f.timestamp.isoformat()
+    } for f in feedbacks]
 
 from pydantic import BaseModel
 class MergeRequest(BaseModel):
@@ -1090,6 +1124,10 @@ async def import_excel(
                 df = df.dropna(how='all')
                 
                 col_map = logbook.detect_columns(df)
+                
+                # Author-005 Detection: Look for very specific headers
+                is_author_005 = any(h in headers for h in ["CREWMAN 1", "OPERATING CAPACITY", "FLT S/N"])
+                
                 if custom_mapping_raw:
                     try:
                         user_map = json.loads(custom_mapping_raw)
@@ -1102,15 +1140,17 @@ async def import_excel(
                 is_missing_critical = any(not col_map.get(k) for k in critical_keys)
                 
                 if (is_missing_critical or not confirm_mapping) and not confirm_mapping:
-                    return JSONResponse(
-                        status_code=422,
-                        content={
-                            "requires_mapping_confirmation": True,
-                            "proposed_mapping": col_map,
-                            "all_columns": df.columns.tolist(),
-                            "message": "Mapping needed."
-                        }
-                    )
+                    # Bypass mapping confirmation if it's a standard Author-005 report and we mapped everything critical
+                    if not (is_author_005 and not is_missing_critical):
+                        return JSONResponse(
+                            status_code=422,
+                            content={
+                                "requires_mapping_confirmation": True,
+                                "proposed_mapping": col_map,
+                                "all_columns": df.columns.tolist(),
+                                "message": "Mapping needed."
+                            }
+                        )
 
                 df = df.replace(r'^\s*$', pd.NA, regex=True)
                 
