@@ -62,6 +62,34 @@ def verify_password(plain_password, hashed_password):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    
+    # Self-healing migration for missing columns
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        # Check existing columns
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        # Add missing columns if they don't exist
+        if 'login_count' not in columns:
+            print("[MIGRATION] Adding login_count column")
+            cursor.execute("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0")
+        
+        if 'functions_used' not in columns:
+            print("[MIGRATION] Adding functions_used column")
+            cursor.execute("ALTER TABLE users ADD COLUMN functions_used TEXT DEFAULT ''")
+            
+        if 'ai_count' not in columns:
+            print("[MIGRATION] Adding ai_count column")
+            cursor.execute("ALTER TABLE users ADD COLUMN ai_count INTEGER DEFAULT 0")
+            
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATION] Error: {e}")
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     init_db()

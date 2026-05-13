@@ -934,6 +934,7 @@ function adjustFontSizeForFit() {
         document.body.appendChild(span);
         
         let currentSize = parseFloat(computedStyle.fontSize);
+        const APP_VERSION = "1.3.1";
         const minSize = 6.5; 
         
         let textWidth = span.offsetWidth;
