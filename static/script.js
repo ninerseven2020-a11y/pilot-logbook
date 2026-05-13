@@ -1427,8 +1427,9 @@ function renderLogbookPageToHTML(pageData) {
                 </tr>
             `;
         } else {
-            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS');
-            let displayRoute = isGfs ? `${entry.dep || ''} ${entry.arr || ''}` : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
+            const gfsRegs = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ'];
+            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS' || gfsRegs.some(r => entry.reg && entry.reg.startsWith(r)));
+            let displayRoute = isGfs ? 'VHHH VHHH' : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
 
             rowsHtml += `
                 <tr style="height: 38px;">
