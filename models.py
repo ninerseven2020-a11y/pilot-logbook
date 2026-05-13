@@ -31,6 +31,9 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
+    login_count = Column(Integer, default=0)
+    functions_used = Column(String, default="") # Comma separated list of features used
+    ai_count = Column(Integer, default=0) # Total AI calls by this user
 
     organizations = relationship("Organization", back_populates="user")
     natures = relationship("FlightNature", back_populates="user")

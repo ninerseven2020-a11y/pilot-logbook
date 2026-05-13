@@ -4,145 +4,253 @@
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logbook Admin | Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Dashboard | Pilot Logbook</title>
+    <link rel="stylesheet" href="/static/style.css?v=1.2.98">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --admin-accent: #3b82f6; /* Blue for admin instead of gold */
+            --admin-accent: #3b82f6;
+            --admin-bg: #0f172a;
         }
-        .admin-sidebar {
-            background: rgba(15, 23, 42, 0.95);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+
+        body {
+            background-color: var(--admin-bg);
         }
-        .user-row:hover {
-            background: rgba(59, 130, 246, 0.05);
+
+        .admin-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
-        .status-badge {
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
+
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .status-admin { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .status-pilot { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
-        
-        .stat-card {
+
+        .admin-nav .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-nav .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--admin-accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .home-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .home-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--admin-accent);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .admin-card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             padding: 1.5rem;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
         }
-        .stat-card .val { font-size: 2rem; font-weight: 800; color: #fff; }
-        .stat-card .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .stat-card .val {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #fff;
+            display: block;
+        }
+
+        /* Table Section */
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-list-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            background: rgba(255,255,255,0.02);
+            color: #94a3b8;
+            font-weight: 600;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            color: #e2e8f0;
+        }
+
+        .func-tag {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-layout {
+                padding: 1rem;
+            }
+
+            .admin-nav {
+                margin-bottom: 2rem;
+            }
+
+            th:nth-child(3), td:nth-child(3),
+            th:nth-child(4), td:nth-child(4),
+            th:nth-child(5), td:nth-child(5) {
+                display: none; /* Hide non-critical columns on mobile */
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="manage-container">
-        <aside class="sidebar admin-sidebar">
-            <div class="logo-section" style="padding: 0 1.5rem; margin-bottom: 3rem;">
-                <div class="logo">
-                    <span class="logo-icon" style="color: var(--admin-accent);">🛡️</span>
-                    <h1 style="background: linear-gradient(135deg, #fff 0%, var(--admin-accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin</h1>
-                </div>
+    <div class="admin-layout">
+        <nav class="admin-nav">
+            <div class="logo">
+                <span style="font-size: 1.5rem;">🛡️</span>
+                <h1>Logbook Admin</h1>
             </div>
-            <nav style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0 1rem;">
-                <a href="/admin" class="nav-item active" style="padding: 0.8rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.8rem; color: var(--admin-accent);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    User Management
-                </a>
-                <a href="/dashboard" class="nav-item" style="padding: 0.8rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.8rem; opacity: 0.6;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    Exit to App
-                </a>
-            </nav>
-        </aside>
+            <a href="/dashboard" class="home-btn" title="Back to App">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </a>
+        </nav>
 
-        <main class="manage-content">
-            <header class="section-header" style="margin-bottom: 2rem;">
-                <h2>System Overview</h2>
-                <div id="admin-user-info" style="display: flex; align-items: center; gap: 1rem;">
-                    <!-- User info -->
-                </div>
-            </header>
+        <section class="stats-grid">
+            <div class="admin-card stat-card">
+                <span class="label">Total Pilots</span>
+                <span class="val" id="total-users">0</span>
+            </div>
+            <div class="admin-card stat-card">
+                <span class="label">Active (24H)</span>
+                <span class="val" id="active-users">0</span>
+            </div>
+            <div class="admin-card stat-card">
+                <span class="label">AI Activities</span>
+                <span class="val" id="total-ai">0</span>
+            </div>
+        </section>
 
-            <!-- Stats Row -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-                <div class="stat-card">
-                    <span class="label">Total Pilots</span>
-                    <span class="val" id="total-users">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="label">Total Flights</span>
-                    <span class="val" id="total-flights">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="label">Active (24h)</span>
-                    <span class="val" id="active-users">0</span>
-                </div>
+        <section class="user-list-section">
+            <div class="user-list-header">
+                <h3>Registered Pilots</h3>
+                <div id="admin-user-info" style="color: #94a3b8; font-size: 0.8rem;"></div>
             </div>
 
-            <section class="card glass">
-                <div class="flex-between" style="margin-bottom: 2rem;">
-                    <h3>Registered Users</h3>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">
-                        Real-time tracking of pilot adoption
-                    </div>
-                </div>
-
-                <div class="table-container">
-                    <table id="user-table">
-                        <thead>
-                            <tr>
-                                <th>Pilot Name</th>
-                                <th>Username</th>
-                                <th>Joined</th>
-                                <th>Last Activity</th>
-                                <th>Flights</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <!-- Populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
+            <div class="table-wrapper">
+                <table id="user-table">
+                    <thead>
+                        <tr>
+                            <th>Pilot Name</th>
+                            <th>Username</th>
+                            <th>Joined</th>
+                            <th>Activity</th>
+                            <th>Logins</th>
+                            <th>Functions Used</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
-    <!-- Merge Modal -->
+    <!-- Simple Merge Modal (Restored) -->
     <div id="merge-modal" class="modal">
         <div class="modal-content glass" style="max-width: 500px;">
             <div class="flex-between" style="margin-bottom: 1.5rem;">
                 <h2>Merge Accounts</h2>
                 <button class="btn-close" onclick="closeMergeModal()">&times;</button>
             </div>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                This will move all flight records and Google links from <strong id="merge-source-name" style="color:#fff;"></strong> into another account. 
-                <span style="color: #ef4444; display: block; margin-top: 0.5rem;">Warning: This action cannot be undone.</span>
+            <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1.5rem;">
+                Move all data from <strong id="merge-source-name" style="color:#fff;"></strong> into:
             </p>
             <div class="form-group">
-                <label>Select Target Account (Keep this one)</label>
-                <select id="merge-target-select" style="width: 100%; padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff;">
-                    <!-- Populated by JS -->
+                <select id="merge-target-select" class="full-width" style="padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff;">
                 </select>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
                 <button class="btn btn-secondary" onclick="closeMergeModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmMerge()" style="background: #ef4444; color: #fff;">Merge Accounts</button>
+                <button class="btn btn-primary" onclick="confirmMerge()" style="background: #ef4444; border-color: #ef4444;">Merge</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/admin.js"></script>
+    <script src="/static/admin.js?v=1.2.98"></script>
 </body>
 </html>

@@ -858,6 +858,15 @@ function openFilterModal() {
         container.innerHTML = '';
         container.appendChild(selectGroup);
         container.appendChild(dateRange);
+        
+        // Show them as they were hidden in the main UI
+        selectGroup.style.display = 'flex';
+        selectGroup.style.flexDirection = 'column';
+        selectGroup.style.gap = '1rem';
+        dateRange.style.display = 'flex';
+        dateRange.style.flexDirection = 'column';
+        dateRange.style.gap = '1rem';
+        
         modal.classList.add('show');
     }
 }

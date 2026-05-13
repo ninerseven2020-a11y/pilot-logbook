@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from jose import JWTError, jwt
 import os
 import json
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List
 from sqlalchemy.orm import Session
@@ -25,7 +26,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.2.21"
+APP_VERSION = "1.2.98"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -50,7 +51,6 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown logic (if any) can go here
 
-APP_VERSION = "1.5.1-SIMPLIFIED"
 
 app = FastAPI(lifespan=lifespan)
 
@@ -118,6 +118,18 @@ async def system_repair(current_user: User = Depends(get_current_user)):
     return {"results": ["System is optimized. No repairs needed."]}
 
 # --- Google OAuth Endpoints ---
+
+def log_function_used(user: User, db: Session, func_name: str):
+    if not user: return
+    try:
+        current = user.functions_used or ""
+        funcs = [f.strip() for f in current.split(",") if f.strip()]
+        if func_name not in funcs:
+            funcs.append(func_name)
+            user.functions_used = ", ".join(funcs)
+            db.commit()
+    except Exception as e:
+        print(f"Error logging function: {e}")
 
 @app.get("/api/auth/google/login")
 async def google_login(request: Request, link: Optional[bool] = False, current_user_id: Optional[int] = None):
@@ -497,8 +509,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db = Depends(g
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Update last login
+    # Update last login and increment count
     user.last_login = datetime.utcnow()
+    if user.login_count is None: user.login_count = 0
+    user.login_count += 1
     db.commit()
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -532,7 +546,10 @@ async def get_admin_users(user: User = Depends(get_current_user), db: Session = 
             "is_admin": u.is_admin,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login": u.last_login.isoformat() if u.last_login else None,
-            "flight_count": flight_count
+            "flight_count": flight_count,
+            "login_count": u.login_count or 0,
+            "ai_count": u.ai_count or 0,
+            "functions_used": u.functions_used or ""
         })
     return user_list
 
@@ -735,7 +752,7 @@ async def update_synonyms(new_map: dict, user: User = Depends(get_current_user))
     return {"message": "Synonyms updated successfully"}
 
 @app.post("/api/synonyms/ai")
-async def update_synonyms_ai(data: dict, user: User = Depends(get_current_user)):
+async def update_synonyms_ai(data: dict, user: User = Depends(get_current_user), db = Depends(get_db)):
     instruction = data.get('instruction')
     if not instruction:
         raise HTTPException(status_code=400, detail="No instruction provided")
@@ -760,6 +777,11 @@ async def update_synonyms_ai(data: dict, user: User = Depends(get_current_user))
     try:
         from engine import LLMEngine
         llm = LLMEngine()
+        
+        # Increment AI Count and Log function
+        user.ai_count = (user.ai_count or 0) + 1
+        log_function_used(user, db, "AI Synonyms")
+        
         updated_map_str = llm.generate(prompt)
         # Extract JSON from potential markdown
         import re
@@ -934,34 +956,42 @@ async def import_excel(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Save new organization if it doesn't exist
-    if operator and operator != "Default":
-        existing_org = db.query(Organization).filter(Organization.user_id == current_user.id, Organization.name == operator).first()
-        if not existing_org:
-            new_org = Organization(user_id=current_user.id, name=operator)
-            db.add(new_org)
+    log_function_used(current_user, db, "Excel Import")
+    # Resolve Human Readable Names for Ingestion
+    final_operator = "Default"
+    final_label = "Default"
     
-    # Save new flight nature if it doesn't exist
+    if operator and operator != "Default":
+        # Check if it's an ID or a Name
+        if operator.isdigit():
+            org = db.query(Organization).filter(Organization.id == int(operator)).first()
+            if org: final_operator = org.name
+        else:
+            final_operator = operator
+
     if label and label != "Default":
-        existing_nature = db.query(FlightNature).filter(FlightNature.user_id == current_user.id, FlightNature.name == label).first()
-        if not existing_nature:
-            new_nature = FlightNature(user_id=current_user.id, name=label)
-            db.add(new_nature)
+        # Check if it's an ID or a Name
+        if label.isdigit():
+            nature = db.query(FlightNature).filter(FlightNature.id == int(label)).first()
+            if nature: final_label = nature.name
+        else:
+            final_label = label
+
+    # Update the local variables for the engine
+    operator = final_operator
+    label = final_label
     
     db.commit()
 
     from engine import CAD407Logbook
-    from main import get_mvp_data
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
 
     if is_manual:
-        # Date object for internal processing
         try:
             date_obj = datetime.strptime(date, "%Y-%m-%d")
         except:
             date_obj = datetime.now()
 
-        # Construct entry from manual fields, aligned with engine.py/LogbookDashboard keys
         entry = {
             "date_obj": date_obj,
             "date_str": date_obj.strftime('%b %d'),
@@ -973,15 +1003,15 @@ async def import_excel(
             "route": route,
             "dep_time": dep,
             "arr_time": arr,
-            "flight_id": "", # Added for consistency
+            "flight_id": str(uuid.uuid4())[:8],
             "day_p1": day_p1,
             "day_p1us": day_p1us,
             "day_p2": day_p2,
-            "day_dual": day_put,   # P U/T mapped to dual
+            "day_dual": day_put,
             "night_p1": night_p1,
             "night_p1us": night_p1us,
             "night_p2": night_p2,
-            "night_dual": night_put, # P U/T mapped to dual
+            "night_dual": night_put,
             "inst_flying": instr,
             "sim_time": sim,
             "takeoff": takeoff,
@@ -991,41 +1021,42 @@ async def import_excel(
             "label": label,
             "is_opening": False,
             "is_adjustment": False,
-            "timestamp": datetime.now().isoformat()
+            "id": str(uuid.uuid4()),
+            "metadata": {}
         }
 
-        status, msg = logbook.merge_or_add_entry(entry)
+        status, msg = logbook.add_entry(entry)
         logbook.save_data()
         
-        return {
+        return JSONResponse(content={
             "message": msg, 
             "status": status,
-            "data": get_mvp_data(logbook)
-        }
+            "data": logbook.get_dashboard_data()
+        })
 
     if not file:
-        raise HTTPException(status_code=400, detail="No file or manual entry provided.")
-
-    if not file.filename.endswith(('.xlsx', '.xls')):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
-    
-    # Check for mapping confirmation
+        raise HTTPException(status_code=400, detail="No file provided.")
 
     try:
         import io
         import pandas as pd
         contents = await file.read()
         
+        # Try different engines for different Excel formats
         try:
-            xl = pd.ExcelFile(io.BytesIO(contents), engine='openpyxl', engine_kwargs={'data_only': True})
-            sheet_names = xl.sheet_names
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to open Excel file: {e}. Please ensure it is a valid .xlsx file.")
-
-        logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+            xl = pd.ExcelFile(io.BytesIO(contents), engine='calamine')
+        except:
+            try:
+                xl = pd.ExcelFile(io.BytesIO(contents), engine='openpyxl')
+            except:
+                xl = pd.ExcelFile(io.BytesIO(contents))
+                
+        sheet_names = xl.sheet_names
         dep_synonyms = [s.upper() for s in logbook.COLUMN_MAP.get('DEP', [])]
         
-        all_entries = []
+        total_added = 0
+        total_updated = 0
+        print(f"[IMPORT] Received Operator: {operator}, Label: {label}")
         
         for sheet_name in sheet_names:
             try:
@@ -1045,70 +1076,60 @@ async def import_excel(
                 df = pd.DataFrame(data[header_row_index+1:], columns=headers)
                 df = df.dropna(how='all')
                 
-                # Initialize mapping variables for this sheet
-                col_map = {}
-                needs_confirmation = False
-
-                # Handle confirmation and custom mapping
+                col_map = logbook.detect_columns(df)
                 if custom_mapping_raw:
                     try:
-                        col_map = json.loads(custom_mapping_raw)
-                        needs_confirmation = False
-                        print(f"[IMPORT] Using user-provided custom mapping: {col_map}")
-                    except:
-                        pass
+                        user_map = json.loads(custom_mapping_raw)
+                        # Overlay user choices on top of auto-detected map
+                        col_map.update({k: v for k, v in user_map.items() if v})
+                        print(f"[IMPORT] Merged mapping: {col_map}")
+                    except: pass
                 
-                if not col_map:
-                    col_map, needs_confirmation = logbook.detect_columns_smart(df)
+                critical_keys = ['DEP', 'AC_REG', 'FLT_SN']
+                is_missing_critical = any(not col_map.get(k) for k in critical_keys)
                 
-                # If AI was used and user hasn't confirmed yet, PAUSE and ask
-                if needs_confirmation and not confirm_mapping:
+                if (is_missing_critical or not confirm_mapping) and not confirm_mapping:
                     return JSONResponse(
                         status_code=422,
                         content={
                             "requires_mapping_confirmation": True,
                             "proposed_mapping": col_map,
                             "all_columns": df.columns.tolist(),
-                            "ai_used": True,
-                            "message": "The system used AI to analyze your Excel data patterns. Please verify the mappings below."
-                        }
-                    )
-                
-                # Proceed with verified or confirmed mapping
-                if not confirm_year and logbook.has_partial_dates(df, col_map):
-                    current_year = datetime.now().year
-                    return JSONResponse(
-                        status_code=409,
-                        content={
-                            "requires_confirmation": True,
-                            "message": f"Some dates in your Excel file are missing the year (e.g., '28-Jan'). Import using {current_year}?"
+                            "message": "Mapping needed."
                         }
                     )
 
+                df = df.replace(r'^\s*$', pd.NA, regex=True)
+                
+                last_valid_date = None
                 for _, row in df.iterrows():
                     entry = logbook.parse_ias_row(row, operator=operator, label=label, col_map=col_map)
                     if entry:
-                        if (not entry.get('ac_type') or entry.get('ac_type') == 'None') and ac_type:
-                            entry['ac_type'] = ac_type
-                        all_entries.append(entry)
-                        logbook.merge_or_add_entry(entry)
-                
-            except Exception as e:
-                print(f"[IMPORT] Error scanning sheet {sheet_name}: {e}")
-                continue
+                        if not entry.get('date_obj') and last_valid_date:
+                            entry['date_obj'] = last_valid_date
+                            entry['date_str'] = last_valid_date.strftime('%b %d')
+                        elif entry.get('date_obj'):
+                            last_valid_date = entry['date_obj']
 
-        logbook.save_data()
-        
-        # Check if we actually imported anything
-        total_imported = len(all_entries)
-        if total_imported == 0:
-            raise HTTPException(status_code=400, detail="No flight data was found in the Excel file. Please check that your column headers (Date, Reg, etc.) are on the first or second row.")
+                        status, msg = logbook.add_entry(entry)
+                        if status == "ADDED": total_added += 1
+                        elif status == "UPDATED": total_updated += 1
+            except Exception as e:
+                print(f"[IMPORT] Error on sheet {sheet_name}: {e}")
+
+        if total_added == 0 and total_updated == 0:
+            return JSONResponse(status_code=400, content={"message": "No valid flight data found."})
             
-        return {
-            "message": f"Import complete. {total_imported} flights processed.", 
-            "data": get_mvp_data(logbook)
-        }
+        from fastapi.encoders import jsonable_encoder
+        from main import get_mvp_data
+        logbook.save_data()
+        return JSONResponse(content={
+            "message": f"Import complete! {total_added} added, {total_updated} updated.",
+            "data": jsonable_encoder(get_mvp_data(logbook))
+        })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error parsing Excel: {str(e)}")
 
 @app.post("/api/profile")

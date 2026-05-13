@@ -34,6 +34,9 @@ node_modules
 # Secrets and Logs
 client_secret_*.json
 server.log
+server_debug.log
+scratch/
+Testing Data/
 *.xlsx
 *.xls
 *.db

@@ -1737,6 +1737,35 @@ function updateFileName(input) {
     }
 }
 
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('drop-zone');
+    if (zone) zone.style.borderColor = 'var(--accent-color)';
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('drop-zone');
+    if (zone) zone.style.borderColor = '';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('drop-zone');
+    if (zone) zone.style.borderColor = '';
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const fileInput = document.getElementById('excel-file');
+        if (fileInput) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileName(fileInput);
+        }
+    }
+}
+
 function setupManualInputLogic() {
     const depInput = document.getElementById('manual-dep');
     const arrInput = document.getElementById('manual-arr');
@@ -2265,7 +2294,18 @@ function showMappingModal(mapping, allColumns = [], aiUsed = false) {
         'CAPTAIN': 'PIC Name',
         'COPILOT': 'Copilot Name',
         'TAKEOFF': 'Takeoffs',
-        'LANDING': 'Landings'
+        'LANDING': 'Landings',
+        'DAY_P1': 'Day P1',
+        'DAY_P1US': 'Day P1 (U/S)',
+        'DAY_P2': 'Day P2',
+        'DAY_DUAL': 'Day Dual',
+        'NIGHT_P1': 'Night P1',
+        'NIGHT_P1US': 'Night P1 (U/S)',
+        'NIGHT_P2': 'Night P2',
+        'NIGHT_DUAL': 'Night Dual',
+        'INSTRUMENT': 'Instrument',
+        'SIM_DAY': 'Sim Day',
+        'SIM_NIGHT': 'Sim Night'
     };
     
     Object.entries(coreFields).forEach(([key, label]) => {
@@ -2278,22 +2318,52 @@ function showMappingModal(mapping, allColumns = [], aiUsed = false) {
         
         const colVal = mapping[key] || "";
         
-        // Create select dropdown
+        // Create select dropdown and clear button wrapper
+        const selectWrapper = document.createElement('div');
+        selectWrapper.style.display = 'flex';
+        selectWrapper.style.gap = '8px';
+        selectWrapper.style.alignItems = 'center';
+
+        const select = document.createElement('select');
+        select.classList.add('mapping-select');
+        select.style.flex = '1';
+        select.style.padding = '0.5rem';
+        select.style.background = 'rgba(255,255,255,0.05)';
+        select.style.border = '1px solid rgba(255,255,255,0.1)';
+        select.style.borderRadius = '6px';
+        select.style.color = 'white';
+        select.style.outline = 'none';
+        select.setAttribute('data-key', key);
+        
         let optionsHtml = `<option value="">--- NOT FOUND ---</option>`;
         allColumns.forEach(col => {
-            const selected = col === colVal ? 'selected' : '';
+            const isMatch = colVal && col && col.toString().trim().toUpperCase() === colVal.toString().trim().toUpperCase();
+            const selected = isMatch ? 'selected' : '';
             optionsHtml += `<option value="${col}" ${selected}>${col}</option>`;
         });
+        select.innerHTML = optionsHtml;
+
+        const clearBtn = document.createElement('button');
+        clearBtn.innerHTML = '&times;';
+        clearBtn.title = 'Clear mapping';
+        clearBtn.style.padding = '4px 10px';
+        clearBtn.style.background = 'rgba(255,255,255,0.1)';
+        clearBtn.style.border = 'none';
+        clearBtn.style.borderRadius = '4px';
+        clearBtn.style.color = 'white';
+        clearBtn.style.cursor = 'pointer';
+        clearBtn.onclick = () => { select.value = ""; };
+
+        selectWrapper.appendChild(select);
+        selectWrapper.appendChild(clearBtn);
 
         row.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: var(--accent-color);">${label}</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center;">
+                <span style="font-weight: 600; font-size: 0.9rem;">${label}</span>
                 <span style="font-size: 0.65rem; color: var(--text-muted); font-style: italic;">${colVal ? 'AI Matched' : 'Missing'}</span>
             </div>
-            <select class="mapping-select" data-key="${key}" style="width: 100%; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px; font-size: 0.85rem;">
-                ${optionsHtml}
-            </select>
         `;
+        row.appendChild(selectWrapper);
         list.appendChild(row);
     });
     
@@ -2349,6 +2419,12 @@ async function confirmMapping() {
     
     formData.append('confirm_mapping', 'true');
     formData.append('custom_mapping_raw', JSON.stringify(customMapping));
+    
+    // REINFORCEMENT: Force-append operator and label from the inputs
+    const operatorVal = document.getElementById('operator').value;
+    const labelVal = document.getElementById('label').value;
+    if (operatorVal) formData.append('operator', operatorVal);
+    if (labelVal) formData.append('label', labelVal);
     
     showToast("Finalizing import with confirmed mapping...");
     

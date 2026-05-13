@@ -59,32 +59,31 @@ class CAD407Logbook:
     def load_synonyms(self):
         """Loads synonyms from JSON file or returns defaults."""
         defaults = {
-            'DEP': ['DEP', 'DATE', 'DEPARTURE', 'FLIGHT DATE', 'UTC DATE', 'MONTH/DATE', 'MONTH', 'DAY', 'DEP TIME', 'DEP_TIME', 'DEPARTURE TIME'],
-            'FLT_SN': ['FLT S/N', 'SERIAL', 'S/N', 'FLIGHT NO', 'FLT NO', 'FLIGHT SN', 'FLT_SN', 'FLIGHT ID', 'FLIGHT_ID'],
-            'AC_TYPE': ['AC TYPE', 'AIRCRAFT TYPE', 'TYPE', 'MODEL', 'A/C TYPE', 'AIRCRAFT MODEL'],
-            'AC_REG': ['AC REG', 'REGISTRATION', 'REG', 'TAIL NO', 'AIRCRAFT REG', 'A/C REG', 'A/C_REG', 'REG NO', 'REGISTRATION NO', 'REG.'],
-            'CAPTAIN': ['CAPTAIN', 'PIC', 'COMMANDER', 'PILOT IN COMMAND', 'P1 NAME', 'PILOT-IN-COMMAND', 'CAPT'],
-            'COPILOT': ['COPILOT', 'FO', 'CO-PILOT', 'SIC', 'P2 NAME', 'CO-PILOT OR STUDENT', 'COPILOT NAME'],
-            'CAPACITY': ['OPERATING CAPACITY', 'CAPACITY', 'ROLE', 'FUNCTION', "HOLDER'S OPERATING CAPACITY"],
-            'ROUTE': ['ROUTE', 'FROM-TO', 'FROM/TO', 'SECTOR', 'JOURNEY'],
-            'DAY_P1': ['DAY P1', 'P1 DAY', 'DAY PIC', 'P1', 'DAY_P1'],
-            'DAY_P1US': ['DAY P1 (U/S)', 'DAY P1US', 'DAY P1 US', 'DAY PICUS', 'P1(U/S)', 'DAY_P1US'],
-            'DAY_P2': ['DAY P2', 'P2 DAY', 'DAY SIC', 'DAY CO-PILOT', 'P2/P2X', 'P2', 'DAY_P2'],
-            'DAY_DUAL': ['DAY DUAL', 'DUAL DAY', 'INSTRUCTION DAY', 'P/UT', 'DUAL', 'DAY_DUAL', 'DAY P/UT'],
-            'NIGHT_P1': ['NIGHT P1', 'P1 NIGHT', 'NIGHT PIC', 'P1.1', 'NIGHT_P1'],
-            'NIGHT_P1US': ['NIGHT P1 (U/S)', 'NIGHT P1US', 'NIGHT P1 US', 'NIGHT PICUS', 'P1(U/S).1', 'NIGHT_P1US'],
-            'NIGHT_P2': ['NIGHT P2', 'P2 NIGHT', 'NIGHT SIC', 'NIGHT CO-PILOT', 'P2/P2X.1', 'P2.1', 'NIGHT_P2'],
-            'NIGHT_DUAL': ['NIGHT DUAL', 'DUAL NIGHT', 'INSTRUCTION NIGHT', 'P/UT.1', 'DUAL.1', 'NIGHT_DUAL', 'NIGHT P/UT'],
-            'INSTRUMENT': ['INSTRUMENT', 'IFR', 'IF', 'INSTRUMENT TIME', 'INST FLYING', 'INST_FLYING'],
-            'SIM_DAY': ['SIM DAY', 'SIMULATOR DAY', 'SIM P1 DAY'],
-            'SIM_NIGHT': ['SIM NIGHT', 'SIMULATOR NIGHT', 'SIM P1 NIGHT'],
-            'REMARKS': ['REMARKS', 'NOTES', 'COMMENTS', 'FLIGHT DETAILS'],
-            'ARR': ['ARRIVAL', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME'],
-            'ATD': ['ATD', 'DEP TIME', 'DEPARTURE TIME', 'DEP_TIME', 'OFF BLOCK'],
-            'ATA': ['ATA', 'ARR TIME', 'ARRIVAL TIME', 'ARR_TIME', 'ON BLOCK'],
-            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS', 'BLOCK TIME', 'TOTAL_TIME', 'DURATION'],
-            'TAKEOFF': ['TAKEOFF', 'TO', 'T/O', 'NO. OF TAKEOFF', 'TAKEOFFS'],
-            'LANDING': ['LANDING', 'LDG', 'LANDINGS', 'NO. OF LANDING', 'NO. OF LANDINGS']
+            'DEP': ['DATE', 'FLIGHT DATE', 'DATE OF FLIGHT'],
+            'FLT_SN': ['FLT S/N', 'S/N', 'FLIGHT SN', 'FLIGHT_ID', 'SERIAL', 'Depart. S/N', 'DEPART. S/N'],
+            'AC_TYPE': ['AC TYPE', 'AIRCRAFT TYPE', 'TYPE', 'AC Type'],
+            'AC_REG': ['AC REG', 'REGISTRATION', 'REG', 'Reg.', 'Reg'],
+            'CAPTAIN': ['CAPTAIN', 'PIC', 'CAPT'],
+            'COPILOT': ['COPILOT', 'FO', 'SIC'],
+            'CAPACITY': ['CAPACITY', 'ROLE', 'CAPACITY'],
+            'ROUTE': ['ROUTE', 'SECTOR', 'JOURNEY'],
+            'DAY_P1': ['DAY P1', 'P1 DAY'],
+            'DAY_P1US': ['DAY P1 (U/S)', 'DAY P1US'],
+            'DAY_P2': ['DAY P2', 'P2 DAY'],
+            'DAY_DUAL': ['DAY DUAL', 'DUAL'],
+            'NIGHT_P1': ['NIGHT P1', 'P1 NIGHT'],
+            'NIGHT_P1US': ['NIGHT P1 (U/S)', 'NIGHT P1US'],
+            'NIGHT_P2': ['NIGHT P2', 'P2 NIGHT'],
+            'NIGHT_DUAL': ['NIGHT DUAL', 'DUAL NIGHT'],
+            'INSTRUMENT': ['INSTRUMENT', 'IFR', 'IF'],
+            'SIM_DAY': ['SIM DAY', 'SIMULATOR DAY'],
+            'SIM_NIGHT': ['SIM NIGHT', 'SIMULATOR NIGHT'],
+            'REMARKS': ['REMARKS', 'NOTES'],
+            'ATD': ['ATD', 'DEP', 'DEP TIME'],
+            'ATA': ['ATA', 'ARR', 'ARR TIME'],
+            'TOTAL': ['TOTAL', 'TOTAL TIME', 'TOTAL HOURS'],
+            'TAKEOFF': ['TAKEOFF', 'TO', 'No. of Takeoff'],
+            'LANDING': ['LANDING', 'LDG', 'No. of Landing', 'No. of Landings']
         }
         if os.path.exists(self.synonyms_file):
             try:
@@ -121,6 +120,7 @@ class CAD407Logbook:
             'history': self.history,
             'sync_adjustments': self.sync_adjustments
         }
+        print(f"[DEBUG] Saving {len(self.history)} entries to {self.storage_file}")
         with open(self.storage_file, "w") as f:
             json.dump(payload, f, default=encoder)
 
@@ -406,28 +406,61 @@ RULES:
         except (ValueError, TypeError):
             return 0.0
 
-    def merge_or_add_entry(self, entry):
+    def add_entry(self, entry):
         """
-        Intelligently merges a new entry into history if it matches an existing flight.
-        Matches on: (Date + FLT_SN) OR (Date + Reg + ATD + ATA).
-        Returns True if merged, False if added as new.
+        Simple addition with basic deduplication (exact matches only).
         """
-        if not entry: return False
+        if not entry: return "ERROR", "Invalid entry."
         
-        match = None
-        for h in self.history:
-            # 1. Match by Flight S/N (Strongest match)
-            if entry.get('flight_id') and str(h.get('flight_id')) == str(entry['flight_id']):
-                match = h
-                break
+        # Simple Deduplication: If we have an exact S/N match, check for missing Takeoff/Landing data
+        flight_id = str(entry.get('flight_id', '')).strip()
+        if flight_id and flight_id not in ['', 'None', 'nan', '---', 'Unknown']:
+            for h in self.history:
+                if str(h.get('flight_id', '')).strip() == flight_id:
+                    # Always update operator/label if we have new non-default values
+                    updated_meta = False
+                    if entry.get('operator') and entry.get('operator') != 'Default':
+                        h['operator'] = entry['operator']
+                        if 'metadata' not in h: h['metadata'] = {}
+                        h['metadata']['operator'] = entry['operator']
+                        updated_meta = True
+                    if entry.get('label') and entry.get('label') != 'Default':
+                        h['label'] = entry['label']
+                        if 'metadata' not in h: h['metadata'] = {}
+                        h['metadata']['label'] = entry['label']
+                        updated_meta = True
+
+                    # Selective Update: If existing record has no T/O or Ldg, but the new one does, patch it
+                    new_to = int(entry.get('takeoff', 0))
+                    new_ldg = int(entry.get('landing', 0))
+                    
+                    if (h.get('takeoff', 0) == 0 and h.get('landing', 0) == 0) and (new_to > 0 or new_ldg > 0):
+                        h['takeoff'] = new_to
+                        h['landing'] = new_ldg
+                        print(f"[DEBUG] [ENGINE] Patched T/O and Landing for flight {flight_id}")
+                        return "UPDATED", "Flight updated with T/O and Landing data."
+                    
+                    if updated_meta:
+                        return "UPDATED", "Flight metadata updated."
+                        
+                    print(f"[DEBUG] [ENGINE] Skipping DUPLICATE flight (S/N match): {flight_id}")
+                    return "SKIPPED", "Duplicate flight."
+
+        # If no S/N, check (Date + Reg + Times)
+        if not flight_id:
+            for h in self.history:
+                if (h.get('date_str') == entry.get('date_str') and 
+                    h.get('reg') == entry.get('reg') and 
+                    h.get('dep_time') == entry.get('dep_time')):
+                    print(f"[DEBUG] [ENGINE] Skipping DUPLICATE flight (Time/Reg match): {entry.get('date_str')} {entry.get('reg')}")
+                    return "SKIPPED", "Duplicate flight."
+
+        if 'id' not in entry:
+            import uuid
+            entry['id'] = str(uuid.uuid4())
             
-            # 2. Match by Date + Reg + Times (Flight key)
-            if (str(h.get('date_obj')) == str(entry.get('date_obj')) and 
-                str(h.get('reg')).upper() == str(entry.get('reg')).upper() and 
-                str(h.get('dep_time')) == str(entry.get('dep_time')) and 
-                str(h.get('arr_time')) == str(entry.get('arr_time'))):
-                match = h
-                break
+        self.history.append(entry)
+        return "ADDED", "New flight added."
 
         # 3. OVERLAP CHECK (Collision Detection)
         # If no exact match, check if the times overlap with ANY existing flight
@@ -634,8 +667,8 @@ RULES:
         detected_map = {}
         all_cols = [str(col).strip() for col in df_columns]
         
-        # Explicitly ignore these confusing columns
-        IGNORE_LIST = ['DEPART. S/N', 'ARRIVAL S/N', 'DEPART S/N', 'ARR S/N']
+        # Explicitly ignore these confusing columns (that aren't IDs)
+        IGNORE_LIST = ['ARRIVAL S/N', 'ARR S/N']
         
         print(f"[ENGINE] Analyzing Columns: {all_cols}")
         
@@ -701,172 +734,98 @@ RULES:
 
         def get_val(key, default=0.0):
             col_name = col_map.get(key)
-            if not col_name:
-                return default
+            if not col_name: return default
             val = row.get(col_name)
-            if pd.isna(val):
-                if isinstance(col_name, str):
-                    for alt in [col_name + " ", col_name.strip()]:
-                        if alt in row:
-                            val = row.get(alt)
-                            if not pd.isna(val):
-                                break
             return default if pd.isna(val) else val
 
+        # 1. Date Handling
         dep_val = row.get(col_map.get('DEP'))
         if pd.isna(dep_val):
-            # Only log if it's not a completely empty row
-            if not row.dropna().empty:
-                print(f"[DEBUG] Skipping row: Date column '{col_map.get('DEP')}' is empty.")
-            return None
-
-        try:
-            if isinstance(dep_val, datetime):
-                dep_dt = dep_val
-            else:
-                try:
-                    dep_dt = pd.to_datetime(dep_val).to_pydatetime()
-                    if pd.isna(dep_dt):
-                        raise ValueError("NaT")
-                except:
-                    try:
-                        current_year = datetime.now().year
-                        dep_dt = pd.to_datetime(f"{dep_val}-{current_year}").to_pydatetime()
-                    except Exception as e:
-                        print(f"[DEBUG] Date parsing failed for '{dep_val}': {e}")
-                        return None
-        except Exception as e:
-            print(f"[DEBUG] Critical error in row parsing logic: {e}")
-            return None
-
-        # --- Capture raw metadata (exclude ALL standard-matching columns) ---
-        metadata = {}
-        # Get all column names that match ANY standard synonym to minimize duplication
-        all_standard_synonyms = set()
-        for syn_list in self.COLUMN_MAP.values():
-            for s in syn_list:
-                all_standard_synonyms.add(s.upper())
-        
-        # Explicit scrub list for common headers that shouldn't be in metadata
-        SCRUB_LIST = {
-            'ID', 'FLIGHT_ID', 'FLT_SN', 'AIRCRAFT_CATEGORY', 'AC_CATEGORY', 'LABEL', 'OPERATOR',
-            'IS_OPENING', 'IS_ADJUSTMENT', 'DATE_OBJ', 'DATE_STR', 'TOTAL', 'TOTAL_TIME', 'TOTAL TIME'
-        }
-        all_standard_synonyms.update(SCRUB_LIST)
-        
-        for k, v in row.items():
-            k_clean = str(k).strip()
-            k_upper = k_clean.upper()
-            
-            # Skip if this column name (stripped/upper) matches any of our standard synonyms or scrub list
-            if k_upper in all_standard_synonyms:
-                continue
-            
-            if not pd.isna(v):
-                # Convert timestamps to string for JSON compatibility
-                if isinstance(v, (datetime, pd.Timestamp)):
-                    metadata[str(k)] = v.isoformat()
+            # This is fine now, app.py will handle carryover
+            dep_dt = None
+        else:
+            try:
+                if isinstance(dep_val, datetime):
+                    dep_dt = dep_val
                 else:
-                    metadata[str(k)] = v
+                    dep_dt = pd.to_datetime(dep_val).to_pydatetime()
+            except:
+                dep_dt = None
 
-        raw_route = str(get_val('ROUTE', '')).strip()
-        remarks = str(get_val('REMARKS', "")).strip()
-        
-        # --- Lesson Extraction Logic (e.g. MCC1, ITR2) ---
-        # Patterns to look for in the route column that are actually lessons
-        lesson_patterns = ['MCC', 'ITR', 'LVL', 'BASE TRG', 'BASE', 'CHECK', 'TEST', 'RENEWAL']
-        extracted_lesson = ""
-        clean_route = raw_route
-        
-        import re
-        for pattern in lesson_patterns:
-            # Look for the pattern followed by optional space and numbers (e.g. "MCC 1" or "MCC1")
-            match = re.search(rf'({pattern}\s?\d*)', raw_route, re.IGNORECASE)
-            if match:
-                extracted_lesson = match.group(1).upper()
-                # Remove the lesson from the route
-                clean_route = re.sub(rf'\s?{pattern}\s?\d*', '', raw_route, flags=re.IGNORECASE).strip()
-                break
-        
-        # If we found a lesson, prepend it to remarks
-        if extracted_lesson:
-            if remarks:
-                remarks = f"{extracted_lesson} - {remarks}"
-            else:
-                remarks = extracted_lesson
+        # 2. Extract EVERYTHING into metadata (audit trail)
+        metadata = {
+            'operator': operator,
+            'label': label
+        }
+        for col in row.index:
+            if not pd.isna(row[col]):
+                val = row[col]
+                # Convert time-like objects to strings for metadata storage
+                if isinstance(val, (datetime, pd.Timestamp)):
+                    val = val.strftime('%Y-%m-%d %H:%M')
+                metadata[str(col)] = val
 
+        # 3. Required Fields Extraction
         is_sim = str(get_val('AC_REG', '')).strip() == "B-LVZ"
+
+        # 3. GFS Fleet Special Handling (B-LVA to B-LVJ)
+        reg_raw = str(get_val('AC_REG', '')).strip().upper()
+        gfs_fleet = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ']
+        is_gfs = any(r in reg_raw for r in gfs_fleet)
         
-        # Extract times for top-level access
-        dep_time_raw = get_val('DEP', '')
-        arr_time_raw = get_val('ARR', '')
+        route_raw = str(get_val('ROUTE', '')).strip()
+        remarks_raw = str(get_val('REMARKS', '')).strip()
         
-        def format_time(val):
+        final_route = route_raw
+        final_remarks = remarks_raw
+        
+        if is_gfs:
+            # 1. Standardize Route
+            final_route = "VHHH VHHH"
+            
+            # 2. Extract Mission/Training info from Route
+            import re
+            # Look for MCC, ITR, SAR, CASEVAC, NVG, LPC, OPC, CHECK, etc.
+            patterns = [
+                r'(MCC\s?\d+)', r'(ITR\s?\d+)', r'(SAR)', r'(CASEVAC)', 
+                r'(NVG)', r'(LPC)', r'(OPC)', r'(CHECK)', r'(TRAINING)',
+                r'(FIRE)', r'(POLICE)', r'(MOUNTAIN)', r'(MEDEVAC)'
+            ]
+            extracted = []
+            for p in patterns:
+                m = re.search(p, route_raw.upper())
+                if m:
+                    extracted.append(m.group(1))
+            
+            if extracted:
+                mission_prefix = f"[{', '.join(extracted)}]"
+                if final_remarks:
+                    final_remarks = f"{mission_prefix} {final_remarks}"
+                else:
+                    final_remarks = mission_prefix
+        
+        # 3. Required Fields Extraction (Simple)
+        def simple_time(val):
             if isinstance(val, (datetime, pd.Timestamp)):
                 return val.strftime('%H:%M')
-            if isinstance(val, str) and 'T' in val:
-                try:
-                    return datetime.fromisoformat(val).strftime('%H:%M')
-                except:
-                    pass
-            return str(val)
+            return str(val) if not pd.isna(val) else ""
 
-        # --- Calculate Total Time Fallback ---
-        total_val = get_val('TOTAL', None)
-        if total_val is None or total_val == 0:
-            # Try ATA - ATD
-            atd_val = get_val('ATD', None)
-            ata_val = get_val('ATA', None)
-            
-            if atd_val and ata_val:
-                try:
-                    def to_minutes(v):
-                        if isinstance(v, (datetime, pd.Timestamp)):
-                            return v.hour * 60 + v.minute
-                        if isinstance(v, time):
-                            return v.hour * 60 + v.minute
-                        if isinstance(v, str) and ':' in v:
-                            p = v.split(':')
-                            return int(p[0]) * 60 + int(p[1])
-                        return None
-                    
-                    m1 = to_minutes(atd_val)
-                    m2 = to_minutes(ata_val)
-                    if m1 is not None and m2 is not None:
-                        diff = m2 - m1
-                        if diff < 0: diff += 1440 # Handle midnight crossover
-                        total_val = diff / 60.0
-                except:
-                    pass
-        
-        # Final fallback: Day + Night
-        if total_val is None or total_val == 0:
-                        float(get_val('DAY_DUAL', 0)) + float(get_val('NIGHT_DUAL', 0))
-        
-        # --- Pilot Extraction with Smart Split ---
         pic_raw = str(get_val('CAPTAIN', '')).strip()
         copilot_raw = str(get_val('COPILOT', '')).strip()
-        
-        # If both mapped to same column and contains '/', split them
-        if col_map.get('CAPTAIN') == col_map.get('COPILOT') and '/' in pic_raw:
-            parts = pic_raw.split('/')
-            pic_raw = parts[0].strip()
-            copilot_raw = parts[1].strip() if len(parts) > 1 else ""
-            
         pic_final = "SELF" if pic_raw.upper() == self.pilot_name.upper() else pic_raw
         copilot_final = "SELF" if copilot_raw.upper() == self.pilot_name.upper() else copilot_raw
 
         entry = {
-            'flight_id': get_val('FLT_SN', ''), # Standardized primary ID
-            'date_obj': dep_dt,
-            'date_str': dep_dt.strftime('%b %d'),
-            'ac_type': "SIM" if is_sim else get_val('AC_TYPE', ''),
+            'flight_id': str(get_val('FLT_SN', '')).strip(),
+            'date_obj': dep_dt.to_pydatetime() if hasattr(dep_dt, 'to_pydatetime') else dep_dt,
+            'date_str': dep_dt.strftime('%b %d') if dep_dt else "",
+            'ac_type': "SIM" if is_sim else str(get_val('AC_TYPE', '')).strip(),
             'ac_category': 'HELI' if is_sim else self.get_ac_category(get_val('AC_TYPE', '')),
-            'reg': f"GFS01 {get_val('AC_REG', '')}" if is_sim else get_val('AC_REG', ''),
+            'reg': reg_raw if not is_sim else f"GFS01 {reg_raw}",
             'pic': pic_final,
             'copilot': copilot_final,
-            'capacity': get_val('CAPACITY', ''),
-            'route': clean_route,
+            'capacity': str(get_val('CAPACITY', '')).strip(),
+            'route': final_route,
             'day_p1': self.cad_round_up(get_val('DAY_P1')),
             'day_p1us': self.cad_round_up(get_val('DAY_P1US')),
             'day_p2': self.cad_round_up(get_val('DAY_P2')),
@@ -877,19 +836,20 @@ RULES:
             'night_dual': self.cad_round_up(get_val('NIGHT_DUAL')),
             'inst_flying': self.cad_round_up(get_val('INSTRUMENT')),
             'sim_time': self.cad_round_up(float(get_val('SIM_DAY', 0)) + float(get_val('SIM_NIGHT', 0))) if is_sim else 0.0,
-            'remarks': remarks,
-            'dep_time': format_time(dep_time_raw),
-            'arr_time': format_time(arr_time_raw),
-            'total_time': self.cad_round_up(total_val), 
+            'remarks': final_remarks,
+            'dep_time': simple_time(get_val('ATD')),
+            'arr_time': simple_time(get_val('ATA')),
+            'total_time': self.cad_round_up(get_val('TOTAL', 0.0)),
             'takeoff': int(float(get_val('TAKEOFF', 0))),
             'landing': int(float(get_val('LANDING', 0))),
             'is_opening': False,
             'is_adjustment': False,
             'operator': operator,
             'label': label,
-            'metadata': metadata, # Store everything else here
+            'metadata': metadata,
             'id': str(uuid.uuid4())
         }
+        return entry
         return entry
 
     def has_partial_dates(self, df, col_map):

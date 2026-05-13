@@ -33,7 +33,7 @@ function renderAdminDashboard(users) {
     const tbody = document.getElementById('user-table-body');
     tbody.innerHTML = '';
 
-    let totalFlights = 0;
+    let totalAI = 0;
     let active24h = 0;
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
@@ -44,24 +44,22 @@ function renderAdminDashboard(users) {
         const lastLogin = user.last_login ? new Date(user.last_login) : null;
         const joinedDate = user.created_at ? new Date(user.created_at) : null;
         
-        totalFlights += user.flight_count;
+        totalAI += (user.ai_count || 0);
         if (lastLogin && lastLogin > oneDayAgo) active24h++;
 
+        const functions = (user.functions_used || "").split(',').filter(f => f.trim());
+        const funcHtml = functions.map(f => `<span class="func-tag">${f.trim()}</span>`).join('');
+
         const row = document.createElement('tr');
-        row.className = 'user-row';
         row.innerHTML = `
             <td style="font-weight: 600; color: #fff;">${user.pilot_name || 'N/A'}</td>
-            <td style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">${user.username}</td>
-            <td style="font-size: 0.85rem;">${joinedDate ? joinedDate.toLocaleDateString() : 'N/A'}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem; color: #94a3b8;">${user.username}</td>
+            <td style="font-size: 0.8rem; color: #64748b;">${joinedDate ? joinedDate.toLocaleDateString() : 'N/A'}</td>
             <td style="font-size: 0.85rem;">${lastLogin ? formatRelativeTime(lastLogin) : 'Never'}</td>
-            <td style="font-weight: 700; color: var(--admin-accent);">${user.flight_count}</td>
-            <td>
-                <span class="status-badge ${user.is_admin ? 'status-admin' : 'status-pilot'}">
-                    ${user.is_admin ? 'Admin' : 'Pilot'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-sm" onclick="openMergeModal(${user.id}, '${user.pilot_name || user.username}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">Merge</button>
+            <td style="font-weight: 600; color: #fff; text-align: center;">${user.login_count || 0}</td>
+            <td>${funcHtml || '<span style="color: #475569; font-size: 0.7rem;">None</span>'}</td>
+            <td style="text-align: right;">
+                <button class="btn btn-sm" onclick="openMergeModal(${user.id}, '${user.pilot_name || user.username}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 0.7rem;">Merge</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -69,8 +67,8 @@ function renderAdminDashboard(users) {
 
     window._allUsers = usersData;
     document.getElementById('total-users').textContent = users.length;
-    document.getElementById('total-flights').textContent = totalFlights;
     document.getElementById('active-users').textContent = active24h;
+    document.getElementById('total-ai').textContent = totalAI;
 }
 
 let mergeSourceId = null;
@@ -80,7 +78,7 @@ function openMergeModal(sourceId, sourceName) {
     document.getElementById('merge-source-name').textContent = sourceName;
     
     const select = document.getElementById('merge-target-select');
-    select.innerHTML = '<option value="">-- Select Target Account --</option>';
+    select.innerHTML = '<option value="">-- Select Target --</option>';
     
     window._allUsers.forEach(u => {
         if (u.id !== sourceId) {

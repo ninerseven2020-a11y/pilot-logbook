@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Upload Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.2.77">
+    <link rel="stylesheet" href="static/style.css?v=1.2.98">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -197,7 +197,7 @@
                                 <span class="tooltip-text">The organization you flew for (e.g., NHV, GFS). This helps in filtering your dashboard later.</span>
                             </div>
                         </label>
-                        <input type="text" id="operator" list="operator-list" placeholder="e.g. NHV, GFS, FTA" required>
+                        <input type="text" id="operator" name="operator" list="operator-list" placeholder="e.g. NHV, GFS, FTA" required>
                         <datalist id="operator-list">
                             <!-- Populated by JS -->
                         </datalist>
@@ -210,7 +210,7 @@
                                 <span class="tooltip-text">The nature or project for these flights (e.g., Initial Training, Line Flying).</span>
                             </div>
                         </label>
-                        <input type="text" id="label" list="label-list" placeholder="e.g. Initial Training, Secondment, Line Flying, PPEP..." required>
+                        <input type="text" id="label" name="label" list="label-list" placeholder="e.g. Initial Training, Secondment, Line Flying, PPEP..." required>
                         <datalist id="label-list">
                             <!-- Populated by JS -->
                         </datalist>
@@ -220,14 +220,15 @@
                 <div class="upload-methods-container">
                     <!-- Excel Import Section (Moved to top) -->
                     <div class="file-input-section">
-                        <h3 class="section-subtitle">Import via excel or image
+                        <h3 class="section-subtitle">Import via excel
                             <div class="tooltip-container">
                                 <span class="info-icon">i</span>
                                 <span class="tooltip-text">Import IAS AUTH-001 (Crew Records) and/or AUTH-005 (Flying Crew Log Record). You can upload both, and the system will intelligently combine them into single flight entries.</span>
                             </div>
                         </h3>
                         <div style="display: flex; gap: 10px; align-items: stretch;">
-                            <div class="file-drop-zone" id="drop-zone" style="flex: 1; margin-bottom: 0; min-height: 45px; padding: 8px 15px;" onclick="document.getElementById('excel-file').click()">
+                            <div class="file-drop-zone" id="drop-zone" style="flex: 1; margin-bottom: 0; min-height: 45px; padding: 8px 15px;" onclick="document.getElementById('excel-file').click()"
+                                 ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                                 <p id="file-name" style="margin: 0; font-size: 0.85rem;">Click to add or drag files here</p>
                                 <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;" onchange="updateFileName(this)">
                             </div>
@@ -467,8 +468,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.2.77</div>
-    <script>const APP_VERSION = "1.2.50"</script>
-    <script src="static/script.js?v=1.2.77"></script>
+    <div class="version-label">v1.2.98</div>
+    <script>const APP_VERSION = "1.2.98"</script>
+    <script src="static/script.js?v=1.2.98"></script>
 </body>
 </html>
