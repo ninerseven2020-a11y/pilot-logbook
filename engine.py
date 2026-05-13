@@ -440,6 +440,16 @@ RULES:
                         print(f"[DEBUG] [ENGINE] Patched T/O and Landing for flight {flight_id}")
                         return "UPDATED", "Flight updated with T/O and Landing data."
                     
+                    # GFS Special: Force update route and remarks even if duplicate
+                    gfs_fleet = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ']
+                    is_gfs = any(r in str(h.get('reg', '')).upper() for r in gfs_fleet)
+                    if is_gfs:
+                        if h.get('route') != entry.get('route') or h.get('remarks') != entry.get('remarks'):
+                            h['route'] = entry.get('route')
+                            h['remarks'] = entry.get('remarks')
+                            updated_meta = True
+                            print(f"[DEBUG] [ENGINE] Patched GFS standardization for flight {flight_id}")
+
                     if updated_meta:
                         return "UPDATED", "Flight metadata updated."
                         
@@ -787,9 +797,9 @@ RULES:
             import re
             # Look for MCC, ITR, SAR, CASEVAC, NVG, LPC, OPC, CHECK, etc.
             patterns = [
-                r'(MCC\s?\d+)', r'(ITR\s?\d+)', r'(SAR)', r'(CASEVAC)', 
-                r'(NVG)', r'(LPC)', r'(OPC)', r'(CHECK)', r'(TRAINING)',
-                r'(FIRE)', r'(POLICE)', r'(MOUNTAIN)', r'(MEDEVAC)'
+                r'(MCC\s?\d+)', r'(ITR\s?\d+)', r'(SAR\s?\d*)', r'(CASEVAC)', 
+                r'(NVG)', r'(LPC\s?\d*)', r'(OPC\s?\d*)', r'(CHECK\s?\d*)', r'(TRAINING)',
+                r'(FIRE)', r'(POLICE)', r'(MOUNTAIN)', r'(MEDEVAC)', r'(FTS\s?\d+)'
             ]
             extracted = []
             for p in patterns:
