@@ -930,7 +930,7 @@ function adjustFontSizeForFit() {
         document.body.appendChild(span);
         
         let currentSize = parseFloat(computedStyle.fontSize);
-        const APP_VERSION = "1.3.5";
+        const APP_VERSION = "1.3.6";
         const minSize = 6.5; 
         
         let textWidth = span.offsetWidth;
@@ -1231,20 +1231,28 @@ function cancelEditMetadata(type, id, originalName) {
 }
 
 async function deleteMetadata(type, id) {
-    if (!confirm(`Are you sure you want to delete this ${type === 'operator' ? 'operator' : 'flight nature'} label? This will remove the suggestion from dropdowns but will NOT delete existing flight records using this label.`)) return;
+    const labelType = type === 'operator' ? 'operator' : 'flight nature';
+    if (!confirm(`Are you sure you want to delete this ${labelType} label? This will remove the suggestion from dropdowns but will NOT delete existing flight records using this label.`)) return;
     
     try {
+        console.log(`[Metadata] Attempting to delete ${type} with ID: ${id}`);
         const response = await apiFetch(`/api/metadata/${type}/${id}`, {
             method: 'DELETE'
         });
         
         if (response.ok) {
+            showToast(`Successfully deleted ${labelType}`, 'success');
             const metaResponse = await apiFetch('/api/upload_metadata');
             if (metaResponse.ok) {
                 renderLabelManagement(await metaResponse.json());
             }
+        } else {
+            const errData = await response.json().catch(() => ({}));
+            showToast(`Failed to delete: ${errData.detail || 'Unknown error'}`, 'error');
+            console.error(`[Metadata] Delete failed with status: ${response.status}`, errData);
         }
     } catch (error) {
+        showToast("Network error during deletion", 'error');
         console.error("Error deleting metadata:", error);
     }
 }
