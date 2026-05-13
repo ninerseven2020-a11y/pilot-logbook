@@ -934,7 +934,7 @@ function adjustFontSizeForFit() {
         document.body.appendChild(span);
         
         let currentSize = parseFloat(computedStyle.fontSize);
-        const APP_VERSION = "1.3.3";
+        const APP_VERSION = "1.3.4";
         const minSize = 6.5; 
         
         let textWidth = span.offsetWidth;
@@ -1427,8 +1427,10 @@ function renderLogbookPageToHTML(pageData) {
                 </tr>
             `;
         } else {
+            const reg = entry.reg || entry.ac_reg || '';
+            const oper = entry.operator || '';
             const gfsRegs = ['B-LVA', 'B-LVB', 'B-LVC', 'B-LVD', 'B-LVE', 'B-LVF', 'B-LVG', 'B-LVH', 'B-LVI', 'B-LVJ'];
-            const isGfs = (entry.operator === 'Government Flying Service' || entry.operator === 'GFS' || gfsRegs.some(r => entry.reg && entry.reg.startsWith(r)));
+            const isGfs = (oper === 'Government Flying Service' || oper === 'GFS' || gfsRegs.some(r => reg.startsWith(r)));
             let displayRoute = isGfs ? 'VHHH VHHH' : (entry.route || `${entry.dep || ''} ${entry.arr || ''}`);
 
             rowsHtml += `
