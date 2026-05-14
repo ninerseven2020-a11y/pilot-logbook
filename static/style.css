@@ -620,6 +620,7 @@ header {
 .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -1530,6 +1531,60 @@ body {
     outline: 2px solid var(--accent-color);
     border-color: transparent;
 }
+
+.btn-sync {
+    background: rgba(245, 158, 11, 0.05);
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+}
+
+.btn-sync:hover {
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.sync-point-badge {
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #fde68a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.sync-point-badge:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--accent-color);
+}
+
+.btn-outline-accent {
+    background: rgba(245, 158, 11, 0.05);
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-accent:hover {
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+@keyframes flashYellowBorder {
+    0% { border-color: var(--accent-color); background: rgba(245, 158, 11, 0.15); }
+    50% { border-color: rgba(255, 255, 255, 0.05); background: transparent; }
+    100% { border-color: var(--accent-color); background: rgba(245, 158, 11, 0.15); }
+}
+
+.flash-yellow-border {
+    animation: flashYellowBorder 1.5s infinite ease-in-out;
+}
 /* Loading Shimmer Animation */
 .loading-shimmer {
     background: linear-gradient(
@@ -1862,9 +1917,9 @@ body {
 
 /* Export Button */
 .btn-export {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: #60a5fa;
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
     padding: 8px 18px;
     border-radius: 10px;
     font-size: 0.85rem;
@@ -1876,9 +1931,10 @@ body {
 }
 
 .btn-export:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: #60a5fa;
+    background: rgba(245, 158, 11, 0.1);
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 .mini-input {

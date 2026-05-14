@@ -1777,6 +1777,30 @@ function showForgotPassword(event) {
 }
 
 
+function showCautionModal(cautions) {
+    const modal = document.createElement('div');
+    modal.className = 'glass-modal';
+    modal.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; padding: 2rem; max-width: 500px; width: 90%; border: 1px solid var(--accent-color);';
+    
+    let listItems = cautions.map(c => `<li style="margin-bottom: 0.5rem; font-size: 0.85rem; color: #fcd34d;">${c}</li>`).join('');
+    
+    modal.innerHTML = `
+        <h3 style="color: var(--accent-color); margin-top: 0; display: flex; align-items: center; gap: 10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Import Cautions
+        </h3>
+        <p style="font-size: 0.9rem; margin-bottom: 1rem;">The following discrepancies were noted during processing:</p>
+        <ul style="max-height: 200px; overflow-y: auto; padding-left: 20px; margin-bottom: 1.5rem;">
+            ${listItems}
+        </ul>
+        <div style="text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+            <button class="btn btn-outline" onclick="this.closest('.glass-modal').remove()">Dismiss</button>
+            <button class="btn btn-primary" onclick="window.location.href='/preview'">Go to Preview</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
 async function fetchUploadMetadata() {
     try {
         const response = await apiFetch('/api/upload_metadata');
@@ -1922,7 +1946,6 @@ async function handleManualSubmit() {
 
 async function handleAdvancedUpload(event) {
     if (event) event.preventDefault();
-    // ... rest of logic unchanged ...
     const fileInput = document.getElementById('excel-file');
     const operatorInput = document.getElementById('operator');
     const labelInput = document.getElementById('label');
@@ -1930,8 +1953,6 @@ async function handleAdvancedUpload(event) {
     const formData = new FormData();
     formData.append('operator', operatorInput.value);
     formData.append('label', labelInput.value);
-    // Always provide a file field (even if null) to avoid 422 errors
-    formData.append('file', ''); 
 
     // Check if manual entry is being used
     const manualDate = document.getElementById('manual-date').value;
@@ -1994,11 +2015,32 @@ async function handleAdvancedUpload(event) {
         formData.append('takeoff', document.getElementById('manual-takeoff').value);
         formData.append('landing', document.getElementById('manual-landing').value);
         formData.append('remarks', document.getElementById('manual-remarks').value);
-    } else if (fileInput.files[0]) {
-        formData.append('file', fileInput.files[0]);
     } else {
-        showToast("Please provide a manual entry or select a file", true);
-        return;
+        const file005 = document.getElementById('excel-file-005');
+        const file001 = document.getElementById('excel-file-001');
+        const fileStandard = document.getElementById('excel-file');
+        
+        let fileAdded = false;
+        
+        if (file005 && file005.files[0]) {
+            formData.append('file_005', file005.files[0]);
+            fileAdded = true;
+        }
+        
+        if (file001 && file001.files[0]) {
+            formData.append('file_001', file001.files[0]);
+            fileAdded = true;
+        }
+        
+        if (!fileAdded && fileStandard && fileStandard.files[0]) {
+            formData.append('file', fileStandard.files[0]);
+            fileAdded = true;
+        }
+        
+        if (!fileAdded) {
+            showToast("Please provide a manual entry or select a file", true);
+            return;
+        }
     }
 
     showToast("Uploading data...");
@@ -2038,7 +2080,17 @@ async function handleAdvancedUpload(event) {
         
         if (response.ok) {
             const result = await response.json();
-            if (result.status === "OVERLAP") {
+            
+            // --- NEW SAFETY NET HANDLER (v1.4.7) ---
+            if (result.status === "CONFIRMATION_REQUIRED") {
+                showIASRemapModal(result.missing_keys, result.suggested_map, result.excel_columns, formData);
+                return;
+            }
+
+            if (result.cautions && result.cautions.length > 0) {
+                showToast(result.message || "Import complete with cautions", "warning");
+                showCautionModal(result.cautions);
+            } else if (result.status === "OVERLAP") {
                 showToast(result.message, 'warning');
             } else if (result.status === "MERGED") {
                 showToast(result.message);
@@ -2086,10 +2138,10 @@ function updateSyncStatusPanel() {
         _syncAdjustments.forEach(adj => {
             const date = new Date(adj.date).toLocaleDateString();
             const badge = document.createElement('div');
-            badge.style = "background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; color: #e2e8f0; display: flex; align-items: center; gap: 0.5rem;";
+            badge.className = "sync-point-badge";
             badge.innerHTML = `
                 <span><strong>${date}</strong>: ${adj.remarks || 'Sync Point'}</span>
-                <button onclick="deleteSyncAdjustment('${adj.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;">&times;</button>
+                <button onclick="deleteSyncAdjustment('${adj.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; font-size: 1.2rem; line-height: 1;">&times;</button>
             `;
             pointsContainer.appendChild(badge);
         });
@@ -2605,4 +2657,89 @@ async function handleRestoreLogbook(input) {
             }
         }
     );
+}
+
+/**
+ * Safety Net Modal for IAS Column Remapping (v1.4.7)
+ */
+function showIASRemapModal(missingKeys, suggestedMap, excelColumns, originalFormData) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.id = 'ias-remap-modal';
+    
+    let html = `
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3>⚠️ IAS Safety Net: Missing Columns</h3>
+                <span class="close-btn" onclick="this.closest('.modal').remove()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; font-size: 0.9em; color: #64748b;">
+                    Some required columns were not found. We've used AI to suggest matches. 
+                    Please confirm or manually select the correct columns from your file.
+                </p>
+                <div id="remap-list" style="max-height: 400px; overflow-y: auto;">
+    `;
+    
+    missingKeys.forEach(key => {
+        const suggestion = suggestedMap[key] || "";
+        html += `
+            <div class="remap-item" style="margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b;">${key}</label>
+                <select class="remap-select" data-key="${key}" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <option value="">-- Skip Column --</option>
+                    ${excelColumns.map(col => `
+                        <option value="${col}" ${col === suggestion ? 'selected' : ''}>${col}</option>
+                    `).join('')}
+                </select>
+                ${suggestion ? `<span style="font-size: 0.8em; color: #059669;">✨ AI Suggestion: ${suggestion}</span>` : ''}
+            </div>
+        `;
+    });
+    
+    html += `
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn-secondary" onclick="document.getElementById('ias-remap-modal').remove()">Cancel</button>
+                <button class="btn-primary" onclick="submitIASRemap()">Confirm & Import</button>
+            </div>
+        </div>
+    `;
+    
+    modal.innerHTML = html;
+    document.body.appendChild(modal);
+    
+    window.submitIASRemap = async function() {
+        const selects = document.querySelectorAll('.remap-select');
+        const columnMap = {};
+        selects.forEach(s => {
+            if (s.value) columnMap[s.dataKey || s.getAttribute('data-key')] = s.value;
+        });
+        
+        // Add to original FormData
+        originalFormData.set('column_map', JSON.stringify(columnMap));
+        
+        modal.remove();
+        showToast("Processing with custom mapping...");
+        
+        try {
+            const response = await apiFetch('/api/import', {
+                method: 'POST',
+                body: originalFormData
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showToast(result.message || "Upload complete!");
+                setTimeout(() => { window.location.href = '/preview'; }, 1500);
+            } else {
+                const error = await response.json();
+                showToast(error.detail || "Upload failed", true);
+            }
+        } catch (e) {
+            showToast("An error occurred", true);
+        }
+    };
 }

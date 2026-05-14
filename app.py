@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.3.6"
+APP_VERSION = "1.5.5"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -957,6 +957,8 @@ async def add_opening_totals(request: Request, category: Optional[str] = Query(N
 @app.post("/api/import")
 async def import_excel(
     file: UploadFile = File(None), 
+    file_005: UploadFile = File(None),
+    file_001: UploadFile = File(None),
     is_manual: bool = Form(False),
     operator: str = Form("Default"),
     label: str = Form("Default"),
@@ -987,9 +989,11 @@ async def import_excel(
     takeoff: int = Form(0),
     landing: int = Form(0),
     remarks: str = Form(""),
+    column_map: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    print(f"[DEBUG] Import call: file={file.filename if file else 'None'}, file_005={file_005.filename if file_005 else 'None'}, file_001={file_001.filename if file_001 else 'None'}")
     log_function_used(current_user, db, "Excel Import")
     
     # Check for xlrd dependency and try to auto-fix if missing
@@ -1031,7 +1035,10 @@ async def import_excel(
     db.commit()
 
     from engine import CAD407Logbook
+    # Force a fresh fetch from DB to ensure we have the absolute latest pilot_name
+    db.refresh(current_user)
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
+    print(f"[DEBUG] Freshly fetched Pilot Name for import: {current_user.pilot_name}")
 
     if is_manual:
         try:
@@ -1080,6 +1087,78 @@ async def import_excel(
             "status": status,
             "data": logbook.get_dashboard_data()
         })
+
+    # IAS Processing Logic
+    if (file_005 and file_005.filename) or (file_001 and file_001.filename):
+        import os
+        import tempfile
+        
+        path_005 = None
+        path_001 = None
+        
+        try:
+            if file_005:
+                tmp_005 = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+                tmp_005.write(await file_005.read())
+                tmp_005.close()
+                path_005 = tmp_005.name
+                
+            if file_001:
+                tmp_001 = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+                tmp_001.write(await file_001.read())
+                tmp_001.close()
+                path_001 = tmp_001.name
+            
+            # Parse column map if provided from the Safety Net modal
+            column_map_data = None
+            if column_map:
+                try:
+                    column_map_data = json.loads(column_map)
+                except:
+                    pass
+
+            results = logbook.process_ias_files(
+                file_005_path=path_005, 
+                file_001_path=path_001, 
+                operator=operator, 
+                label=label,
+                column_map=column_map_data
+            )
+            
+            # --- HANDLE SAFETY NET (Missing Columns) ---
+            if isinstance(results, dict) and results.get("status") == "CONFIRMATION_REQUIRED":
+                # Do NOT delete temp files yet, we need them for the actual import next
+                return JSONResponse(content={
+                    "status": "CONFIRMATION_REQUIRED",
+                    "message": "Some required columns were not found. Please confirm mappings.",
+                    "missing_keys": results["missing_keys"],
+                    "suggested_map": results["suggested_map"],
+                    "excel_columns": results["excel_columns"],
+                    "temp_files": {
+                        "path_005": path_005,
+                        "path_001": path_001
+                    }
+                })
+            
+            # Clean up
+            if path_005: os.remove(path_005)
+            if path_001: os.remove(path_001)
+            
+            summary_msg = f"Import complete: {results['added']} new, {results['updated']} updated, {results['skipped']} skipped."
+            
+            return JSONResponse(content={
+                "message": summary_msg,
+                "status": "SUCCESS",
+                "cautions": results['cautions'],
+                "data": logbook.get_dashboard_data()
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc() # Print full error to console
+            if path_005 and os.path.exists(path_005): os.remove(path_005)
+            if path_001 and os.path.exists(path_001): os.remove(path_001)
+            raise HTTPException(status_code=400, detail=str(e))
 
     if not file:
         raise HTTPException(status_code=400, detail="No file provided.")

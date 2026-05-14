@@ -109,11 +109,19 @@ class CAD407Logbook:
         self.save_synonyms()
 
     def save_data(self):
-        """Serializes history and profile to JSON."""
         def encoder(obj):
-            if isinstance(obj, datetime):
+            try:
+                import pandas as pd
+                if pd.isna(obj):
+                    return None
+                if hasattr(obj, 'isoformat'):
+                    return obj.isoformat()
+            except:
+                pass
+            # Fallback for anything else
+            if isinstance(obj, (datetime, date)):
                 return obj.isoformat()
-            return obj
+            return str(obj)
         
         payload = {
             'pilot_name': self.pilot_name,
@@ -123,6 +131,19 @@ class CAD407Logbook:
         print(f"[DEBUG] Saving {len(self.history)} entries to {self.storage_file}")
         with open(self.storage_file, "w") as f:
             json.dump(payload, f, default=encoder)
+
+    def get_dashboard_data(self, category=None, query=None):
+        """
+        Unified method to fetch all logbook data for the UI.
+        Ensures dates are serialized and SELF logic is applied.
+        """
+        from main import get_mvp_data
+        # Use the existing MVP data structure
+        raw_data = get_mvp_data(self, category=category, query=query)
+        
+        # Ensure the entire payload is JSON-safe (datetimes -> strings)
+        import json
+        return json.loads(json.dumps(raw_data, default=str))
 
     def detect_columns_exact(self, df):
         """Tier 1: Look for exact standard CAD407 headers."""
@@ -277,7 +298,6 @@ RULES:
                         return
                     data = json.loads(content)
                     if isinstance(data, dict):
-                        self.pilot_name = data.get('pilot_name', self.pilot_name)
                         self.history = data.get('history', [])
                         self.sync_adjustments = data.get('sync_adjustments', [])
                         
@@ -310,7 +330,7 @@ RULES:
             # Always recompute ac_category from the database
             entry['ac_category'] = self.get_ac_category(entry.get('ac_type'))
 
-            # Key Mapping (Manual Entry keys -> Engine/Rendering keys)
+            # Key Mapping (Manual/Legacy/IAS Entry keys -> Engine/Rendering keys)
             mapping = {
                 'type': 'ac_type',
                 'day_put': 'day_dual',
@@ -324,10 +344,13 @@ RULES:
                     if new_key not in entry or entry[new_key] == 0:
                         entry[new_key] = entry.get(old_key)
 
-            # APPLY ROUNDING to all hour columns to ensure consistency
-            for col in hour_cols:
-                if col in entry:
-                    entry[col] = self.cad_round_up(entry[col])
+            # Handle Simulator Time Merging (sim_day + sim_night -> sim_time)
+            # This is kept as a fallback for old IAS data
+            if 'sim_time' not in entry or entry['sim_time'] == 0:
+                s_day = float(entry.get('sim_day', 0))
+                s_night = float(entry.get('sim_night', 0))
+                if s_day > 0 or s_night > 0:
+                    entry['sim_time'] = s_day + s_night
 
             # Date string for rendering (Oct 31 format)
             if 'date_obj' in entry:
@@ -405,6 +428,236 @@ RULES:
             return math.ceil(round(float(value), 9) * 10) / 10.0
         except (ValueError, TypeError):
             return 0.0
+
+    def add_or_update_flight(self, entry):
+        """
+        Smart Deduplication/Update based on FLT S/N.
+        Returns (status, message).
+        """
+        sn = str(entry.get('flight_id', '')).strip()
+        if not sn or sn in ['', 'None', 'nan', 'Unknown']:
+            return self.add_entry(entry)
+            
+        for h in self.history:
+            if str(h.get('flight_id', '')).strip() == sn:
+                # Compare critical data to see if update is needed
+                has_changes = False
+                # Fields to potentially update from new Excel data
+                update_fields = [
+                    'takeoff', 'landing', 'remarks', 'operator', 'label', 'capacity', 
+                    'captain', 'copilot', 'crewman_1', 'crewman_2', 'crewman_3', 'crewman_4'
+                ]
+                for field in update_fields:
+                    new_val = entry.get(field)
+                    old_val = h.get(field)
+                    
+                    # Special case for TO/LDG: only update if new data is present
+                    if field in ['takeoff', 'landing']:
+                        if new_val != '' and new_val != old_val:
+                            h[field] = new_val
+                            has_changes = True
+                    else:
+                        if new_val and new_val != old_val:
+                            h[field] = new_val
+                            has_changes = True
+                
+                if has_changes:
+                    return "UPDATED", f"Flight {sn} updated."
+                return "SKIPPED", f"Flight {sn} is identical."
+        
+        # If not found, add as new
+        self.history.append(entry)
+        return "ADDED", f"Flight {sn} added."
+
+    def process_ias_files(self, file_005_path=None, file_001_path=None, operator="Default", label="Default", column_map=None):
+        """
+        IAS standard ingestion engine with Safety Net validation.
+        """
+        results = {'added': 0, 'updated': 0, 'skipped': 0, 'cautions': []}
+        df_005 = None
+        df_001 = None
+
+        try:
+            if file_005_path:
+                df_005 = pd.read_excel(file_005_path)
+                
+                # --- SMART SAFETY NET (Simplified v1.4.9) ---
+                # Only these will STOP the import if missing
+                critical_keys = ['DATE', 'FLT S/N', 'AC TYPE', 'AC REG']
+                
+                # These will be searched for SILENTLY (handling typos like extra spaces)
+                breakdown_keys = [
+                    'CAPTAIN', 'COPILOT', 'OPERATING CAPACITY', 'ROUTE', 'TOTAL', 
+                    'DAY P1', 'DAY P1 (U/S)', 'DAY P2', 'DAY DUAL', 
+                    'NIGHT P1', 'NIGHT P1 (U/S)', 'NIGHT P2', 'NIGHT DUAL',
+                    'INSTRUMENT', 'REMARKS', 'SIM DAY', 'SIM NIGHT'
+                ]
+                
+                final_map = column_map or {}
+                missing_critical = []
+                
+                # 1. Map everything we can find silently
+                for key in (critical_keys + breakdown_keys):
+                    if key not in final_map:
+                        # Exact match or common typos (like trailing space)
+                        synonyms = [key, key + " ", " " + key]
+                        found = False
+                        for syn in synonyms:
+                            if syn in df_005.columns:
+                                final_map[key] = syn
+                                found = True
+                                break
+                        if not found and key in critical_keys:
+                            missing_critical.append(key)
+                
+                # 2. Only trigger modal if CRITICAL info is missing
+                if missing_critical and not column_map:
+                    print(f"[SAFETY NET] Critical columns missing: {missing_critical}. Engaging AI...")
+                    suggested_map, _ = self.detect_columns_smart(df_005)
+                    return {
+                        "status": "CONFIRMATION_REQUIRED",
+                        "missing_keys": missing_critical,
+                        "suggested_map": suggested_map,
+                        "excel_columns": list(df_005.columns)
+                    }
+                # --------------------------------------------
+
+            if file_001_path:
+                df_001 = pd.read_excel(file_001_path)
+        except Exception as e:
+            raise Exception(f"File format error: {str(e)}")
+
+        # Path 1: AUTH-005 is provided
+        if df_005 is not None:
+            landing_map = {}
+            if df_001 is not None:
+                sn_col = 'S/N ' if 'S/N ' in df_001.columns else 'S/N'
+                if sn_col in df_001.columns:
+                    for _, row in df_001.iterrows():
+                        sn = str(row[sn_col]).strip()
+                        landing_map[sn] = row.get('No. of Landing')
+
+            for _, row in df_005.iterrows():
+                sn_col_005 = final_map.get('FLT S/N', 'FLT S/N')
+                sn = str(row.get(sn_col_005, '')).strip()
+                if not sn or pd.isna(sn): continue
+                
+                entry = self.map_005_row_to_metadata(row, operator, label, final_map)
+                
+                if df_001 is not None and sn in landing_map:
+                    ldg = landing_map[sn]
+                    if not pd.isna(ldg):
+                        entry['takeoff'] = int(ldg)
+                        entry['landing'] = int(ldg)
+
+                status, msg = self.add_or_update_flight(entry)
+                if status == "ADDED": results['added'] += 1
+                elif status == "UPDATED": results['updated'] += 1
+                elif status == "SKIPPED": results['skipped'] += 1
+
+        # Path 2: ONLY AUTH-001 is provided (Enrichment Mode)
+        elif df_001 is not None:
+            sn_col = 'S/N ' if 'S/N ' in df_001.columns else 'S/N'
+            for _, row in df_001.iterrows():
+                sn = str(row.get(sn_col, '')).strip()
+                if not sn or pd.isna(sn): continue
+                
+                ldg = row.get('No. of Landing')
+                if pd.isna(ldg): continue
+                
+                found = False
+                for h in self.history:
+                    # Match by native flight_id key
+                    if str(h.get('flight_id', '')).strip() == sn:
+                        if h.get('landing') != ldg or h.get('takeoff') != ldg:
+                            h['takeoff'] = int(ldg)
+                            h['landing'] = int(ldg)
+                            results['updated'] += 1
+                        else:
+                            results['skipped'] += 1
+                        found = True
+                        break
+                
+                if not found:
+                    results['cautions'].append(f"Flight {sn}: Landings found in AUTH-001 but flight not found in Logbook. Please upload AUTH-005 first.")
+
+        self.save_data()
+        return results
+
+    def map_005_row_to_metadata(self, row, operator, label, col_map=None):
+        """Maps an AUTH-005 row to the standardized CAD 407 JSON structure."""
+        if not col_map:
+            # Default fallback for IAS standard headers
+            col_map = {
+                'DATE': 'DATE', 'FLT S/N': 'FLT S/N', 'AC TYPE': 'AC TYPE', 'AC REG': 'AC REG',
+                'CAPTAIN': 'CAPTAIN', 'COPILOT': 'COPILOT', 'OPERATING CAPACITY': 'OPERATING CAPACITY',
+                'ROUTE': 'ROUTE', 'TOTAL': 'TOTAL', 'DAY P1': 'DAY P1', 'DAY P2': 'DAY P2',
+                'DAY DUAL': 'DAY DUAL', 'NIGHT P1': 'NIGHT P1', 'NIGHT P2': 'NIGHT P2', 'NIGHT DUAL': 'NIGHT DUAL',
+                'INSTRUMENT': 'INSTRUMENT', 'REMARKS': 'REMARKS'
+            }
+
+        # Helper to safely format timestamps for JSON serialization
+        def fmt_dt_json(val):
+            if pd.isna(val): return None
+            if isinstance(val, (datetime, pd.Timestamp)):
+                return val.isoformat()
+            return str(val)
+
+        # Map according to user's finalized CAD 407 order
+        raw_date = row.get(col_map.get('DATE', 'DATE'))
+        if hasattr(raw_date, 'to_pydatetime'):
+            raw_date = raw_date.to_pydatetime()
+        elif pd.isna(raw_date):
+            raw_date = datetime.now()
+            
+        # Helper to safely format strings and handle NaN
+        def fmt_str(val):
+            if pd.isna(val): return ""
+            return str(val).strip()
+
+        # Helper to safely format pilot names with "SELF" logic
+        def fmt_pilot(name):
+            n = fmt_str(name)
+            if n.upper() == self.pilot_name.upper():
+                return "SELF"
+            return n
+
+        metadata = {
+            'id': str(uuid.uuid4()),
+            'date_obj': raw_date.isoformat(), # Store as ISO String for JSON safety
+            'date_str': raw_date.strftime('%b %d'),
+            'flight_id': fmt_str(row.get(col_map.get('FLT S/N', 'FLT S/N'))),
+            'ac_type': fmt_str(row.get(col_map.get('AC TYPE', 'AC TYPE'))),
+            'reg': fmt_str(row.get(col_map.get('AC REG', 'AC REG'))),
+            'pic': fmt_pilot(row.get(col_map.get('CAPTAIN', 'CAPTAIN'))),
+            'copilot': fmt_pilot(row.get(col_map.get('COPILOT', 'COPILOT'))),
+            'crewman_1': fmt_str(row.get(col_map.get('CREWMAN 1', 'CREWMAN 1'))),
+            'crewman_2': fmt_str(row.get(col_map.get('CREWMAN 2', 'CREWMAN 2'))),
+            'crewman_3': fmt_str(row.get(col_map.get('CREWMAN 3', 'CREWMAN 3'))),
+            'crewman_4': fmt_str(row.get(col_map.get('CREWMAN 4', 'CREWMAN 4'))),
+            'capacity': fmt_str(row.get(col_map.get('OPERATING CAPACITY', 'OPERATING CAPACITY'))),
+            'route': fmt_str(row.get(col_map.get('ROUTE', 'ROUTE'))),
+            'takeoff': 0, 
+            'landing': 0, 
+            'dep_time': fmt_dt_json(row.get('DEP')),
+            'arr_time': fmt_dt_json(row.get('ARR')),
+            'total': self.cad_round_up(row.get(col_map.get('TOTAL', 'TOTAL'))),
+            'day_p1': self.cad_round_up(row.get(col_map.get('DAY P1', 'DAY P1'))),
+            'day_p1us': self.cad_round_up(row.get(col_map.get('DAY P1 (U/S)', 'DAY P1 (U/S)'))),
+            'day_p2': self.cad_round_up(row.get(col_map.get('DAY P2', 'DAY P2'))),
+            'day_dual': self.cad_round_up(row.get(col_map.get('DAY DUAL', 'DAY DUAL'))),
+            'night_p1': self.cad_round_up(row.get(col_map.get('NIGHT P1', 'NIGHT P1'))),
+            'night_p1us': self.cad_round_up(row.get(col_map.get('NIGHT P1 (U/S)', 'NIGHT P1 (U/S)'))),
+            'night_p2': self.cad_round_up(row.get(col_map.get('NIGHT P2', 'NIGHT P2'))),
+            'night_dual': self.cad_round_up(row.get(col_map.get('NIGHT DUAL', 'NIGHT DUAL'))),
+            'inst_flying': self.cad_round_up(row.get(col_map.get('INSTRUMENT', 'INSTRUMENT'))),
+            'sim_time': self.cad_round_up(row.get(col_map.get('SIM DAY', 'SIM DAY'), 0)) + self.cad_round_up(row.get(col_map.get('SIM NIGHT', 'SIM NIGHT'), 0)),
+            'remarks': fmt_str(row.get(col_map.get('REMARKS', 'REMARKS'))),
+            'operator': operator,
+            'label': label,
+            'ac_category': self.get_ac_category(fmt_str(row.get(col_map.get('AC TYPE', 'AC TYPE'))))
+        }
+        return metadata
 
     def add_entry(self, entry):
         """
