@@ -6,8 +6,14 @@ from datetime import datetime
 
 import os
 data_dir = os.getenv("LOGBOOK_DATA_DIR", ".")
-db_path = os.path.join(data_dir, "logbook.db")
-DATABASE_URL = f"sqlite:///{db_path}"
+db_path = os.path.abspath(os.path.join(data_dir, "logbook.db"))
+
+# When running in Cloud Run (LOGBOOK_DATA_DIR is set), GCS Fuse does not support POSIX locks.
+# We append nolock=1 to prevent SQLite from attempting file locking, which crashes on GCS Fuse.
+if os.getenv("LOGBOOK_DATA_DIR"):
+    DATABASE_URL = f"sqlite:///file:{db_path}?nolock=1&uri=true"
+else:
+    DATABASE_URL = f"sqlite:///{db_path}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -76,7 +82,10 @@ def init_db():
     
     # Self-healing migration for missing columns
     import sqlite3
-    conn = sqlite3.connect(db_path)
+    if os.getenv("LOGBOOK_DATA_DIR"):
+        conn = sqlite3.connect(f"file:{db_path}?nolock=1", uri=True)
+    else:
+        conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     try:
         # Check existing columns
