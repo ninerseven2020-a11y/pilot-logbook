@@ -615,13 +615,6 @@ RULES:
             if pd.isna(val): return ""
             return str(val).strip()
 
-        # Helper to safely format pilot names with "SELF" logic
-        def fmt_pilot(name):
-            n = fmt_str(name)
-            if n.upper() == self.pilot_name.upper():
-                return "SELF"
-            return n
-
         metadata = {
             'id': str(uuid.uuid4()),
             'date_obj': raw_date.isoformat(), # Store as ISO String for JSON safety
@@ -629,8 +622,8 @@ RULES:
             'flight_id': fmt_str(row.get(col_map.get('FLT S/N', 'FLT S/N'))),
             'ac_type': fmt_str(row.get(col_map.get('AC TYPE', 'AC TYPE'))),
             'reg': fmt_str(row.get(col_map.get('AC REG', 'AC REG'))),
-            'pic': fmt_pilot(row.get(col_map.get('CAPTAIN', 'CAPTAIN'))),
-            'copilot': fmt_pilot(row.get(col_map.get('COPILOT', 'COPILOT'))),
+            'pic': fmt_str(row.get(col_map.get('CAPTAIN', 'CAPTAIN'))),
+            'copilot': fmt_str(row.get(col_map.get('COPILOT', 'COPILOT'))),
             'crewman_1': fmt_str(row.get(col_map.get('CREWMAN 1', 'CREWMAN 1'))),
             'crewman_2': fmt_str(row.get(col_map.get('CREWMAN 2', 'CREWMAN 2'))),
             'crewman_3': fmt_str(row.get(col_map.get('CREWMAN 3', 'CREWMAN 3'))),
@@ -881,29 +874,24 @@ RULES:
         self.history.append(adjustment)
         self.save_data()
 
-    def add_sync_adjustment(self, date_str, offsets, remarks="Sync with Paper"):
+    def add_sync_adjustment(self, page_number, offsets, remarks="Sync with Paper"):
         """
-        Adds a hidden adjustment point.
+        Adds a carried-forward adjustment point keyed to a logbook page number.
+        The adjustment is applied to the brought_forward totals of that page and all subsequent pages.
         offsets: dict like {'day_p1': 0.5, 'night_p1': -0.2}
         """
-        try:
-            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-        except:
-            date_obj = datetime.now()
-
         # Round offsets to 1 decimal place
         rounded_offsets = {k: round(float(v), 1) for k, v in offsets.items() if abs(float(v)) > 0.001}
 
         adjustment = {
             'id': str(uuid.uuid4()),
-            'date': date_str,
-            'date_obj': date_obj,
+            'page_number': int(page_number),
             'offsets': rounded_offsets,
             'remarks': remarks
         }
         self.sync_adjustments.append(adjustment)
-        # Sort adjustments by date for easier calculation later
-        self.sync_adjustments.sort(key=lambda x: x['date_obj'])
+        # Sort by page number for deterministic application order
+        self.sync_adjustments.sort(key=lambda x: x.get('page_number', 0))
         self.save_data()
         return adjustment
 
@@ -1065,8 +1053,9 @@ RULES:
 
         pic_raw = str(get_val('CAPTAIN', '')).strip()
         copilot_raw = str(get_val('COPILOT', '')).strip()
-        pic_final = "SELF" if pic_raw.upper() == self.pilot_name.upper() else pic_raw
-        copilot_final = "SELF" if copilot_raw.upper() == self.pilot_name.upper() else copilot_raw
+        # Store real names — SELF substitution happens at render time in get_paginated_data()
+        pic_final = pic_raw
+        copilot_final = copilot_raw
 
         entry = {
             'flight_id': str(get_val('FLT_SN', '')).strip(),
@@ -1130,7 +1119,18 @@ RULES:
             return []
             
         print(f"[PREVIEW] Generating pages for {len(self.history)} entries starting at page {start_page}...")
-        
+
+        # Render-time SELF substitution: replace the user's own pilot name with "SELF"
+        # in the PIC and Copilot columns. Real names are stored in the database;
+        # this substitution only affects data returned for display/preview/PDF.
+        def resolve_self(name):
+            """Returns 'SELF' if name matches the logbook owner's pilot_name (case-insensitive)."""
+            if not name or not self.pilot_name:
+                return name
+            if str(name).strip().upper() == self.pilot_name.strip().upper():
+                return "SELF"
+            return name
+
         sorted_data = sorted(self.history, key=lambda x: x['date_obj'])
         
         # Columns to track for totals
@@ -1155,29 +1155,11 @@ RULES:
                 
             filtered_data.append(x)
             
-        # Prepare adjustments: sort by date
-        sorted_adjustments = sorted(self.sync_adjustments, key=lambda x: x['date_obj'])
-        for adj in sorted_adjustments:
-            if isinstance(adj['date_obj'], str):
-                adj['date_obj'] = datetime.fromisoformat(adj['date_obj'].replace('Z', '+00:00'))
-
-        # Split adjustments into "Initial" (before date_from) and "Timeline" (after date_from)
-        initial_adjustments = []
-        timeline_adjustments = []
-        if date_from:
-            for adj in sorted_adjustments:
-                if adj['date_obj'] < date_from:
-                    initial_adjustments.append(adj)
-                else:
-                    timeline_adjustments.append(adj)
-        else:
-            timeline_adjustments = sorted_adjustments
-
-        # Apply initial adjustments to running totals
-        for adj in initial_adjustments:
-            for col, offset in adj.get('offsets', {}).items():
-                if col in running_totals:
-                    running_totals[col] += float(offset)
+        # Prepare adjustments sorted by page number (support legacy date-based entries as page 1)
+        sorted_adjustments = sorted(
+            self.sync_adjustments,
+            key=lambda x: x.get('page_number', 0)
+        )
 
         pages = []
         
@@ -1188,8 +1170,13 @@ RULES:
         current_page_entries = []
         page_brought_forward = running_totals.copy()
         
-        # Keep track of which timeline adjustments have been applied
-        adj_idx = 0
+        def apply_adjustments_for_page(page_num):
+            """Apply any sync adjustments whose page_number matches page_num."""
+            for adj in sorted_adjustments:
+                if adj.get('page_number') == page_num:
+                    for col, offset in adj.get('offsets', {}).items():
+                        if col in running_totals:
+                            running_totals[col] = round(running_totals[col] + float(offset), 1)
         
         def start_new_page():
             nonlocal current_page_entries, page_brought_forward
@@ -1197,6 +1184,10 @@ RULES:
                 return
                 
             page_num = ((start_page + len(pages) - 1) % self.pages_per_book) + 1
+            
+            # Apply any adjustments that target the NEXT page's brought_forward
+            # (i.e., they are applied before we snapshot page_brought_forward for the next page)
+            next_page_num = ((start_page + len(pages)) % self.pages_per_book) + 1
             
             # Calculate carried forward for this page
             page_carried_forward = running_totals.copy()
@@ -1208,13 +1199,6 @@ RULES:
                     year = entry['date_obj'].year
                     break
             
-            # Find last valid date on page for adjustment check
-            last_date = None
-            for e in reversed(current_page_entries):
-                if 'date_obj' in e:
-                    last_date = e['date_obj']
-                    break
-            
             pages.append({
                 'page_number': page_num,
                 'year': year,
@@ -1222,27 +1206,27 @@ RULES:
                 'brought_forward': page_brought_forward.copy(),
                 'carried_forward': page_carried_forward,
                 'grand_total_1_8': sum(page_carried_forward[col] for col in total_cols[:8]),
-                'has_adjustments': any(adj['date_obj'] <= last_date for adj in sorted_adjustments) if last_date else False
+                'has_adjustments': any(adj.get('page_number', 0) <= page_num for adj in sorted_adjustments)
             })
             current_page_entries = []
+            # Apply adjustments targeting the next page before snapshotting brought_forward
+            apply_adjustments_for_page(next_page_num)
             page_brought_forward = running_totals.copy()
+
 
         for (year, month), month_entries in grouped:
             month_entries = list(month_entries)
             month_totals = {col: 0.0 for col in total_cols}
             
             for entry in month_entries:
-                # Apply any adjustments that should occur before or on this entry's date
-                while adj_idx < len(timeline_adjustments) and timeline_adjustments[adj_idx]['date_obj'] <= entry['date_obj']:
-                    for col, offset in timeline_adjustments[adj_idx].get('offsets', {}).items():
-                        if col in running_totals:
-                            running_totals[col] = round(running_totals[col] + float(offset), 1)
-                    adj_idx += 1
-
                 if len(current_page_entries) >= self.lines_per_page:
                     start_new_page()
                 
-                current_page_entries.append(entry)
+                # Apply SELF substitution at render time (non-destructive copy)
+                display_entry = dict(entry)
+                display_entry['pic'] = resolve_self(display_entry.get('pic', ''))
+                display_entry['copilot'] = resolve_self(display_entry.get('copilot', ''))
+                current_page_entries.append(display_entry)
                 for col in total_cols:
                     val = float(entry.get(col, 0))
                     running_totals[col] = round(running_totals[col] + val, 1)
@@ -1267,14 +1251,13 @@ RULES:
             
             start_new_page()
 
-        # Apply any remaining adjustments
-        while adj_idx < len(timeline_adjustments):
-            for col, offset in timeline_adjustments[adj_idx].get('offsets', {}).items():
-                if col in running_totals:
-                    running_totals[col] += float(offset)
-            adj_idx += 1
+        # Apply any remaining adjustments (targeting pages beyond the last generated page)
+        # These are no-ops for display but kept for consistency
 
         if current_page_entries:
             start_new_page()
-            
+
+        # Apply page-1 adjustments upfront if no pages have been generated yet
+        # (edge case: adjustments exist but no data)
+
         return pages

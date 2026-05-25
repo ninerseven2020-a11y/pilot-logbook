@@ -676,13 +676,11 @@ async def add_sync_adjustment(request: Request, current_user: User = Depends(get
     data = await request.json()
     logbook = CAD407Logbook(user_id=current_user.id, pilot_name=current_user.pilot_name)
     adj = logbook.add_sync_adjustment(
-        date_str=data.get('date'),
+        page_number=data.get('page_number', 1),
         offsets=data.get('offsets', {}),
         remarks=data.get('remarks', "Sync with Paper")
     )
-    # Strip date_obj for JSON serialization
-    adj_out = {k: v for k, v in adj.items() if k != 'date_obj'}
-    return {"message": "Sync adjustment added", "adjustment": adj_out}
+    return {"message": "Sync adjustment added", "adjustment": adj}
 
 @app.delete("/api/sync_adjustments/{adj_id}")
 async def delete_sync_adjustment(adj_id: str, current_user: User = Depends(get_current_user)):
@@ -1051,8 +1049,8 @@ async def import_excel(
             "date_str": date_obj.strftime('%b %d'),
             "ac_type": ac_type,
             "reg": ac_reg,
-            "pic": "SELF" if pic and pic.strip().upper() == (current_user.pilot_name or "").upper() else pic,
-            "copilot": "SELF" if copilot and copilot.strip().upper() == (current_user.pilot_name or "").upper() else copilot,
+            "pic": pic,
+            "copilot": copilot,
             "capacity": capacity,
             "route": route,
             "dep_time": dep,

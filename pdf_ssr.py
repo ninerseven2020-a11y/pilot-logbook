@@ -256,15 +256,38 @@ async def render_pdf_local(html_content, output_path, token, port=8000):
             # Wait for the page selector to be populated (indicates data is ready)
             await page.wait_for_function("document.querySelectorAll('#page-select option').length > 0", timeout=20000)
 
-            # 3. Style cleanup (hide sync indicators etc)
-            await page.add_style_tag(content=".sync-indicator { display: none !important; }")
+            # 3. Hide ALL page chrome so only the logbook table is captured
+            await page.add_style_tag(content="""
+                header,
+                .preview-header,
+                #sync-status-panel,
+                #no-sync-panel,
+                .version-label,
+                .sync-indicator,
+                #pdf-modal,
+                #sync-modal {
+                    display: none !important;
+                }
+                /* Remove container padding so the printable area is flush */
+                .container {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                }
+                #preview.card-section {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                /* Ensure the printable area has a clean white background */
+                #logbook-printable-area {
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                }
+            """)
 
-            # 4. Capture all requested pages
-            # We assume the caller filtered the page range in the URL or we do it here
-            # For simplicity, we capture the current view or loop if needed.
-            # In the current app, we'll just capture what's on the screen for now 
-            # to match the user's "screenshot" expectation.
-            
+            # 4. Scroll to very top so the element is fully in view without header overlap
+            await page.evaluate("window.scrollTo(0, 0)")
+
+            # 5. Capture the logbook printable area only
             element = await page.query_selector("#logbook-printable-area")
             if element:
                 img_data = await element.screenshot(type="png")
@@ -275,6 +298,7 @@ async def render_pdf_local(html_content, output_path, token, port=8000):
             
             if not images:
                 raise Exception("Failed to capture logbook area")
+
 
             # 5. Save as Image-based PDF
             images[0].save(

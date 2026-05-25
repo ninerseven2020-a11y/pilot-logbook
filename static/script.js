@@ -1975,9 +1975,16 @@ async function handleAdvancedUpload(event) {
 
         const total = parseFloat(document.getElementById('manual-total-input').value) || 0;
         
-        if (total <= 0) {
-            showToast("TOTAL hours must be greater than 0", true);
+        if (total < 0) {
+            showToast("TOTAL hours cannot be negative", true);
             return;
+        }
+        
+        if (total === 0) {
+            const confirmZero = window.confirm("Are you sure you want to add this entry with 0.0 total hours?");
+            if (!confirmZero) {
+                return;
+            }
         }
 
         const flyingFields = [
@@ -2136,11 +2143,11 @@ function updateSyncStatusPanel() {
         
         pointsContainer.innerHTML = '';
         _syncAdjustments.forEach(adj => {
-            const date = new Date(adj.date).toLocaleDateString();
+            const label = adj.page_number ? `Page ${adj.page_number}` : (adj.date ? new Date(adj.date).toLocaleDateString() : 'Sync Point');
             const badge = document.createElement('div');
             badge.className = "sync-point-badge";
             badge.innerHTML = `
-                <span><strong>${date}</strong>: ${adj.remarks || 'Sync Point'}</span>
+                <span><strong>${label}</strong>: ${adj.remarks || 'Sync Point'}</span>
                 <button onclick="deleteSyncAdjustment('${adj.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; font-size: 1.2rem; line-height: 1;">&times;</button>
             `;
             pointsContainer.appendChild(badge);
@@ -2159,15 +2166,12 @@ function openSyncModal() {
     const modal = document.getElementById('sync-modal');
     if (!modal) return;
     
-    // Set default date to today or current page date
-    const pageData = allPages[currentPageIndex];
-    if (pageData && pageData.entries && pageData.entries.length > 0) {
-        const entry = pageData.entries[0];
-        if (entry.date_obj) {
-            document.getElementById('sync-date').value = new Date(entry.date_obj).toISOString().split('T')[0];
-        }
-    } else {
-        document.getElementById('sync-date').value = new Date().toISOString().split('T')[0];
+    // Default to current page number
+    const pageInput = document.getElementById('sync-page');
+    if (pageInput) {
+        const pageData = allPages[currentPageIndex];
+        pageInput.value = pageData ? pageData.page_number : (currentPageIndex + 1);
+        pageInput.max = allPages.length;
     }
     
     updateSyncColumnsList();
@@ -2192,16 +2196,18 @@ function updateSyncColumnsList() {
     
     const totals = pageData.carried_forward || {};
     const cols = [
-        { key: 'day_p1', name: 'Day P1' },
-        { key: 'day_p1us', name: 'Day P1(U/S)' },
-        { key: 'day_p2', name: 'Day P2' },
-        { key: 'day_dual', name: 'Day Dual' },
-        { key: 'night_p1', name: 'Night P1' },
+        { key: 'day_p1',     name: 'Day P1' },
+        { key: 'day_p1us',   name: 'Day P1(U/S)' },
+        { key: 'day_p2',     name: 'Day P2' },
+        { key: 'day_dual',   name: 'Day Dual' },
+        { key: 'night_p1',   name: 'Night P1' },
         { key: 'night_p1us', name: 'Night P1(U/S)' },
-        { key: 'night_p2', name: 'Night P2' },
+        { key: 'night_p2',   name: 'Night P2' },
         { key: 'night_dual', name: 'Night Dual' },
         { key: 'inst_flying', name: 'Inst.' },
-        { key: 'sim_time', name: 'Sim.' }
+        { key: 'sim_time',   name: 'Sim.' },
+        { key: 'takeoff',    name: 'Take-Offs', integer: true },
+        { key: 'landing',    name: 'Landings',  integer: true }
     ];
     
     // Clear previous cells (keeping the headers)
@@ -2210,7 +2216,16 @@ function updateSyncColumnsList() {
     });
     
     cols.forEach(col => {
-        const currentVal = totals[col.key] || 0;
+        // For takeoff/landing, sum from entries on current page; for hours use carried_forward
+        let currentVal;
+        if (col.integer) {
+            currentVal = (pageData.entries || []).reduce((sum, e) => {
+                if (e.is_monthly_total) return sum;
+                return sum + (parseInt(e[col.key]) || 0);
+            }, 0);
+        } else {
+            currentVal = totals[col.key] || 0;
+        }
         
         // Category Label
         const tdLabel = rowLabels.insertCell();
@@ -2221,23 +2236,23 @@ function updateSyncColumnsList() {
         const tdDigital = rowDigital.insertCell();
         tdDigital.id = `digital-total-${col.key}`;
         tdDigital.style = "padding: 8px; text-align: center; font-family: var(--font-mono); border: 1px solid rgba(255,255,255,0.05);";
-        tdDigital.innerText = currentVal.toFixed(1);
+        tdDigital.innerText = col.integer ? String(currentVal) : currentVal.toFixed(1);
         
         // Physical Input
         const tdPhysical = rowPhysical.insertCell();
         tdPhysical.style = "padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);";
         tdPhysical.innerHTML = `
-            <input type="number" step="0.1" class="sync-input" data-col="${col.key}" 
-                style="width: 60px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 4px; border-radius: 4px; text-align: center; font-family: var(--font-mono); font-weight: bold;"
+            <input type="number" ${col.integer ? 'step="1"' : 'step="0.1"'} class="sync-input" data-col="${col.key}" data-integer="${col.integer ? 'true' : 'false'}"
+                style="width: 70px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 4px; border-radius: 4px; text-align: center; font-family: var(--font-mono); font-weight: bold;"
                 oninput="calculateSyncDelta('${col.key}', ${currentVal})"
-                placeholder="${currentVal.toFixed(1)}">
+                placeholder="${col.integer ? currentVal : currentVal.toFixed(1)}">
         `;
         
         // Delta Value
         const tdDelta = rowDelta.insertCell();
         tdDelta.id = `delta-${col.key}`;
         tdDelta.style = "padding: 8px; text-align: center; font-family: var(--font-mono); font-weight: bold; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05);";
-        tdDelta.innerText = "0.0";
+        tdDelta.innerText = "0";
     });
 }
 
@@ -2259,15 +2274,23 @@ function calculateSyncDelta(colKey, currentVal) {
 }
 
 async function saveSyncAdjustment() {
-    const date = document.getElementById('sync-date').value;
+    const pageInput = document.getElementById('sync-page');
     const remarks = document.getElementById('sync-remarks').value;
+    const pageNum = parseInt(pageInput && pageInput.value);
+    
+    if (!pageNum || pageNum < 1) {
+        showToast("Please enter a valid logbook page number.", true);
+        return;
+    }
     
     const offsets = {};
     document.querySelectorAll('.sync-input').forEach(input => {
         const col = input.dataset.col;
-        const paperVal = parseFloat(input.value);
+        const isInteger = input.dataset.integer === 'true';
+        const paperVal = isInteger ? parseInt(input.value) : parseFloat(input.value);
         if (!isNaN(paperVal)) {
-            const digitalVal = parseFloat(document.getElementById(`digital-total-${col}`).innerText);
+            const digitalEl = document.getElementById(`digital-total-${col}`);
+            const digitalVal = isInteger ? parseInt(digitalEl.innerText) : parseFloat(digitalEl.innerText);
             const delta = paperVal - digitalVal;
             if (Math.abs(delta) > 0.001) {
                 offsets[col] = delta;
@@ -2283,13 +2306,12 @@ async function saveSyncAdjustment() {
     try {
         const response = await apiFetch('/api/sync_adjustments', {
             method: 'POST',
-            body: JSON.stringify({ date, offsets, remarks })
+            body: JSON.stringify({ page_number: pageNum, offsets, remarks })
         });
         
         if (response.ok) {
             showToast("Sync adjustment saved!");
             closeSyncModal();
-            // Refresh preview and adjustments
             await fetchSyncAdjustments();
             await fetchPreview();
         } else {
@@ -2329,13 +2351,14 @@ function renderExistingSyncList() {
         const div = document.createElement('div');
         div.style = "background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;";
         
+        const label = adj.page_number ? `Page ${adj.page_number}` : (adj.date ? new Date(adj.date).toLocaleDateString() : 'Sync Point');
         const offsetsText = Object.entries(adj.offsets || {})
-            .map(([k, v]) => `${k.replace('_', ' ').toUpperCase()}: ${v > 0 ? '+' : ''}${v}`)
+            .map(([k, v]) => `${k.replace(/_/g, ' ').toUpperCase()}: ${v > 0 ? '+' : ''}${v}`)
             .join(', ');
             
         div.innerHTML = `
             <div>
-                <div style="font-weight: 600; margin-bottom: 0.2rem;">${new Date(adj.date).toLocaleDateString()} - ${adj.remarks || 'Sync Point'}</div>
+                <div style="font-weight: 600; margin-bottom: 0.2rem;">${label} — ${adj.remarks || 'Sync Point'}</div>
                 <div style="font-size: 0.8rem; color: #94a3b8;">${offsetsText}</div>
             </div>
             <button class="btn btn-secondary btn-sm" onclick="deleteSyncAdjustment('${adj.id}')" style="color: #ef4444;">Delete</button>
