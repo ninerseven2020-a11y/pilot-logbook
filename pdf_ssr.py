@@ -203,7 +203,9 @@ def render_logbook_html(user, start_page=1, end_page=None):
                 </tbody>
                 <tfoot>
                     <tr class="grand-total-row">
-                        <td colspan="9" style="text-align: left;">CARRIED FORWARD TOTALS:</td>
+                        <td colspan="7" style="text-align: left;">CARRIED FORWARD TOTALS:</td>
+                        <td>{int(cf.get('takeoff', 0)) if cf.get('takeoff', 0) > 0 else ''}</td>
+                        <td>{int(cf.get('landing', 0)) if cf.get('landing', 0) > 0 else ''}</td>
                         <td>{cf.get('day_p1', 0):.1f}</td>
                         <td>{cf.get('day_p1us', 0):.1f}</td>
                         <td>{cf.get('day_p2', 0):.1f}</td>

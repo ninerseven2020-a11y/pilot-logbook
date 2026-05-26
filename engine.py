@@ -1137,7 +1137,7 @@ RULES:
         # Columns to track for totals
         total_cols = ['day_p1', 'day_p1us', 'day_p2', 'day_dual', 
                       'night_p1', 'night_p1us', 'night_p2', 'night_dual', 
-                      'inst_flying', 'sim_time']
+                      'inst_flying', 'sim_time', 'takeoff', 'landing']
         
         running_totals = {col: 0.0 for col in total_cols}
         

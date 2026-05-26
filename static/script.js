@@ -796,6 +796,12 @@ function renderLogbookTable() {
         return (num !== 0) ? num.toFixed(1) : '';
     };
 
+    const fmtInt = (val) => {
+        if (val === undefined || val === null) return '';
+        const num = parseInt(val);
+        return (num !== 0) ? String(num) : '';
+    };
+
     // 1. Add "Brought Forward" Row
     const bf = pageData.brought_forward || {};
     const bfTr = document.createElement('tr');
@@ -803,8 +809,8 @@ function renderLogbookTable() {
     bfTr.innerHTML = `
         <td></td><td></td><td></td><td></td><td></td><td></td>
         <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals brought forward</td>
-        <td style="border: 1px solid #94a3b8;"></td>
-        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmtInt(bf.takeoff)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmtInt(bf.landing)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(1)</span>${fmt(bf.day_p1)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(2)</span>${fmt(bf.day_p1us)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(3)</span>${fmt(bf.day_p2)}</td>
@@ -883,8 +889,8 @@ function renderLogbookTable() {
     cfTr.innerHTML = `
         <td></td><td></td><td></td><td></td><td></td><td></td>
         <td colspan="3" style="text-align: center; font-weight: 700; border: 1px solid #94a3b8;">Totals carried forward</td>
-        <td style="border: 1px solid #94a3b8;"></td>
-        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmtInt(cf.takeoff)}</td>
+        <td style="text-align: center; border: 1px solid #94a3b8;">${fmtInt(cf.landing)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(1)</span>${fmt(cf.day_p1)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(2)</span>${fmt(cf.day_p1us)}</td>
         <td style="text-align: center; border: 1px solid #94a3b8; position: relative;"><span style="position:absolute; top:2px; left:4px; font-size:0.6rem; color:#64748b;">(3)</span>${fmt(cf.day_p2)}</td>
