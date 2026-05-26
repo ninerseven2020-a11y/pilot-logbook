@@ -35,7 +35,12 @@ class LogbookDashboard:
         # Apply sync adjustments
         if sync_adjustments:
             for adj in sync_adjustments:
-                adj_date = pd.to_datetime(adj.get('date_obj', adj.get('date')))
+                raw_date = adj.get('date_obj') or adj.get('date')
+                if not raw_date:
+                    continue
+                adj_date = pd.to_datetime(raw_date)
+                if pd.isna(adj_date):
+                    continue
                 # Apply if after start_date (or if no start_date)
                 if not start_date or adj_date >= pd.to_datetime(start_date):
                     offsets = adj.get('offsets', {})
