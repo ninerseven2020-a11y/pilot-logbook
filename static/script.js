@@ -2132,14 +2132,12 @@ async function fetchSyncAdjustments() {
 
 function updateSyncStatusPanel() {
     const activePanel = document.getElementById('sync-status-panel');
-    const noPanel = document.getElementById('no-sync-panel');
     const pointsContainer = document.getElementById('active-sync-points');
     
-    if (!activePanel || !noPanel || !pointsContainer) return;
+    if (!activePanel || !pointsContainer) return;
 
     if (_syncAdjustments.length > 0) {
         activePanel.style.display = 'block';
-        noPanel.style.display = 'none';
         
         pointsContainer.innerHTML = '';
         _syncAdjustments.forEach(adj => {
@@ -2154,7 +2152,6 @@ function updateSyncStatusPanel() {
         });
     } else {
         activePanel.style.display = 'none';
-        noPanel.style.display = 'block';
     }
 }
 
@@ -2172,6 +2169,61 @@ function openSyncModal() {
         const pageData = allPages[currentPageIndex];
         pageInput.value = pageData ? pageData.page_number : (currentPageIndex + 1);
         pageInput.max = allPages.length;
+        
+        pageInput.oninput = () => {
+            const val = parseInt(pageInput.value);
+            if (!isNaN(val) && val >= 1) {
+                let bestIdx = -1;
+                let minDiff = Infinity;
+                allPages.forEach((p, idx) => {
+                    if (p.page_number === val) {
+                        const diff = Math.abs(idx - currentPageIndex);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestIdx = idx;
+                        }
+                    }
+                });
+                if (bestIdx !== -1) {
+                    const pageData = allPages[bestIdx];
+                    const totals = pageData.carried_forward || {};
+                    const cols = [
+                        { key: 'takeoff',    name: 'Take-Offs', integer: true },
+                        { key: 'landing',    name: 'Landings',  integer: true },
+                        { key: 'day_p1',     name: 'Day P1' },
+                        { key: 'day_p1us',   name: 'Day P1(U/S)' },
+                        { key: 'day_p2',     name: 'Day P2' },
+                        { key: 'day_dual',   name: 'Day Dual' },
+                        { key: 'night_p1',   name: 'Night P1' },
+                        { key: 'night_p1us', name: 'Night P1(U/S)' },
+                        { key: 'night_p2',   name: 'Night P2' },
+                        { key: 'night_dual', name: 'Night Dual' },
+                        { key: 'inst_flying', name: 'Inst.' },
+                        { key: 'sim_time',   name: 'Sim.' }
+                    ];
+                    cols.forEach(col => {
+                        let currentVal;
+                        if (col.integer) {
+                            currentVal = (pageData.entries || []).reduce((sum, e) => {
+                                if (e.is_monthly_total) return sum;
+                                return sum + (parseInt(e[col.key]) || 0);
+                            }, 0);
+                        } else {
+                            currentVal = totals[col.key] || 0;
+                        }
+                        const digitalEl = document.getElementById(`digital-total-${col.key}`);
+                        if (digitalEl) {
+                            digitalEl.innerText = col.integer ? String(currentVal) : currentVal.toFixed(1);
+                        }
+                        const inputEl = document.querySelector(`.sync-input[data-col="${col.key}"]`);
+                        if (inputEl) {
+                            inputEl.setAttribute('oninput', `calculateSyncDelta('${col.key}', ${currentVal})`);
+                            calculateSyncDelta(col.key, currentVal);
+                        }
+                    });
+                }
+            }
+        };
     }
     
     updateSyncColumnsList();
@@ -2196,6 +2248,8 @@ function updateSyncColumnsList() {
     
     const totals = pageData.carried_forward || {};
     const cols = [
+        { key: 'takeoff',    name: 'Take-Offs', integer: true },
+        { key: 'landing',    name: 'Landings',  integer: true },
         { key: 'day_p1',     name: 'Day P1' },
         { key: 'day_p1us',   name: 'Day P1(U/S)' },
         { key: 'day_p2',     name: 'Day P2' },
@@ -2205,9 +2259,7 @@ function updateSyncColumnsList() {
         { key: 'night_p2',   name: 'Night P2' },
         { key: 'night_dual', name: 'Night Dual' },
         { key: 'inst_flying', name: 'Inst.' },
-        { key: 'sim_time',   name: 'Sim.' },
-        { key: 'takeoff',    name: 'Take-Offs', integer: true },
-        { key: 'landing',    name: 'Landings',  integer: true }
+        { key: 'sim_time',   name: 'Sim.' }
     ];
     
     // Clear previous cells (keeping the headers)
@@ -2229,21 +2281,21 @@ function updateSyncColumnsList() {
         
         // Category Label
         const tdLabel = rowLabels.insertCell();
-        tdLabel.style = "padding: 8px; font-weight: 600; text-align: center; border: 1px solid rgba(255,255,255,0.05);";
+        tdLabel.style = "padding: 4px 2px; font-weight: 600; text-align: center; border: 1px solid rgba(255,255,255,0.05); font-size: 0.7rem; white-space: nowrap;";
         tdLabel.innerHTML = col.name;
         
         // Digital Value
         const tdDigital = rowDigital.insertCell();
         tdDigital.id = `digital-total-${col.key}`;
-        tdDigital.style = "padding: 8px; text-align: center; font-family: var(--font-mono); border: 1px solid rgba(255,255,255,0.05);";
+        tdDigital.style = "padding: 4px 2px; text-align: center; font-family: var(--font-mono); border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;";
         tdDigital.innerText = col.integer ? String(currentVal) : currentVal.toFixed(1);
         
         // Physical Input
         const tdPhysical = rowPhysical.insertCell();
-        tdPhysical.style = "padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);";
+        tdPhysical.style = "padding: 4px 2px; text-align: center; border: 1px solid rgba(255,255,255,0.05);";
         tdPhysical.innerHTML = `
             <input type="number" ${col.integer ? 'step="1"' : 'step="0.1"'} class="sync-input" data-col="${col.key}" data-integer="${col.integer ? 'true' : 'false'}"
-                style="width: 70px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 4px; border-radius: 4px; text-align: center; font-family: var(--font-mono); font-weight: bold;"
+                style="width: 55px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 2px; border-radius: 4px; text-align: center; font-family: var(--font-mono); font-weight: bold; font-size: 0.75rem;"
                 oninput="calculateSyncDelta('${col.key}', ${currentVal})"
                 placeholder="${col.integer ? currentVal : currentVal.toFixed(1)}">
         `;
@@ -2251,7 +2303,7 @@ function updateSyncColumnsList() {
         // Delta Value
         const tdDelta = rowDelta.insertCell();
         tdDelta.id = `delta-${col.key}`;
-        tdDelta.style = "padding: 8px; text-align: center; font-family: var(--font-mono); font-weight: bold; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05);";
+        tdDelta.style = "padding: 4px 2px; text-align: center; font-family: var(--font-mono); font-weight: bold; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;";
         tdDelta.innerText = "0";
     });
 }
@@ -2303,10 +2355,32 @@ async function saveSyncAdjustment() {
         return;
     }
     
+    let pageIndex = currentPageIndex;
+    const defaultPageNum = allPages[currentPageIndex] ? allPages[currentPageIndex].page_number : (currentPageIndex + 1);
+    if (pageNum !== defaultPageNum) {
+        // Find the closest page index with this page number
+        let bestIdx = -1;
+        let minDiff = Infinity;
+        allPages.forEach((p, idx) => {
+            if (p.page_number === pageNum) {
+                const diff = Math.abs(idx - currentPageIndex);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestIdx = idx;
+                }
+            }
+        });
+        if (bestIdx !== -1) {
+            pageIndex = bestIdx;
+        } else {
+            pageIndex = pageNum - 1;
+        }
+    }
+    
     try {
         const response = await apiFetch('/api/sync_adjustments', {
             method: 'POST',
-            body: JSON.stringify({ page_number: pageNum, offsets, remarks })
+            body: JSON.stringify({ page_number: pageNum, page_index: pageIndex, offsets, remarks })
         });
         
         if (response.ok) {

@@ -874,7 +874,7 @@ RULES:
         self.history.append(adjustment)
         self.save_data()
 
-    def add_sync_adjustment(self, page_number, offsets, remarks="Sync with Paper"):
+    def add_sync_adjustment(self, page_number, offsets, remarks="Sync with Paper", page_index=None):
         """
         Adds a carried-forward adjustment point keyed to a logbook page number.
         The adjustment is applied to the brought_forward totals of that page and all subsequent pages.
@@ -886,12 +886,13 @@ RULES:
         adjustment = {
             'id': str(uuid.uuid4()),
             'page_number': int(page_number),
+            'page_index': int(page_index) if page_index is not None else None,
             'offsets': rounded_offsets,
             'remarks': remarks
         }
         self.sync_adjustments.append(adjustment)
-        # Sort by page number for deterministic application order
-        self.sync_adjustments.sort(key=lambda x: x.get('page_number', 0))
+        # Sort by page index if present, otherwise page number
+        self.sync_adjustments.sort(key=lambda x: x.get('page_index') if x.get('page_index') is not None else x.get('page_number', 0))
         self.save_data()
         return adjustment
 
@@ -1168,15 +1169,24 @@ RULES:
         grouped = groupby(filtered_data, key=lambda x: (x['date_obj'].year, x['date_obj'].month))
         
         current_page_entries = []
-        page_brought_forward = running_totals.copy()
         
-        def apply_adjustments_for_page(page_num):
-            """Apply any sync adjustments whose page_number matches page_num."""
+        def apply_adjustments_for_page(page_idx, page_num):
+            """Apply any sync adjustments whose page_index matches page_idx (or page_number matches page_num for legacy)."""
             for adj in sorted_adjustments:
-                if adj.get('page_number') == page_num:
-                    for col, offset in adj.get('offsets', {}).items():
-                        if col in running_totals:
-                            running_totals[col] = round(running_totals[col] + float(offset), 1)
+                if 'page_index' in adj and adj.get('page_index') is not None:
+                    if adj.get('page_index') == page_idx:
+                        for col, offset in adj.get('offsets', {}).items():
+                            if col in running_totals:
+                                running_totals[col] = round(running_totals[col] + float(offset), 1)
+                else:
+                    if adj.get('page_number') == page_num:
+                        for col, offset in adj.get('offsets', {}).items():
+                            if col in running_totals:
+                                running_totals[col] = round(running_totals[col] + float(offset), 1)
+        
+        # Apply adjustments for the first page upfront (index 0)
+        apply_adjustments_for_page(0, start_page)
+        page_brought_forward = running_totals.copy()
         
         def start_new_page():
             nonlocal current_page_entries, page_brought_forward
@@ -1206,11 +1216,16 @@ RULES:
                 'brought_forward': page_brought_forward.copy(),
                 'carried_forward': page_carried_forward,
                 'grand_total_1_8': sum(page_carried_forward[col] for col in total_cols[:8]),
-                'has_adjustments': any(adj.get('page_number', 0) <= page_num for adj in sorted_adjustments)
+                'has_adjustments': any(
+                    (adj.get('page_index') is not None and adj.get('page_index') <= len(pages)) or
+                    (adj.get('page_index') is None and adj.get('page_number', 0) <= page_num)
+                    for adj in sorted_adjustments
+                )
             })
             current_page_entries = []
             # Apply adjustments targeting the next page before snapshotting brought_forward
-            apply_adjustments_for_page(next_page_num)
+            next_page_idx = len(pages)
+            apply_adjustments_for_page(next_page_idx, next_page_num)
             page_brought_forward = running_totals.copy()
 
 

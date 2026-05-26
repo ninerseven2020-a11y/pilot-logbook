@@ -9,7 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Logbook - Pilot Logbook</title>
-    <link rel="stylesheet" href="static/style.css?v=1.6.4">
+    <link rel="stylesheet" href="static/style.css?v=1.6.5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -64,42 +64,56 @@
             </div>
             
             <div class="compact-toolbar glass">
-                <!-- Group 1: Navigation -->
-                <div class="toolbar-group">
-                    <button class="btn-nav" onclick="prevPage()" title="Previous Page">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-                    </button>
-                    <div class="page-selector-wrapper">
-                        <select id="page-select" class="page-select-dropdown" onchange="jumpToPage()">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    <button class="btn-nav" onclick="nextPage()" title="Next Page">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-9-6"/></svg>
-                    </button>
-                </div>
-                
-                <!-- Group 2: Date Filter -->
-                <div class="toolbar-group date-filter-group">
-                    <div class="date-filter-box glass-bg">
-                        <div class="date-input-wrapper">
-                            <span class="date-label">From</span>
-                            <input type="date" id="filter-date-from" class="date-picker-inline" onchange="applyDateFilter()">
+                <!-- Left Section: Navigation & Date Filter -->
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <!-- Group 1: Navigation -->
+                    <div class="toolbar-group">
+                        <button class="btn-nav" onclick="prevPage()" title="Previous Page">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <div class="page-selector-wrapper">
+                            <select id="page-select" class="page-select-dropdown" onchange="jumpToPage()" style="height: 36px; box-sizing: border-box; padding: 0 12px; border-radius: 8px;">
+                                <!-- Populated by JS -->
+                            </select>
                         </div>
-                        <div class="date-separator"></div>
-                        <div class="date-input-wrapper">
-                            <span class="date-label">To</span>
-                            <input type="date" id="filter-date-to" class="date-picker-inline" onchange="applyDateFilter()">
+                        <button class="btn-nav" onclick="nextPage()" title="Next Page">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-9-6"/></svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Group 2: Date Filter -->
+                    <div class="toolbar-group date-filter-group">
+                        <div class="date-filter-box glass-bg" style="height: 36px; box-sizing: border-box; display: flex; align-items: center; border-radius: 8px; padding: 2px 8px;">
+                            <div class="date-input-wrapper" style="padding: 0 4px; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+                                <span class="date-label" style="margin-bottom: 0; font-size: 0.75rem;">From</span>
+                                <input type="date" id="filter-date-from" class="date-picker-inline" onchange="applyDateFilter()">
+                            </div>
+                            <div class="date-separator" style="height: 16px; margin: 0 8px;"></div>
+                            <div class="date-input-wrapper" style="padding: 0 4px; display: flex; flex-direction: row; align-items: center; gap: 8px;">
+                                <span class="date-label" style="margin-bottom: 0; font-size: 0.75rem;">To</span>
+                                <input type="date" id="filter-date-to" class="date-picker-inline" onchange="applyDateFilter()">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Group 3: Export -->
-                <div class="toolbar-group">
-                    <button class="btn-export" onclick="exportPDF()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><polyline points="9 15 12 12 15 15"/></svg>
-                        Export PDF
-                    </button>
+                <!-- Right Section: Adjust & Export -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <!-- Group 3: Adjust UI -->
+                    <div class="toolbar-group" style="gap: 0.5rem; display: flex; align-items: center;">
+                        <div class="tooltip-container" style="display: inline-flex; align-items: center;">
+                            <span class="info-icon" style="margin-left: 0; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;">i</span>
+                            <span class="tooltip-text">Numbers don't match your paper logbook? Adjust carried forward.</span>
+                        </div>
+                        <button class="btn btn-sync btn-sm" onclick="openSyncModal()" style="height: 36px; border-radius: 8px; padding: 0 16px; font-weight: 700; font-size: 0.85rem; box-sizing: border-box; margin: 0; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">Adjust</button>
+                    </div>
+
+                    <!-- Group 4: Export -->
+                    <div class="toolbar-group">
+                        <button class="btn-export" onclick="exportPDF()" style="height: 36px; border-radius: 8px; padding: 0 16px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; margin: 0; font-size: 0.85rem; font-weight: 700; line-height: 1;">
+                            Export
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -113,28 +127,6 @@
                     <div id="active-sync-points" style="display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1;">
                         <!-- Sync points will be listed here -->
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0;">
-                        <div class="tooltip-container">
-                            <span class="info-icon">i</span>
-                            <span class="tooltip-text">Sync points let you match your digital carried-forward totals with your physical paper logbook. Specify a logbook page number and the adjustment applies from that page onwards.</span>
-                        </div>
-                        <button class="btn btn-sync btn-sm" onclick="openSyncModal()">Adjust Carried Forward</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="no-sync-panel" class="sync-status-panel glass" style="margin-bottom: 1rem; padding: 0.65rem 1rem; border-radius: 8px; border-style: dashed;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-size: 0.9rem; color: #94a3b8;">
-                        Numbers don't match your paper logbook? Adjust carried forward.
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <div class="tooltip-container">
-                            <span class="info-icon">i</span>
-                            <span class="tooltip-text">Sync points let you match your digital carried-forward totals with your physical paper logbook. Specify a logbook page number and the adjustment applies from that page onwards.</span>
-                        </div>
-                        <button class="btn btn-sync btn-sm" onclick="openSyncModal()">Adjust Carried Forward</button>
-                    </div>
                 </div>
             </div>
 
@@ -147,7 +139,7 @@
                 <div class="cad407-wrapper">
         <div id="logbook-container" class="logbook-viewport">
             <table id="logbook-table" class="cad407-table" style="table-layout: fixed; width: 100%;">
-                        <!-- CAD 407 FINAL LAYOUT (v1.6.4) - DO NOT MODIFY WITHOUT EXPLICIT USER REQUEST -->
+                        <!-- CAD 407 FINAL LAYOUT (v1.6.5) - DO NOT MODIFY WITHOUT EXPLICIT USER REQUEST -->
                         <colgroup>
                             <col style="width: 85px;"> <!-- Month/Date -->
                             <col style="width: 55px;"> <!-- Type -->
@@ -371,16 +363,16 @@
                 <table id="sync-table-transposed" class="cad407-table" style="font-size: 0.8rem; background: transparent; box-shadow: none; width: auto; min-width: 100%;">
                     <!-- Populated by JS in rows: Labels, Digital, Physical, Delta -->
                     <tr id="sync-row-labels" style="background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">
-                        <th style="text-align: left; padding: 10px; min-width: 120px;">Category</th>
+                        <th style="text-align: left; padding: 4px 6px; min-width: 75px; font-size: 0.7rem;">Category</th>
                     </tr>
                     <tr id="sync-row-digital">
-                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Digital</th>
+                        <th style="text-align: left; padding: 4px 6px; color: var(--text-muted); font-size: 0.7rem;">Digital</th>
                     </tr>
                     <tr id="sync-row-physical">
-                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Physical</th>
+                        <th style="text-align: left; padding: 4px 6px; color: var(--text-muted); font-size: 0.7rem;">Physical</th>
                     </tr>
                     <tr id="sync-row-delta">
-                        <th style="text-align: left; padding: 10px; color: var(--text-muted);">Delta</th>
+                        <th style="text-align: left; padding: 4px 6px; color: var(--text-muted); font-size: 0.7rem;">Delta</th>
                     </tr>
                 </table>
             </div>
@@ -402,8 +394,8 @@
     <div id="toast" class="toast"></div>
 
 
-    <div class="version-label">v1.6.4</div>
+    <div class="version-label">v1.6.5</div>
     <div id="print-container" style="position: absolute; left: -9999px; top: -9999px;"></div>
-    <script src="static/script.js?v=1.6.4"></script>
+    <script src="static/script.js?v=1.6.5"></script>
 </body>
 </html>

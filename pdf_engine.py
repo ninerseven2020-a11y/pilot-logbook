@@ -130,7 +130,7 @@ class CAD407Renderer:
                 fields = [
                     entry.get('date_str', ''), entry.get('ac_type', ''), entry.get('reg', ''),
                     entry.get('pic', ''), entry.get('copilot', ''), entry.get('capacity', ''),
-                    entry.get('route', ''), entry.get('takeoffs', ''), entry.get('landings', ''),
+                    entry.get('route', ''), entry.get('takeoff', ''), entry.get('landing', ''),
                     entry.get('day_p1', ''), entry.get('day_p1us', ''), entry.get('day_p2', ''), entry.get('day_dual', ''),
                     entry.get('night_p1', ''), entry.get('night_p1us', ''), entry.get('night_p2', ''), entry.get('night_dual', ''),
                     entry.get('inst_flying', ''), entry.get('sim_time', ''), entry.get('remarks', '')

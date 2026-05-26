@@ -140,8 +140,8 @@ def render_logbook_html(user, start_page=1, end_page=None):
                         <td>{e.get('copilot', '')}</td>
                         <td>{e.get('capacity', '')}</td>
                         <td style="text-align: left;">{e.get('route', '')}</td>
-                        <td>{e.get('takeoffs', '') or ''}</td>
-                        <td>{e.get('landings', '') or ''}</td>
+                        <td>{e.get('takeoff', '') or ''}</td>
+                        <td>{e.get('landing', '') or ''}</td>
                         <td>{fmt(e.get('day_p1'))}</td>
                         <td>{fmt(e.get('day_p1us'))}</td>
                         <td>{fmt(e.get('day_p2'))}</td>

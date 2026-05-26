@@ -90,7 +90,8 @@
                             <td>{{ entry.copilot or '' }}</td>
                             <td>{{ entry.capacity or '' }}</td>
                             <td>{{ entry.route or '' }}</td>
-                            <td></td><td></td>
+                            <td>{{ entry.takeoff or '' }}</td>
+                            <td>{{ entry.landing or '' }}</td>
                         {% endif %}
                         <td>{{ entry.day_p1 | round(1) if entry.day_p1 else '' }}</td>
                         <td>{{ entry.day_p1us | round(1) if entry.day_p1us else '' }}</td>

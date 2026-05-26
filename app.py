@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-APP_VERSION = "1.5.5"
+APP_VERSION = "1.6.5"
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -678,7 +678,8 @@ async def add_sync_adjustment(request: Request, current_user: User = Depends(get
     adj = logbook.add_sync_adjustment(
         page_number=data.get('page_number', 1),
         offsets=data.get('offsets', {}),
-        remarks=data.get('remarks', "Sync with Paper")
+        remarks=data.get('remarks', "Sync with Paper"),
+        page_index=data.get('page_index')
     )
     return {"message": "Sync adjustment added", "adjustment": adj}
 
