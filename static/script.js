@@ -2208,18 +2208,10 @@ function openSyncModal() {
                         { key: 'sim_time',   name: 'Sim.' }
                     ];
                     cols.forEach(col => {
-                        let currentVal;
-                        if (col.integer) {
-                            currentVal = (pageData.entries || []).reduce((sum, e) => {
-                                if (e.is_monthly_total) return sum;
-                                return sum + (parseInt(e[col.key]) || 0);
-                            }, 0);
-                        } else {
-                            currentVal = totals[col.key] || 0;
-                        }
+                        let currentVal = totals[col.key] || 0;
                         const digitalEl = document.getElementById(`digital-total-${col.key}`);
                         if (digitalEl) {
-                            digitalEl.innerText = col.integer ? String(currentVal) : currentVal.toFixed(1);
+                            digitalEl.innerText = col.integer ? String(Math.round(currentVal)) : currentVal.toFixed(1);
                         }
                         const inputEl = document.querySelector(`.sync-input[data-col="${col.key}"]`);
                         if (inputEl) {
@@ -2274,16 +2266,7 @@ function updateSyncColumnsList() {
     });
     
     cols.forEach(col => {
-        // For takeoff/landing, sum from entries on current page; for hours use carried_forward
-        let currentVal;
-        if (col.integer) {
-            currentVal = (pageData.entries || []).reduce((sum, e) => {
-                if (e.is_monthly_total) return sum;
-                return sum + (parseInt(e[col.key]) || 0);
-            }, 0);
-        } else {
-            currentVal = totals[col.key] || 0;
-        }
+        let currentVal = totals[col.key] || 0;
         
         // Category Label
         const tdLabel = rowLabels.insertCell();
@@ -2294,7 +2277,7 @@ function updateSyncColumnsList() {
         const tdDigital = rowDigital.insertCell();
         tdDigital.id = `digital-total-${col.key}`;
         tdDigital.style = "padding: 4px 2px; text-align: center; font-family: var(--font-mono); border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;";
-        tdDigital.innerText = col.integer ? String(currentVal) : currentVal.toFixed(1);
+        tdDigital.innerText = col.integer ? String(Math.round(currentVal)) : currentVal.toFixed(1);
         
         // Physical Input
         const tdPhysical = rowPhysical.insertCell();
@@ -2303,14 +2286,14 @@ function updateSyncColumnsList() {
             <input type="number" ${col.integer ? 'step="1"' : 'step="0.1"'} class="sync-input" data-col="${col.key}" data-integer="${col.integer ? 'true' : 'false'}"
                 style="width: 55px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 2px; border-radius: 4px; text-align: center; font-family: var(--font-mono); font-weight: bold; font-size: 0.75rem;"
                 oninput="calculateSyncDelta('${col.key}', ${currentVal})"
-                placeholder="${col.integer ? currentVal : currentVal.toFixed(1)}">
+                placeholder="${col.integer ? Math.round(currentVal) : currentVal.toFixed(1)}">
         `;
         
         // Delta Value
         const tdDelta = rowDelta.insertCell();
         tdDelta.id = `delta-${col.key}`;
         tdDelta.style = "padding: 4px 2px; text-align: center; font-family: var(--font-mono); font-weight: bold; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;";
-        tdDelta.innerText = "0";
+        tdDelta.innerText = col.integer ? "0" : "0.0";
     });
 }
 
@@ -2321,13 +2304,14 @@ function calculateSyncDelta(colKey, currentVal) {
     
     const paperVal = parseFloat(input.value);
     if (isNaN(paperVal)) {
-        deltaEl.innerText = '0.0';
+        deltaEl.innerText = input.dataset.integer === 'true' ? '0' : '0.0';
         deltaEl.style.color = '#94a3b8';
         return;
     }
     
     const delta = paperVal - currentVal;
-    deltaEl.innerText = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+    const isInteger = input.dataset.integer === 'true';
+    deltaEl.innerText = (delta >= 0 ? '+' : '') + (isInteger ? Math.round(delta) : delta.toFixed(1));
     deltaEl.style.color = delta === 0 ? '#94a3b8' : (delta > 0 ? '#4ade80' : '#f87171');
 }
 
